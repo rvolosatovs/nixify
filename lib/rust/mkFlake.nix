@@ -211,10 +211,7 @@ with nixlib.lib;
         final.dockerTools.buildImage {
           name = pname;
           tag = version;
-          copyToRoot = final.buildEnv {
-            name = pname;
-            paths = [bin];
-          };
+          contents = [bin];
           config.Cmd = [pname];
           config.Env = ["PATH=${bin}/bin"];
         };
