@@ -110,6 +110,7 @@ with self.lib.rust;
               "${pname}-aarch64-unknown-linux-musl"
               "${pname}-aarch64-unknown-linux-musl-oci"
               "${pname}-wasm32-wasi"
+              "${pname}-wasm32-wasi-oci"
               "${pname}-x86_64-unknown-linux-musl"
               "${pname}-x86_64-unknown-linux-musl-oci"
 
@@ -117,6 +118,7 @@ with self.lib.rust;
               "${pname}-debug-aarch64-unknown-linux-musl"
               "${pname}-debug-aarch64-unknown-linux-musl-oci"
               "${pname}-debug-wasm32-wasi"
+              "${pname}-debug-wasm32-wasi-oci"
               "${pname}-debug-x86_64-unknown-linux-musl"
               "${pname}-debug-x86_64-unknown-linux-musl-oci"
             ]
