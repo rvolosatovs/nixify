@@ -15,5 +15,7 @@
   outputs = inputs: {
     checks = import ./checks inputs;
     lib = import ./lib inputs;
+    templates.rust.description = "A basic Rust template";
+    templates.rust.path = ./templates/rust;
   };
 }
