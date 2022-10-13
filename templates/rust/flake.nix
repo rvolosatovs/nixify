@@ -1,16 +1,26 @@
 {
   inputs.nixify.url = github:rvolosatovs/nixify;
-  inputs.nixlib.url = github:nix-community/nixpkgs.lib;
 
   outputs = {
     nixify,
-    nixlib,
     ...
   }:
     nixify.lib.rust.mkFlake {
       # Rust project's source code
-      src = nixlib.lib.cleanSource ./.;
+      src = ./.;
 
+      ## Paths, which are not required by any cargo invocation
+      #ignorePaths = [
+      #  "/.codecov.yml"
+      #  "/.github"
+      #  "/.gitignore"
+      #  "/.mailmap"
+      #  "/deny.toml"
+      #  "/flake.lock"
+      #  "/flake.nix"
+      #  "/rust-toolchain.toml"
+      #];
+      #
       ## Systems to generate outputs for
       #systems = [
       #  "aarch64-darwin"

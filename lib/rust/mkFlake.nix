@@ -11,6 +11,16 @@ with flake-utils.lib.system;
 with nixlib.lib;
   {
     src,
+    ignorePaths ? [
+      "/.codecov.yml"
+      "/.github"
+      "/.gitignore"
+      "/.mailmap"
+      "/deny.toml"
+      "/flake.lock"
+      "/flake.nix"
+      "/rust-toolchain.toml"
+    ],
     systems ? [
       aarch64-darwin
       aarch64-linux
@@ -45,11 +55,17 @@ with nixlib.lib;
       warn = [];
     },
   }: let
+    mkRustToolchain = pkgs: pkgs.rust-bin.fromRustupToolchainFile "${src}/rust-toolchain.toml";
+
+    ignorePaths' = genAttrs ignorePaths (_: {});
+    src' = cleanSourceWith {
+      inherit src;
+      filter = name: type: !(ignorePaths' ? "${removePrefix "${src}" name}");
+    };
+
     cargoPackage = (builtins.fromTOML (builtins.readFile "${src}/Cargo.toml")).package;
     pname = cargoPackage.name;
     version = cargoPackage.version;
-
-    mkRustToolchain = pkgs: pkgs.rust-bin.fromRustupToolchainFile "${src}/rust-toolchain.toml";
 
     mkCargoFlags = config:
       with config;
@@ -75,9 +91,9 @@ with nixlib.lib;
       commonArgs = {
         inherit
           pname
-          src
           version
           ;
+        src = src';
       };
 
       # buildDeps builds dependencies of the crate given `craneLib`.
