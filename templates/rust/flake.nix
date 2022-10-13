@@ -31,16 +31,58 @@
       #];
       #
       ## Check output generation
-      #withChecks = {checks, pkgs, ...}: checks;
+      #withChecks = {
+      #  checks,
+      #  pkgs,
+      #  pname,
+      #  src,
+      #  version,
+      #  ...
+      #}:
+      #  checks;
       #
       ## Development shell output generation
-      #withDevShells = {devShells, pkgs, ...}: devShells;
+      #withDevShells = {
+      #  devShells,
+      #  pkgs,
+      #  pname,
+      #  src,
+      #  version,
+      #  ...
+      #}:
+      #  devShells;
       #
       ## Formatter output generation
-      #withFormatter = {formatter, pkgs, ...}: formatter;
+      #withFormatter = {
+      #  formatter,
+      #  pkgs,
+      #  pname,
+      #  src,
+      #  version,
+      #  ...
+      #}:
+      #  formatter;
+      #
+      ## Overlay output generation
+      #withOverlays = {
+      #  overlays,
+      #  pname,
+      #  src,
+      #  version,
+      #  ...
+      #}:
+      #  overlays;
       #
       ## Package output generation
-      #withPackages = {packages, pkgs, ...}: packages;
+      #withPackages = {
+      #  packages,
+      #  pkgs,
+      #  pname,
+      #  src,
+      #  version,
+      #  ...
+      #}:
+      #  packages;
       #
       ## Test configuration
       #test = {
