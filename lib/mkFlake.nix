@@ -8,48 +8,68 @@
   ...
 }:
 with nixlib.lib;
+with self.lib;
   {
-    systems,
-    mkPkgs ? system:
-      import nixpkgs {
-        inherit system;
-      },
+    ignorePaths ? defaultIgnorePaths,
     pname,
+    src,
+    systems ? defaultSystems,
     version,
-    withChecks ? {checks, ...}: checks,
-    withDevShells ? {devShells, ...}: devShells,
-    withFormatter ? {formatter, ...}: formatter,
-    withOverlays ? {overlays, ...}: overlays,
-    withPackages ? {packages, ...}: packages,
-  }:
-    {
-      overlays = withOverlays {
-        inherit
-          pname
-          version
-          ;
+    withChecks ? defaultWithChecks,
+    withDevShells ? defaultWithDevShells,
+    withFormatter ? defaultWithFormatter,
+    withOverlays ? defaultWithOverlays,
+    withPackages ? defaultWithPackages,
+    withPkgs ? defaultWithPkgs,
+  }: let
+    ignorePaths' = genAttrs ignorePaths (_: {});
+    src' = cleanSourceWith {
+      inherit src;
+      filter = name: type: !(ignorePaths' ? "${removePrefix "${src}" name}");
+    };
+
+    commonArgs = {
+      inherit
+        pname
+        version
+        ;
+
+      src = src';
+    };
+
+    overlays = withOverlays (commonArgs
+      // {
         overlays = {};
-      };
+      });
+  in
+    {
+      inherit overlays;
     }
     // flake-utils.lib.eachSystem systems
     (
       system: let
-        pkgs = mkPkgs system;
+        pkgs = withPkgs (commonArgs
+          // {
+            inherit
+              overlays
+              system
+              ;
+          });
 
-        commonArgs = {
-          inherit
-            pkgs
-            pname
-            system
-            version
-            ;
-        };
-
-        checks = withChecks (commonArgs
+        commonPkgsArgs =
+          commonArgs
+          // {
+            inherit
+              pkgs
+              ;
+          };
+      in {
+        checks = withChecks (commonPkgsArgs
           // {
             checks = {};
           });
-        devShells = withDevShells (commonArgs
+
+        devShells = withDevShells (commonPkgsArgs
           // {
             devShells.default = pkgs.mkShell {
               inherit
@@ -58,20 +78,15 @@ with nixlib.lib;
                 ;
             };
           });
-        formatter = withFormatter (commonArgs
+
+        formatter = withFormatter (commonPkgsArgs
           // {
             formatter = pkgs.alejandra;
           });
-        packages = withPackages (commonArgs
+
+        packages = withPackages (commonPkgsArgs
           // {
             packages = {};
           });
-      in {
-        inherit
-          checks
-          devShells
-          formatter
-          packages
-          ;
       }
     )
