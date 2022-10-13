@@ -134,42 +134,91 @@ with self.lib.rust;
         // extraArgs
       );
 
+    withCrossSystem = crossSystem:
+      import nixpkgs {
+        inherit
+          crossSystem
+          ;
+        localSystem = final.hostPlatform.system;
+      };
+
     # pkgsFor constructs a package set for specified `crossSystem`.
-    pkgsFor = crossSystem: let
-      localSystem = final.hostPlatform.system;
-    in
-      if localSystem == crossSystem
+    pkgsFor = crossSystem:
+      if final.hostPlatform.system == crossSystem
       then final
+      else if final.hostPlatform.system == aarch64-darwin && crossSystem == "aarch64-apple-darwin"
+      then final
+      else if final.hostPlatform.system == aarch64-linux && crossSystem == "aarch64-unknown-linux-gnu"
+      then final
+      else if final.hostPlatform.system == x86_64-darwin && crossSystem == "x86_64-apple-darwin"
+      then final
+      else if final.hostPlatform.system == x86_64-linux && crossSystem == "x86_64-unknown-linux-gnu"
+      then final
+      else if crossSystem == "aarch64-unknown-linux-musl"
+      then final.pkgsCross.aarch64-multiplatform-musl
+      else if crossSystem == "aarch64-apple-darwin"
+      then withCrossSystem aarch64-darwin
+      else if crossSystem == "x86_64-unknown-linux-musl"
+      then final.pkgsCross.musl64
+      else if crossSystem == "x86_64-apple-darwin"
+      then withCrossSystem x86_64-darwin
       else if crossSystem == wasm32-wasi
       then final.pkgsCross.wasi32
-      else
-        import nixpkgs {
-          inherit
-            crossSystem
-            localSystem
-            ;
-        };
+      else withCrossSystem crossSystem;
 
-    # build.packageFor builds for `target` using `crossSystem` toolchain.
+    # build.packageFor builds for `target`.
     # `extraArgs` are passed through to `build.package` verbatim.
     # NOTE: Upstream only provides binary caches for a subset of supported systems.
-    build.packageFor = crossSystem: target: extraArgs: let
-      pkgs = pkgsFor crossSystem;
-      cc = pkgs.stdenv.cc;
+    build.packageFor = target: extraArgs: let
+      pkgsCross = pkgsFor target;
       kebab2snake = replaceStrings ["-"] ["_"];
-      commonCrossArgs = {
-        depsBuildBuild = [
-          cc
-        ];
+      commonCrossArgs = with pkgsCross;
+        {
+          CARGO_BUILD_TARGET = target;
+        }
+        // optionalAttrs stdenv.targetPlatform.isWasi {
+          depsBuildBuild = [
+            final.wasmtime
+          ];
 
-        buildInputs =
-          optional pkgs.stdenv.isDarwin
-          pkgs.darwin.apple_sdk.frameworks.Security;
+          buildInputs = optionals final.stdenv.isDarwin (with final.darwin.apple_sdk.frameworks; [
+            CoreFoundation
+            CoreServices
+            Carbon
+            Foundation
+            Security
+            SystemConfiguration
+          ]);
 
-        CARGO_BUILD_TARGET = target;
-        "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${cc.targetPrefix}cc";
-      };
-      craneLib = mkCraneLib pkgs;
+          nativeBuildInputs = optionals final.stdenv.isDarwin (with final.darwin.apple_sdk.frameworks; [
+            CoreFoundation
+            CoreServices
+            Carbon
+            Foundation
+            Security
+            SystemConfiguration
+          ]);
+
+          CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
+        }
+        // optionalAttrs (stdenv.targetPlatform.isDarwin || stdenv.targetPlatform.isLinux) {
+          depsBuildBuild = [
+            stdenv.cc
+          ];
+
+          "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
+        }
+        // optionalAttrs stdenv.targetPlatform.isDarwin {
+          buildInputs = with darwin.apple_sdk.frameworks; [
+            Security
+          ];
+        }
+        // optionalAttrs stdenv.targetPlatform.isLinux {
+          buildInputs =
+            optional final.stdenv.isDarwin
+            pkgsCross.libiconv;
+        };
+      craneLib = mkCraneLib pkgsCross;
     in
       build.package craneLib (commonCrossArgs
         // {
@@ -178,41 +227,27 @@ with self.lib.rust;
         // extraArgs);
 
     build.aarch64-apple-darwin.package = extraArgs:
-      build.packageFor aarch64-darwin "aarch64-apple-darwin" ({
+      build.packageFor "aarch64-apple-darwin" ({
           CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
         }
         // extraArgs);
 
     build.aarch64-unknown-linux-musl.package = extraArgs:
-      build.packageFor aarch64-linux "aarch64-unknown-linux-musl" ({
+      build.packageFor "aarch64-unknown-linux-musl" ({
           CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
         }
         // extraArgs);
 
-    build.wasm32-wasi.package = extraArgs: let
-      pkgs = pkgsFor wasm32-wasi;
-      commonWasm32WasiArgs = {
-        depsBuildBuild = [final.wasmtime];
-
-        CARGO_BUILD_TARGET = "wasm32-wasi";
-        CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
-      };
-      craneLib = mkCraneLib pkgs;
-    in
-      build.package craneLib (commonWasm32WasiArgs
-        // {
-          cargoArtifacts = buildDeps craneLib commonWasm32WasiArgs;
-        }
-        // extraArgs);
+    build.wasm32-wasi.package = build.packageFor wasm32-wasi;
 
     build.x86_64-apple-darwin.package = extraArgs:
-      build.packageFor x86_64-darwin "x86_64-apple-darwin" ({
+      build.packageFor "x86_64-apple-darwin" ({
           CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
         }
         // extraArgs);
 
     build.x86_64-unknown-linux-musl.package = extraArgs:
-      build.packageFor x86_64-linux "x86_64-unknown-linux-musl" ({
+      build.packageFor "x86_64-unknown-linux-musl" ({
           CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
         }
         // extraArgs);
