@@ -67,11 +67,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1665601444,
-        "narHash": "sha256-ijT5Cyxa9c9eQhT4bodIEcT6l0VgXJT9aB/L+r9nMrk=",
+        "lastModified": 1665685661,
+        "narHash": "sha256-/f2qEQ0lx0PBlNyDo8j1320eF85Nm0BDWWHbcrEBS04=",
         "owner": "rvolosatovs",
         "repo": "nixify",
-        "rev": "ca8cba552faf28a40739710e14bc565bc0c33660",
+        "rev": "40b6933c8883d25dfd36dc34567255d9ac5d5607",
         "type": "github"
       },
       "original": {
@@ -81,21 +81,6 @@
       }
     },
     "nixlib": {
-      "locked": {
-        "lastModified": 1665277441,
-        "narHash": "sha256-TTuO5F7sStTBL/twYMSnRakrw1l7FqAYulN7+HPYjqc=",
-        "owner": "nix-community",
-        "repo": "nixpkgs.lib",
-        "rev": "76ef73e385f96bb438676cf5f21f220694fd3d73",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "nixpkgs.lib",
-        "type": "github"
-      }
-    },
-    "nixlib_2": {
       "locked": {
         "lastModified": 1665277441,
         "narHash": "sha256-TTuO5F7sStTBL/twYMSnRakrw1l7FqAYulN7+HPYjqc=",
@@ -128,8 +113,7 @@
     },
     "root": {
       "inputs": {
-        "nixify": "nixify",
-        "nixlib": "nixlib_2"
+        "nixify": "nixify"
       }
     },
     "rust-overlay": {
