@@ -105,7 +105,15 @@ with self.lib.rust;
 
           installPhaseCommand = ''
             mkdir -p $out/bin
-            cp target/''${CARGO_BUILD_TARGET:+''${CARGO_BUILD_TARGET}/}''${CARGO_PROFILE:-debug}/${pname} $out/bin/${pname}
+            profileDir=''${CARGO_PROFILE:-debug}
+            case ''${CARGO_BUILD_TARGET} in
+                "wasm32-wasi")
+                    cp target/wasm32-wasi/''${profileDir}/${pname}.wasm $out/bin/${pname};;
+                "")
+                    cp target/''${profileDir}/${pname} $out/bin/${pname};;
+                *)
+                    cp target/''${CARGO_BUILD_TARGET}/''${profileDir}/${pname} $out/bin/${pname};;
+            esac
           '';
         }
         // optionalAttrs (test != null) {
@@ -186,7 +194,8 @@ with self.lib.rust;
       build.host.package ({
           nativeBuildInputs = [final.wasmtime];
 
-          CARGO_WASM32_WASI_RUNNER = "wasmtime";
+          CARGO_BUILD_TARGET = "wasm32-wasi";
+          CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
         }
         // extraArgs);
 
