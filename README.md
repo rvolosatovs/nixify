@@ -8,26 +8,36 @@ See `examples` directory
 
 ## Rust
 
-A flake at `examples/rust-hello/flake.nix`:
+### Template
+
+To nixify a Rust project:
+```
+nix flake init --template 'github:rvolosatovs/nixify#rust'
+```
+
+### Example
+
+A flake definition at `examples/rust-hello/flake.nix`:
 ```nix
 {
   inputs.nixify.url = github:rvolosatovs/nixify;
-  inputs.nixlib.url = github:nix-community/nixpkgs.lib;
 
   description = "Rust hello world";
 
-  outputs = {
-    nixify,
-    nixlib,
-    ...
-  }:
+  outputs = {nixify, ...}:
     nixify.lib.rust.mkFlake {
-      src = nixlib.lib.cleanSource ./.;
+      src = ./.;
+      ignorePaths = [
+        "/.gitignore"
+        "/flake.lock"
+        "/flake.nix"
+        "/rust-toolchain.toml"
+      ];
     };
 }
 ```
 
-Would produce the following flake:
+Produces the following outputs (`nix flake show 'github:rvolosatovs/nixify?dir=examples/rust-hello'`):
 ```
 ├───checks
 │   ├───aarch64-darwin
