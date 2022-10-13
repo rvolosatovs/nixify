@@ -1,6 +1,6 @@
 # Description
 
-Opinionated and simple nix flake bootstrapping library for real-world projects
+Simple, yet extensible nix flake bootstrapping library for real-world projects
 
 # Usage
 
