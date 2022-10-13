@@ -23,6 +23,17 @@ with nixlib.lib;
     withFormatter ? {formatter, ...}: formatter,
     withOverlays ? {overlays, ...}: overlays,
     withPackages ? {packages, ...}: packages,
+    clippy ? {
+      allFeatures = true;
+      allTargets = true;
+      targets = [];
+      workspace = true;
+
+      allow = [];
+      deny = ["warnings"];
+      forbid = [];
+      warn = [];
+    },
   }: let
     cargoPackage = (builtins.fromTOML (builtins.readFile "${src}/Cargo.toml")).package;
     pname = cargoPackage.name;
@@ -69,8 +80,21 @@ with nixlib.lib;
       checks.clippy = hostCraneLib.cargoClippy (commonArgs
         // {
           cargoArtifacts = hostCargoArtifacts;
-          cargoClippyExtraArgs = "--workspace --all-targets -- --deny warnings";
-          cargoExtraArgs = "-j $NIX_BUILD_CORES --all-features";
+          cargoExtraArgs = "-j $NIX_BUILD_CORES";
+        }
+        // optionalAttrs (clippy != null) {
+          cargoClippyExtraArgs = with clippy;
+            concatStrings (
+              optionals (clippy ? targets) (map (target: "--target ${target} ") targets)
+              ++ optional (clippy ? allFeatures && allFeatures) "--all-features "
+              ++ optional (clippy ? allTargets && allTargets) "--all-targets "
+              ++ optional (clippy ? workspace && workspace) "--workspace "
+              ++ ["-- "]
+              ++ optionals (clippy ? allow) (map (lint: "--allow ${lint} ") allow)
+              ++ optionals (clippy ? deny) (map (lint: "--deny ${lint} ") deny)
+              ++ optionals (clippy ? forbid) (map (lint: "--forbid ${lint} ") forbid)
+              ++ optionals (clippy ? warn) (map (lint: "--warn ${lint} ") warn)
+            );
         });
       checks.fmt = hostCraneLib.cargoFmt commonArgs;
       checks.nextest = hostCraneLib.cargoNextest (commonArgs
@@ -163,7 +187,7 @@ with nixlib.lib;
           // extraArgs);
 
       build.wasm32-wasi.package = extraArgs:
-        # TODO: Consider using wasm32-wasi cross package set.
+      # TODO: Consider using wasm32-wasi cross package set.
         build.host.package ({
             nativeBuildInputs = [final.wasmtime];
 
