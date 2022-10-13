@@ -140,8 +140,8 @@ with self.lib.rust;
     in
       if localSystem == crossSystem
       then final
-      else if crossSystem == x86_64-darwin
-      then throw "cross compilation to x86_64-darwin not supported due to https://github.com/NixOS/nixpkgs/issues/180771"
+      else if crossSystem == wasm32-wasi
+      then final.pkgsCross.wasi32
       else
         import nixpkgs {
           inherit
@@ -189,13 +189,19 @@ with self.lib.rust;
         }
         // extraArgs);
 
-    build.wasm32-wasi.package = extraArgs:
-    # TODO: Consider using wasm32-wasi cross package set.
-      build.host.package ({
-          nativeBuildInputs = [final.wasmtime];
+    build.wasm32-wasi.package = extraArgs: let
+      pkgs = pkgsFor wasm32-wasi;
+      commonWasm32WasiArgs = {
+        depsBuildBuild = [final.wasmtime];
 
-          CARGO_BUILD_TARGET = "wasm32-wasi";
-          CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
+        CARGO_BUILD_TARGET = "wasm32-wasi";
+        CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
+      };
+      craneLib = mkCraneLib pkgs;
+    in
+      build.package craneLib (commonWasm32WasiArgs
+        // {
+          cargoArtifacts = buildDeps craneLib commonWasm32WasiArgs;
         }
         // extraArgs);
 
