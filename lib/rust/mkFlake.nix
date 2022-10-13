@@ -23,9 +23,19 @@ with nixlib.lib;
     withFormatter ? {formatter, ...}: formatter,
     withOverlays ? {overlays, ...}: overlays,
     withPackages ? {packages, ...}: packages,
+    test ? {
+      allFeatures = true;
+      allTargets = true;
+      noDefaultFeatures = false;
+      features = [];
+      targets = [];
+      workspace = true;
+    },
     clippy ? {
       allFeatures = true;
       allTargets = true;
+      noDefaultFeatures = false;
+      features = [];
       targets = [];
       workspace = true;
 
@@ -40,6 +50,17 @@ with nixlib.lib;
     version = cargoPackage.version;
 
     mkRustToolchain = pkgs: pkgs.rust-bin.fromRustupToolchainFile "${src}/rust-toolchain.toml";
+
+    mkCargoFlags = config:
+      with config;
+        concatStrings (
+          optionals (config ? targets) (map (target: "--target ${target} ") targets)
+          ++ optional (config ? features && length features > 0) "--features ${concatStringsSep "," features} "
+          ++ optional (config ? allFeatures && allFeatures) "--all-features "
+          ++ optional (config ? allTargets && allTargets) "--all-targets "
+          ++ optional (config ? noDefaultFeatures && noDefaultFeatures) "--no-default-features "
+          ++ optional (config ? workspace && workspace) "--workspace "
+        );
 
     overlay = final: prev: let
       rustToolchain = mkRustToolchain final;
@@ -64,13 +85,16 @@ with nixlib.lib;
       buildDeps = craneLib: extraArgs:
         craneLib.buildDepsOnly (commonArgs
           // {
-            cargoExtraArgs = "-j $NIX_BUILD_CORES --all-features";
+            cargoExtraArgs = "-j $NIX_BUILD_CORES";
 
             # Remove binary dependency specification, since that breaks on generated "dummy source"
             extraDummyScript = ''
               sed -i '/^artifact = "bin"$/d' $out/Cargo.toml
               sed -i '/^target = ".*"$/d' $out/Cargo.toml
             '';
+          }
+          // optionalAttrs (test != null) {
+            cargoTestExtraArgs = mkCargoFlags test;
           }
           // extraArgs);
 
@@ -83,24 +107,24 @@ with nixlib.lib;
           cargoExtraArgs = "-j $NIX_BUILD_CORES";
         }
         // optionalAttrs (clippy != null) {
-          cargoClippyExtraArgs = with clippy;
-            concatStrings (
-              optionals (clippy ? targets) (map (target: "--target ${target} ") targets)
-              ++ optional (clippy ? allFeatures && allFeatures) "--all-features "
-              ++ optional (clippy ? allTargets && allTargets) "--all-targets "
-              ++ optional (clippy ? workspace && workspace) "--workspace "
-              ++ ["-- "]
-              ++ optionals (clippy ? allow) (map (lint: "--allow ${lint} ") allow)
-              ++ optionals (clippy ? deny) (map (lint: "--deny ${lint} ") deny)
-              ++ optionals (clippy ? forbid) (map (lint: "--forbid ${lint} ") forbid)
-              ++ optionals (clippy ? warn) (map (lint: "--warn ${lint} ") warn)
-            );
+          cargoClippyExtraArgs = "${mkCargoFlags clippy} -- ${
+            with clippy;
+              concatStrings (
+                optionals (clippy ? allow) (map (lint: "--allow ${lint} ") allow)
+                ++ optionals (clippy ? deny) (map (lint: "--deny ${lint} ") deny)
+                ++ optionals (clippy ? forbid) (map (lint: "--forbid ${lint} ") forbid)
+                ++ optionals (clippy ? warn) (map (lint: "--warn ${lint} ") warn)
+              )
+          }";
         });
       checks.fmt = hostCraneLib.cargoFmt commonArgs;
       checks.nextest = hostCraneLib.cargoNextest (commonArgs
         // {
           cargoArtifacts = hostCargoArtifacts;
           cargoExtraArgs = "-j $NIX_BUILD_CORES";
+        }
+        // optionalAttrs (test != null) {
+          cargoNextestExtraArgs = mkCargoFlags test;
         });
 
       # buildPackage builds using `craneLib`.
@@ -115,6 +139,9 @@ with nixlib.lib;
               mkdir -p $out/bin
               cp target/''${CARGO_BUILD_TARGET:+''${CARGO_BUILD_TARGET}/}''${CARGO_PROFILE:-debug}/${pname} $out/bin/${pname}
             '';
+          }
+          // optionalAttrs (test != null) {
+            cargoTestExtraArgs = mkCargoFlags test;
           }
           // extraArgs);
 
