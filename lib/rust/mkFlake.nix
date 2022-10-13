@@ -293,20 +293,16 @@ with nixlib.lib;
       "${pname}RustToolchain" = rustToolchain;
     };
   in
-    {
-      overlays = withOverlays {
-        inherit
-          pname
-          version
-          ;
+    self.lib.mkFlake {
+      inherit
+        pname
+        systems
+        version
+        withFormatter
+        ;
 
-        overlays.default = overlay;
-      };
-    }
-    // flake-utils.lib.eachSystem systems
-    (
-      system: let
-        pkgs = import nixpkgs {
+      mkPkgs = system:
+        import nixpkgs {
           inherit system;
           overlays = [
             # NOTE: Order is important
@@ -315,37 +311,53 @@ with nixlib.lib;
           ];
         };
 
-        commonArgs = {
-          inherit
-            pkgs
-            pname
-            version
-            ;
-        };
-
-        checks = withChecks (commonArgs
+      withChecks = {
+        checks,
+        pkgs,
+        ...
+      } @ cx:
+        withChecks (cx
           // {
-            checks = pkgs."${pname}Checks";
+            checks = cx.checks // pkgs."${pname}Checks";
           });
 
-        devShells = withDevShells (commonArgs
+      withDevShells = {
+        devShells,
+        pkgs,
+        ...
+      } @ cx:
+        withDevShells (cx
           // {
-            devShells.default = pkgs.mkShell {
-              buildInputs = [
-                pkgs."${pname}RustToolchain"
-              ];
-            };
+            devShells.default = devShells.default.overrideAttrs (attrs: {
+              buildInputs =
+                attrs.buildInputs
+                ++ [
+                  pkgs."${pname}RustToolchain"
+                ];
+            });
           });
 
-        formatter = withFormatter (commonArgs
+      withOverlays = {overlays, ...} @ cx:
+        withOverlays (cx
           // {
-            formatter = pkgs.alejandra;
+            overlays =
+              cx.overlays
+              // {
+                default = overlay;
+              };
           });
 
-        packages = withPackages (commonArgs
+      withPackages = {
+        packages,
+        pkgs,
+        system,
+        ...
+      } @ cx:
+        withPackages (cx
           // {
             packages =
-              {
+              cx.packages
+              // {
                 default = pkgs."${pname}";
               }
               // genAttrs ([
@@ -379,12 +391,4 @@ with nixlib.lib;
                   "${pname}-debug-x86_64-apple-darwin-oci"
                 ]) (name: pkgs.${name});
           });
-      in {
-        inherit
-          checks
-          devShells
-          formatter
-          packages
-          ;
-      }
-    )
+    }
