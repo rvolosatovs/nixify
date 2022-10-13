@@ -1,0 +1,36 @@
+name: templates
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    strategy:
+      matrix:
+        platform:
+        - host: macos-latest
+        - host: ubuntu-latest
+    runs-on: ${{ matrix.platform.host }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: cachix/install-nix-action@v18
+    - uses: cachix/cachix-action@v11
+      with:
+        name: rvolosatovs
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - name: "Initialize and test"
+      run: |
+        cargo new ci
+        cd ci
+        cargo run
+        nix flake init -t '..#templates.rust'
+        git add .
+        nix flake check --override-input 'nixify' '..' -L
+        nix run --override-input 'nixify' '..' -L
+        nix develop --override-input 'nixify' '..' -L --ignore-environment -c cargo test
