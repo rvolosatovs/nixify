@@ -1,10 +1,7 @@
 {
   inputs.nixify.url = github:rvolosatovs/nixify;
 
-  outputs = {
-    nixify,
-    ...
-  }:
+  outputs = {nixify, ...}:
     nixify.lib.rust.mkFlake {
       # Rust project's source code
       src = ./.;

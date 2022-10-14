@@ -6,15 +6,24 @@
   nixpkgs,
   rust-overlay,
   ...
+}: {
+  defaultIgnorePaths,
+  defaultSystems,
+  defaultWithChecks,
+  defaultWithDevShells,
+  defaultWithFormatter,
+  defaultWithOverlays,
+  defaultWithPackages,
+  defaultWithPkgs,
+  ...
 }:
 with nixlib.lib;
-with self.lib;
   {
     ignorePaths ? defaultIgnorePaths,
     pname,
-    src,
+    src ? null,
     systems ? defaultSystems,
-    version,
+    version ? null,
     withChecks ? defaultWithChecks,
     withDevShells ? defaultWithDevShells,
     withFormatter ? defaultWithFormatter,
@@ -22,20 +31,23 @@ with self.lib;
     withPackages ? defaultWithPackages,
     withPkgs ? defaultWithPkgs,
   }: let
-    ignorePaths' = genAttrs ignorePaths (_: {});
-    src' = cleanSourceWith {
-      inherit src;
-      filter = name: type: !(ignorePaths' ? "${removePrefix "${src}" name}");
-    };
-
-    commonArgs = {
-      inherit
-        pname
-        version
-        ;
-
-      src = src';
-    };
+    commonArgs =
+      {
+        inherit
+          pname
+          version
+          ;
+      }
+      // (optionalAttrs (src != null) {
+        src = let
+          ignorePaths' = genAttrs ignorePaths (_: {});
+          removeSrc = removePrefix "${src}";
+        in
+          cleanSourceWith {
+            inherit src;
+            filter = name: type: !(ignorePaths' ? ${removeSrc name});
+          };
+      });
 
     overlays = withOverlays (commonArgs
       // {
