@@ -13,8 +13,9 @@ with self.lib;
 with self.lib.rust;
   {
     src,
-    ignorePaths ? defaultIgnorePaths,
     clippy ? defaultClippyConfig,
+    ignorePaths ? defaultIgnorePaths,
+    overlays ? [],
     systems ? defaultSystems,
     test ? defaultTestConfig,
     withChecks ? defaultWithChecks,
@@ -27,11 +28,16 @@ with self.lib.rust;
     pname = cargoPackage.name;
     version = cargoPackage.version;
 
-    mkOverlay' = cx:
-      mkOverlay (cx
-        // {
-          rustupToolchainFile = "${src}/rust-toolchain.toml";
-        });
+    overlay = mkOverlay {
+      inherit
+        clippy
+        pname
+        src
+        test
+        version
+        ;
+      rustupToolchainFile = "${src}/rust-toolchain.toml";
+    };
   in
     self.lib.mkFlake {
       inherit
@@ -42,6 +48,13 @@ with self.lib.rust;
         version
         withFormatter
         ;
+
+      overlays =
+        overlays
+        ++ [
+          rust-overlay.overlays.default
+          overlay
+        ];
 
       withChecks = {
         checks,
@@ -79,17 +92,15 @@ with self.lib.rust;
               };
           });
 
-      withOverlays = {overlays, ...} @ cx: let
-        default = mkOverlay' (filterAttrs (n: v: n != "overlays") cx);
-      in
+      withOverlays = {overlays, ...} @ cx:
         withOverlays (cx
           // {
             overlays =
               overlays
               // {
-                inherit
-                  default
-                  ;
+                ${pname} = overlay;
+                default = overlay;
+                rust = rust-overlay.overlays.default;
               };
           });
 
@@ -145,22 +156,4 @@ with self.lib.rust;
           // {
             packages = packages';
           });
-
-      withPkgs = {
-        system,
-        overlays,
-        ...
-      } @ cx: let
-        overlay = mkOverlay' (filterAttrs (n: v: n != "overlays" && n != "system") cx);
-      in
-        import nixpkgs {
-          inherit system;
-          overlays =
-            [
-              # NOTE: Order is important
-              rust-overlay.overlays.default
-              overlay
-            ]
-            ++ mapAttrsToList (n: overlay: overlay) overlays;
-        };
     }

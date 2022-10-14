@@ -18,6 +18,9 @@
       #  "/rust-toolchain.toml"
       #];
       #
+      ## Overlays to use in nixpkgs instantiaion
+      #overlays = [];
+      #
       ## Systems to generate outputs for
       #systems = [
       #  "aarch64-darwin"

@@ -14,12 +14,12 @@
   defaultWithFormatter,
   defaultWithOverlays,
   defaultWithPackages,
-  defaultWithPkgs,
   ...
 }:
 with nixlib.lib;
   {
     ignorePaths ? defaultIgnorePaths,
+    overlays ? [],
     pname ? null,
     src ? null,
     systems ? defaultSystems,
@@ -29,7 +29,6 @@ with nixlib.lib;
     withFormatter ? defaultWithFormatter,
     withOverlays ? defaultWithOverlays,
     withPackages ? defaultWithPackages,
-    withPkgs ? defaultWithPkgs,
   }: let
     commonArgs =
       optionalAttrs (pname != null) {
@@ -48,25 +47,22 @@ with nixlib.lib;
             filter = name: type: !(ignorePaths' ? ${removeSrc name});
           };
       };
-
-    overlays = withOverlays (commonArgs
-      // {
-        overlays = {};
-      });
   in
     {
-      inherit overlays;
+      overlays = withOverlays (commonArgs
+        // {
+          overlays = {};
+        });
     }
     // flake-utils.lib.eachSystem systems
     (
       system: let
-        pkgs = withPkgs (commonArgs
-          // {
-            inherit
-              overlays
-              system
-              ;
-          });
+        pkgs = import nixpkgs {
+          inherit
+            overlays
+            system
+            ;
+        };
 
         commonPkgsArgs =
           commonArgs
