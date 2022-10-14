@@ -60,8 +60,7 @@ in
           rust-hello-pkg-rust-hello-debug-x86_64-unknown-linux-musl = rust-hello-debug-x86_64-unknown-linux-musl;
           rust-hello-pkg-rust-hello-debug-x86_64-unknown-linux-musl-oci = rust-hello-debug-x86_64-unknown-linux-musl-oci;
         }
-        # TODO: Support x86_64 -> aarch64 cross
-        // optionalAttrs (system == aarch64-darwin) {
+        // optionalAttrs (system == aarch64-darwin || system == x86_64-darwin) {
           rust-hello-pkg-rust-hello-aarch64-apple-darwin = rust-hello-aarch64-apple-darwin;
           rust-hello-pkg-rust-hello-aarch64-apple-darwin-oci = rust-hello-aarch64-apple-darwin-oci;
 

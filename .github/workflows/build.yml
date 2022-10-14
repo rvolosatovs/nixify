@@ -14,18 +14,17 @@ jobs:
     strategy:
       matrix:
         platform:
+        - host: macos-latest
+          target: aarch64-apple-darwin
+          flake: ./examples/rust-hello
+          test-bin: ./result/bin/rust-hello
+          test-oci: |
+            nix profile install --inputs-from . 'nixpkgs#podman'
+            podman machine init
+            podman machine start
+            podman load < ./result
+
           # TODO: Fix these targets and reenable
-
-          #- host: macos-latest
-          #  target: aarch64-apple-darwin
-          #  flake: ./examples/rust-hello
-          #  test-bin: ./result/bin/rust-hello
-          #  test-oci: |
-          #    nix profile install --inputs-from . 'nixpkgs#podman'
-          #    podman machine init
-          #    podman machine start
-          #    podman load < ./result
-
           #- host: macos-latest
           #  target: aarch64-unknown-linux-musl
           #  flake: ./examples/rust-hello
