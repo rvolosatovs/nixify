@@ -136,9 +136,7 @@ with self.lib.rust;
 
     withCrossSystem = crossSystem:
       import nixpkgs {
-        inherit
-          crossSystem
-          ;
+        inherit crossSystem;
         localSystem = final.hostPlatform.system;
       };
 
@@ -155,7 +153,7 @@ with self.lib.rust;
       else if final.hostPlatform.system == x86_64-linux && crossSystem == "x86_64-unknown-linux-gnu"
       then final
       else if crossSystem == "aarch64-unknown-linux-musl"
-      then final.pkgsCross.aarch64-multiplatform-musl
+      then withCrossSystem aarch64-linux
       else if crossSystem == "aarch64-apple-darwin"
       then withCrossSystem aarch64-darwin
       else if crossSystem == "x86_64-unknown-linux-musl"
