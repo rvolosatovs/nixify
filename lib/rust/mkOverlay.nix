@@ -148,18 +148,22 @@ with self.lib.rust;
       then final
       else if final.hostPlatform.system == aarch64-linux && crossSystem == "aarch64-unknown-linux-gnu"
       then final
+      else if final.hostPlatform.system == aarch64-linux && crossSystem == "aarch64-unknown-linux-musl"
+      then final
       else if final.hostPlatform.system == x86_64-darwin && crossSystem == "x86_64-apple-darwin"
       then final
       else if final.hostPlatform.system == x86_64-linux && crossSystem == "x86_64-unknown-linux-gnu"
       then final
+      else if final.hostPlatform.system == x86_64-linux && crossSystem == "x86_64-unknown-linux-musl"
+      then final
       else if crossSystem == "aarch64-unknown-linux-musl"
       then withCrossSystem aarch64-linux
       else if crossSystem == "aarch64-apple-darwin"
-      then withCrossSystem aarch64-darwin
+      then final.pkgsCross.aarch64-darwin
       else if crossSystem == "x86_64-unknown-linux-musl"
-      then final.pkgsCross.musl64
+      then withCrossSystem x86_64-linux
       else if crossSystem == "x86_64-apple-darwin"
-      then withCrossSystem x86_64-darwin
+      then final.pkgsCross.x86_64-darwin
       else if crossSystem == wasm32-wasi
       then final.pkgsCross.wasi32
       else withCrossSystem crossSystem;
