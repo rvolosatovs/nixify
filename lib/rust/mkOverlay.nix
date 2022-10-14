@@ -107,8 +107,8 @@ with self.lib.rust;
             mkdir -p $out/bin
             profileDir=''${CARGO_PROFILE:-debug}
             case ''${CARGO_BUILD_TARGET} in
-                "wasm32-wasi")
-                    cp target/wasm32-wasi/''${profileDir}/${pname}.wasm $out/bin/${pname};;
+                ${wasm32-wasi})
+                    cp target/${wasm32-wasi}/''${profileDir}/${pname}.wasm $out/bin/${pname};;
                 "")
                     cp target/''${profileDir}/${pname} $out/bin/${pname};;
                 *)
@@ -144,6 +144,8 @@ with self.lib.rust;
     pkgsFor = crossSystem:
       if final.hostPlatform.system == crossSystem
       then final
+      else if crossSystem == wasm32-wasi
+      then final
       else if final.hostPlatform.system == aarch64-darwin && crossSystem == "aarch64-apple-darwin"
       then final
       else if final.hostPlatform.system == aarch64-linux && crossSystem == "aarch64-unknown-linux-gnu"
@@ -164,8 +166,6 @@ with self.lib.rust;
       then withCrossSystem x86_64-linux
       else if crossSystem == "x86_64-apple-darwin"
       then final.pkgsCross.x86_64-darwin
-      else if crossSystem == wasm32-wasi
-      then final.pkgsCross.wasi32
       else withCrossSystem crossSystem;
 
     # build.packageFor builds for `target`.
@@ -174,20 +174,12 @@ with self.lib.rust;
     build.packageFor = target: extraArgs: let
       pkgsCross = pkgsFor target;
       kebab2snake = replaceStrings ["-"] ["_"];
-      commonCrossArgs = with pkgsCross;
-        {
-          depsBuildBuild =
-            optional stdenv.targetPlatform.isUnix stdenv.cc
-            ++ optional stdenv.targetPlatform.isWasi final.wasmtime;
+      commonCrossArgs = with pkgsCross; {
+        depsBuildBuild = [stdenv.cc];
 
-          CARGO_BUILD_TARGET = target;
-        }
-        // optionalAttrs stdenv.targetPlatform.isUnix {
-          "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
-        }
-        // optionalAttrs stdenv.targetPlatform.isWasi {
-          CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
-        };
+        CARGO_BUILD_TARGET = target;
+        "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
+      };
       craneLib = mkCraneLib pkgsCross;
     in
       build.package craneLib (commonCrossArgs
@@ -208,23 +200,19 @@ with self.lib.rust;
         }
         // extraArgs);
 
-    build.wasm32-wasi.package =
-      if final.stdenv.isDarwin
-      then let
-        commonWasiArgs = {
-          depsBuildBuild = [final.wasmtime];
+    build.wasm32-wasi.package = extraArgs: let
+      commonWasiArgs = {
+        depsBuildBuild = [final.wasmtime];
 
-          CARGO_BUILD_TARGET = "wasm32-wasi";
+        CARGO_BUILD_TARGET = wasm32-wasi;
 
-          CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
-        };
-      in
-        extraArgs:
-          build.package hostCraneLib (commonWasiArgs
-            // {
-              cargoArtifacts = buildDeps hostCraneLib commonWasiArgs;
-            })
-      else build.packageFor wasm32-wasi;
+        CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
+      };
+    in
+      build.package hostCraneLib (commonWasiArgs
+        // {
+          cargoArtifacts = buildDeps hostCraneLib commonWasiArgs;
+        });
 
     build.x86_64-apple-darwin.package = extraArgs:
       build.packageFor "x86_64-apple-darwin" ({
