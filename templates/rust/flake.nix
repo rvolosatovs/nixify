@@ -82,28 +82,24 @@
       #  packages;
       #
       ## Test configuration
-      #test = {
-      #  allFeatures = true;
-      #  allTargets = true;
-      #  noDefaultFeatures = false;
-      #  features = [];
-      #  targets = [];
-      #  workspace = true;
-      #};
-      #
+      #test.allFeatures = false;
+      #test.allTargets = false;
+      #test.noDefaultFeatures = false;
+      #test.features = [];
+      #test.targets = [];
+      #test.workspace = false;
+
       ## Clippy configuration
-      #clippy = {
-      #  allFeatures = true;
-      #  allTargets = true;
-      #  noDefaultFeatures = false;
-      #  features = [];
-      #  targets = [];
-      #  workspace = true;
-      #
-      #  allow = [];
-      #  deny = ["warnings"];
-      #  forbid = [];
-      #  warn = [];
-      #};
+      #clippy.allFeatures = false;
+      #clippy.allTargets = false;
+      #clippy.noDefaultFeatures = false;
+      #clippy.features = [];
+      #clippy.targets = [];
+      #clippy.workspace = false;
+
+      #clippy.allow = [];
+      #clippy.deny = [];
+      #clippy.forbid = [];
+      #clippy.warn = [];
     };
 }
