@@ -29,8 +29,8 @@ jobs:
         cargo new ci
         cd ci
         cargo run
-        nix flake init -t '..#templates.rust'
+        nix flake init --access-tokens 'github.com=${{ github.token }}' -t '..#templates.rust'
         git add .
-        nix flake check --override-input 'nixify' '..' -L
-        nix run --override-input 'nixify' '..' -L
-        nix develop --override-input 'nixify' '..' -L --ignore-environment -c cargo test
+        nix flake check --access-tokens 'github.com=${{ github.token }}' --override-input 'nixify' '..' -L
+        nix run --access-tokens 'github.com=${{ github.token }}' --override-input 'nixify' '..' -L
+        nix develop --access-tokens 'github.com=${{ github.token }}' --override-input 'nixify' '..' -L --ignore-environment -c cargo test
