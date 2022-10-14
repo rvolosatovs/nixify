@@ -1,4 +1,5 @@
-{self, ...} @ inputs: {
+{self, ...} @ inputs:
+with self.lib; {
   mkFlake = import ./mkFlake.nix inputs;
   mkOverlay = import ./mkOverlay.nix inputs;
 
@@ -21,7 +22,7 @@
   defaultTestConfig.workspace = true;
 
   defaultIgnorePaths =
-    self.lib.defaultIgnorePaths
+    defaultIgnorePaths
     ++ [
       "/deny.toml"
       "/rust-toolchain.toml"

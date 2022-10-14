@@ -12,10 +12,18 @@
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
   inputs.rust-overlay.url = github:oxalica/rust-overlay;
 
-  outputs = inputs: {
-    checks = import ./checks inputs;
+  outputs = inputs: let
     lib = import ./lib inputs;
-    templates.rust.description = "A basic Rust template";
-    templates.rust.path = ./templates/rust;
-  };
+  in
+    lib.mkFlake {
+      pname = "nixify";
+    }
+    // {
+      inherit lib;
+
+      checks = import ./checks inputs;
+
+      templates.rust.description = "A basic Rust template";
+      templates.rust.path = ./templates/rust;
+    };
 }
