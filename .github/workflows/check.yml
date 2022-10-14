@@ -26,5 +26,6 @@ jobs:
         name: rvolosatovs
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - run: nix flake check -L --show-trace
-    - run: nix flake check -L --show-trace ./examples/rust-hello
-    - run: nix run -L --show-trace ./examples/rust-hello
+
+    - run: nix flake check -L --show-trace --override-input 'nixify' '.' ./examples/rust-hello
+    - run: nix run -L --show-trace --override-input 'nixify' '.' ./examples/rust-hello
