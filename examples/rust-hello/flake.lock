@@ -67,11 +67,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1665686672,
-        "narHash": "sha256-yCIKzpsz03ngapDktuoYlHxcAoW29GbGDcxLLQFICEc=",
+        "lastModified": 1665770217,
+        "narHash": "sha256-84QAj+7u1QUuEHU9/FoaNDgNGGi63NvRPuHuDDs7tQ4=",
         "owner": "rvolosatovs",
         "repo": "nixify",
-        "rev": "ee3fc38018b6e3d0b15995e6603ee0cf75d8926f",
+        "rev": "ecb38b7399a1ef05566966cd892d4774bf37c949",
         "type": "github"
       },
       "original": {
@@ -97,16 +97,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1665483364,
-        "narHash": "sha256-sisuhAPPjYB92YlcyoVEcTh5teuAkL9NW8UVexRsfoo=",
+        "lastModified": 1665613119,
+        "narHash": "sha256-VTutbv5YKeBGWou6ladtgfx11h6et+Wlkdyh4jPJ3p0=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "e0ed589d7422c1d7a1bdd1e81289e2428c6ec2a3",
+        "rev": "e06bd4b64bbfda91d74f13cb5eca89485d47528f",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixpkgs-unstable",
+        "ref": "nixpkgs-22.05-darwin",
         "repo": "nixpkgs",
         "type": "github"
       }
