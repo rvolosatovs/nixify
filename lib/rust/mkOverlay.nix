@@ -176,49 +176,21 @@ with self.lib.rust;
       kebab2snake = replaceStrings ["-"] ["_"];
       commonCrossArgs = with pkgsCross;
         {
+          depsBuildBuild =
+            optional stdenv.targetPlatform.isUnix stdenv.cc
+            ++ optional stdenv.targetPlatform.isWasi final.wasmtime;
+
+          buildInputs =
+            optional stdenv.targetPlatform.isDarwin darwin.apple_sdk.frameworks.Security
+            ++ optional (final.stdenv.isDarwin && stdenv.targetPlatform.isLinux) libiconv;
+
           CARGO_BUILD_TARGET = target;
         }
-        // optionalAttrs stdenv.targetPlatform.isWasi {
-          depsBuildBuild = [
-            final.wasmtime
-          ];
-
-          buildInputs = optionals final.stdenv.isDarwin (with final.darwin.apple_sdk.frameworks; [
-            CoreFoundation
-            CoreServices
-            Carbon
-            Foundation
-            Security
-            SystemConfiguration
-          ]);
-
-          nativeBuildInputs = optionals final.stdenv.isDarwin (with final.darwin.apple_sdk.frameworks; [
-            CoreFoundation
-            CoreServices
-            Carbon
-            Foundation
-            Security
-            SystemConfiguration
-          ]);
-
-          CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
-        }
-        // optionalAttrs (stdenv.targetPlatform.isDarwin || stdenv.targetPlatform.isLinux) {
-          depsBuildBuild = [
-            stdenv.cc
-          ];
-
+        // optionalAttrs stdenv.targetPlatform.isUnix {
           "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
         }
-        // optionalAttrs stdenv.targetPlatform.isDarwin {
-          buildInputs = with darwin.apple_sdk.frameworks; [
-            Security
-          ];
-        }
-        // optionalAttrs stdenv.targetPlatform.isLinux {
-          buildInputs =
-            optional final.stdenv.isDarwin
-            pkgsCross.libiconv;
+        // optionalAttrs stdenv.targetPlatform.isWasi {
+          CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
         };
       craneLib = mkCraneLib pkgsCross;
     in
@@ -259,7 +231,6 @@ with self.lib.rust;
       CARGO_PROFILE = "";
     };
 
-    # hostBin is the binary built for host native triple.
     hostBin = build.host.package commonReleaseArgs;
     hostDebugBin = build.host.package commonDebugArgs;
 
