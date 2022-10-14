@@ -180,10 +180,6 @@ with self.lib.rust;
             optional stdenv.targetPlatform.isUnix stdenv.cc
             ++ optional stdenv.targetPlatform.isWasi final.wasmtime;
 
-          buildInputs =
-            optional stdenv.targetPlatform.isDarwin darwin.apple_sdk.frameworks.Security
-            ++ optional (final.stdenv.isDarwin && stdenv.targetPlatform.isLinux) libiconv;
-
           CARGO_BUILD_TARGET = target;
         }
         // optionalAttrs stdenv.targetPlatform.isUnix {
