@@ -20,7 +20,7 @@
 with nixlib.lib;
   {
     ignorePaths ? defaultIgnorePaths,
-    pname,
+    pname ? null,
     src ? null,
     systems ? defaultSystems,
     version ? null,
@@ -32,13 +32,13 @@ with nixlib.lib;
     withPkgs ? defaultWithPkgs,
   }: let
     commonArgs =
-      {
-        inherit
-          pname
-          version
-          ;
+      optionalAttrs (pname != null) {
+        inherit pname;
       }
-      // (optionalAttrs (src != null) {
+      // optionalAttrs (version != null) {
+        inherit version;
+      }
+      // optionalAttrs (src != null) {
         src = let
           ignorePaths' = genAttrs ignorePaths (_: {});
           removeSrc = removePrefix "${src}";
@@ -47,7 +47,7 @@ with nixlib.lib;
             inherit src;
             filter = name: type: !(ignorePaths' ? ${removeSrc name});
           };
-      });
+      };
 
     overlays = withOverlays (commonArgs
       // {
@@ -83,12 +83,14 @@ with nixlib.lib;
 
         devShells = withDevShells (commonPkgsArgs
           // {
-            devShells.default = pkgs.mkShell {
-              inherit
-                pname
-                version
-                ;
-            };
+            devShells.default = pkgs.mkShell (
+              optionalAttrs (pname != null) {
+                inherit pname;
+              }
+              // optionalAttrs (version != null) {
+                inherit version;
+              }
+            );
           });
 
         formatter = withFormatter (commonPkgsArgs

@@ -15,9 +15,7 @@
   outputs = inputs: let
     lib = import ./lib inputs;
   in
-    lib.mkFlake {
-      pname = "nixify";
-    }
+    lib.mkFlake {}
     // {
       inherit lib;
 
