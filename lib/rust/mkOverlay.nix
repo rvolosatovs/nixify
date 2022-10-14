@@ -208,7 +208,23 @@ with self.lib.rust;
         }
         // extraArgs);
 
-    build.wasm32-wasi.package = build.packageFor wasm32-wasi;
+    build.wasm32-wasi.package =
+      if final.stdenv.isDarwin
+      then let
+        commonWasiArgs = {
+          depsBuildBuild = [final.wasmtime];
+
+          CARGO_BUILD_TARGET = "wasm32-wasi";
+
+          CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
+        };
+      in
+        extraArgs:
+          build.package hostCraneLib (commonWasiArgs
+            // {
+              cargoArtifacts = buildDeps hostCraneLib commonWasiArgs;
+            })
+      else build.packageFor wasm32-wasi;
 
     build.x86_64-apple-darwin.package = extraArgs:
       build.packageFor "x86_64-apple-darwin" ({
