@@ -7,7 +7,7 @@
   inputs.crane.url = github:rvolosatovs/crane/fix/no_std;
   inputs.flake-utils.url = github:numtide/flake-utils;
   inputs.nixlib.url = github:nix-community/nixpkgs.lib;
-  inputs.nixpkgs.url = github:nixos/nixpkgs/nixpkgs-unstable;
+  inputs.nixpkgs.url = github:nixos/nixpkgs/nixos-22.05;
   inputs.rust-overlay.inputs.flake-utils.follows = "flake-utils";
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
   inputs.rust-overlay.url = github:oxalica/rust-overlay;
