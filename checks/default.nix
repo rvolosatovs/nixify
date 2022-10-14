@@ -42,6 +42,10 @@ in
           rust-hello-pkg-default = default;
 
           rust-hello-pkg-rust-hello = rust-hello;
+          rust-hello-pkg-rust-hello-debug = rust-hello-debug;
+        }
+        # TODO: Remove
+        // optionalAttrs (system != aarch64-darwin && system != x86_64-darwin) {
           rust-hello-pkg-rust-hello-aarch64-unknown-linux-musl = rust-hello-aarch64-unknown-linux-musl;
           rust-hello-pkg-rust-hello-aarch64-unknown-linux-musl-oci = rust-hello-aarch64-unknown-linux-musl-oci;
           rust-hello-pkg-rust-hello-wasm32-wasi = rust-hello-wasm32-wasi;
@@ -49,7 +53,6 @@ in
           rust-hello-pkg-rust-hello-x86_64-unknown-linux-musl = rust-hello-x86_64-unknown-linux-musl;
           rust-hello-pkg-rust-hello-x86_64-unknown-linux-musl-oci = rust-hello-x86_64-unknown-linux-musl-oci;
 
-          rust-hello-pkg-rust-hello-debug = rust-hello-debug;
           rust-hello-pkg-rust-hello-debug-aarch64-unknown-linux-musl = rust-hello-debug-aarch64-unknown-linux-musl;
           rust-hello-pkg-rust-hello-debug-aarch64-unknown-linux-musl-oci = rust-hello-debug-aarch64-unknown-linux-musl-oci;
           rust-hello-pkg-rust-hello-debug-wasm32-wasi = rust-hello-debug-wasm32-wasi;
