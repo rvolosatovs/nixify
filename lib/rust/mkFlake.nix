@@ -107,18 +107,21 @@ with self.lib.rust;
           }
           // genAttrs ([
               "${pname}"
-              "${pname}-aarch64-unknown-linux-musl"
-              "${pname}-aarch64-unknown-linux-musl-oci"
               "${pname}-wasm32-wasi"
               "${pname}-wasm32-wasi-oci"
+
+              "${pname}-debug"
+              "${pname}-debug-wasm32-wasi"
+              "${pname}-debug-wasm32-wasi-oci"
+            ]
+            ++ optionals (system != aarch64-darwin && system != x86_64-darwin) [
+              "${pname}-aarch64-unknown-linux-musl"
+              "${pname}-aarch64-unknown-linux-musl-oci"
               "${pname}-x86_64-unknown-linux-musl"
               "${pname}-x86_64-unknown-linux-musl-oci"
 
-              "${pname}-debug"
               "${pname}-debug-aarch64-unknown-linux-musl"
               "${pname}-debug-aarch64-unknown-linux-musl-oci"
-              "${pname}-debug-wasm32-wasi"
-              "${pname}-debug-wasm32-wasi-oci"
               "${pname}-debug-x86_64-unknown-linux-musl"
               "${pname}-debug-x86_64-unknown-linux-musl-oci"
             ]
