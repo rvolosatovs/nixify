@@ -31,15 +31,11 @@ jobs:
           #    podman machine start
           #    podman load < ./result
 
-          #- host: macos-latest
-          #  target: wasm32-wasi
-          #  flake: ./examples/rust-hello
-          #  test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
-          #  test-oci: |
-          #    nix profile install --inputs-from . 'nixpkgs#podman'
-          #    podman machine init
-          #    podman machine start
-          #    podman load < ./result
+        - host: macos-latest
+          target: wasm32-wasi
+          flake: ./examples/rust-hello
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
+          test-oci: true
 
           #- host: macos-latest
           #  target: x86_64-unknown-linux-musl
