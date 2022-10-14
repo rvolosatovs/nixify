@@ -92,8 +92,8 @@ jobs:
         name: rvolosatovs
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-    - run: nix build -L --show-trace --override-input 'nixify' '.' '${{ matrix.platform.flake }}#rust-hello-${{ matrix.platform.target }}'
+    - run: nix build -L --show-trace --access-tokens 'github.com=${{ github.token }}' --override-input 'nixify' '.' '${{ matrix.platform.flake }}#rust-hello-${{ matrix.platform.target }}'
     - run: ${{ matrix.platform.test-bin }}
 
-    - run: nix build -L --show-trace --override-input 'nixify' '.' '${{ matrix.platform.flake }}#rust-hello-${{ matrix.platform.target }}-oci'
+    - run: nix build -L --show-trace --access-tokens 'github.com=${{ github.token }}' --override-input 'nixify' '.' '${{ matrix.platform.flake }}#rust-hello-${{ matrix.platform.target }}-oci'
     - run: ${{ matrix.platform.test-oci }}
