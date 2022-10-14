@@ -33,10 +33,6 @@ with flake-utils.lib.system; let
     defaultWithFormatter = {formatter, ...}: formatter;
     defaultWithOverlays = {overlays, ...}: overlays;
     defaultWithPackages = {packages, ...}: packages;
-    defaultWithPkgs = {system, ...}:
-      import nixpkgs {
-        inherit system;
-      };
   };
 in
   fix f
