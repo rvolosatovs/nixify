@@ -9,6 +9,15 @@ with nixlib.lib; let
   rust-hello-flake = self.lib.rust.mkFlake {
     src = "${self}/examples/rust-hello";
 
+    overlays = [
+      (final: prev: {
+        test-prev = final.test-final;
+      })
+      (final: prev: {
+        test-final = final.writeText "test" "test";
+      })
+    ];
+
     withPackages = {
       pkgs,
       packages,
@@ -16,6 +25,8 @@ with nixlib.lib; let
     }:
       packages
       // {
+        test-prev = pkgs.test-prev;
+        test-final = pkgs.test-final;
         hello = pkgs.hello;
       };
   };
@@ -38,6 +49,8 @@ in
       // (with rust-hello-flake.packages.${system};
         {
           rust-hello-pkg-hello = hello;
+          rust-hello-pkg-test-final = test-final;
+          rust-hello-pkg-test-prev = test-prev;
 
           rust-hello-pkg-default = default;
 
