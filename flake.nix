@@ -15,7 +15,23 @@
   outputs = inputs: let
     lib = import ./lib inputs;
   in
-    lib.mkFlake {}
+    lib.mkFlake {
+      withDevShells = {
+        pkgs,
+        devShells,
+        ...
+      }:
+        devShells
+        // {
+          default = devShells.default.overrideAttrs (attrs: {
+            buildInputs =
+              attrs.buildInputs
+              ++ [
+                pkgs.wasmtime
+              ];
+          });
+        };
+    }
     // {
       inherit lib;
 

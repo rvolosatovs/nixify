@@ -15,12 +15,11 @@ with self.lib.rust;
     pname,
     rustupToolchainFile,
     src,
+    targets ? defaultRustTargets,
     test ? defaultTestConfig,
     version,
   }: final: prev: let
-    mkRustToolchain = pkgs: pkgs.rust-bin.fromRustupToolchainFile rustupToolchainFile;
-
-    rustToolchain = mkRustToolchain final;
+    rustToolchain = final.rust-bin.fromRustupToolchainFile rustupToolchainFile;
 
     # mkCraneLib constructs a crane library for specified `pkgs`.
     mkCraneLib = pkgs: (crane.mkLib pkgs).overrideToolchain rustToolchain;
@@ -40,12 +39,12 @@ with self.lib.rust;
     mkCargoFlags = config:
       with config;
         concatStrings (
-          optionals (config ? targets) (map (target: "--target ${target} ") targets)
-          ++ optional (config ? features && length features > 0) "--features ${concatStringsSep "," features} "
-          ++ optional (config ? allFeatures && allFeatures) "--all-features "
-          ++ optional (config ? allTargets && allTargets) "--all-targets "
-          ++ optional (config ? noDefaultFeatures && noDefaultFeatures) "--no-default-features "
-          ++ optional (config ? workspace && workspace) "--workspace "
+          optionals (config ? targets) (map (target: "--target ${target} ") config.targets)
+          ++ optional (config ? features && length config.features > 0) "--features ${concatStringsSep "," config.features} "
+          ++ optional (config ? allFeatures && config.allFeatures) "--all-features "
+          ++ optional (config ? allTargets && config.allTargets) "--all-targets "
+          ++ optional (config ? noDefaultFeatures && config.noDefaultFeatures) "--no-default-features "
+          ++ optional (config ? workspace && config.workspace) "--workspace "
         );
 
     # buildDeps builds dependencies of the crate given `craneLib`.
@@ -257,31 +256,48 @@ with self.lib.rust;
         config.Cmd = [pname];
         config.Env = ["PATH=${bin}/bin"];
       };
-  in {
-    "${pname}" = hostBin;
-    "${pname}-aarch64-apple-darwin" = aarch64DarwinBin;
-    "${pname}-aarch64-apple-darwin-oci" = buildImage aarch64DarwinBin;
-    "${pname}-aarch64-unknown-linux-musl" = aarch64LinuxMuslBin;
-    "${pname}-aarch64-unknown-linux-musl-oci" = buildImage aarch64LinuxMuslBin;
-    "${pname}-wasm32-wasi" = wasm32WasiBin;
-    "${pname}-wasm32-wasi-oci" = buildImage wasm32WasiBin;
-    "${pname}-x86_64-apple-darwin" = x86_64DarwinBin;
-    "${pname}-x86_64-apple-darwin-oci" = buildImage x86_64DarwinBin;
-    "${pname}-x86_64-unknown-linux-musl" = x86_64LinuxMuslBin;
-    "${pname}-x86_64-unknown-linux-musl-oci" = buildImage x86_64LinuxMuslBin;
 
-    "${pname}-debug" = hostDebugBin;
-    "${pname}-debug-aarch64-apple-darwin" = aarch64DarwinDebugBin;
-    "${pname}-debug-aarch64-apple-darwin-oci" = buildImage aarch64DarwinDebugBin;
-    "${pname}-debug-aarch64-unknown-linux-musl" = aarch64LinuxMuslDebugBin;
-    "${pname}-debug-aarch64-unknown-linux-musl-oci" = buildImage aarch64LinuxMuslDebugBin;
-    "${pname}-debug-wasm32-wasi" = wasm32WasiDebugBin;
-    "${pname}-debug-wasm32-wasi-oci" = buildImage wasm32WasiDebugBin;
-    "${pname}-debug-x86_64-apple-darwin" = x86_64DarwinDebugBin;
-    "${pname}-debug-x86_64-apple-darwin-oci" = buildImage x86_64DarwinDebugBin;
-    "${pname}-debug-x86_64-unknown-linux-musl" = x86_64LinuxMuslDebugBin;
-    "${pname}-debug-x86_64-unknown-linux-musl-oci" = buildImage x86_64LinuxMuslDebugBin;
+    targets' = genAttrs targets (_: {});
+  in
+    {
+      "${pname}" = hostBin;
+      "${pname}-debug" = hostDebugBin;
 
-    "${pname}Checks" = checks;
-    "${pname}RustToolchain" = rustToolchain;
-  }
+      "${pname}Checks" = checks;
+      "${pname}RustToolchain" = rustToolchain;
+    }
+    // optionalAttrs (targets' ? "aarch64-unknown-linux-musl" && !prev.hostPlatform.isDarwin) {
+      "${pname}-aarch64-unknown-linux-musl" = aarch64LinuxMuslBin;
+      "${pname}-aarch64-unknown-linux-musl-oci" = buildImage aarch64LinuxMuslBin;
+
+      "${pname}-debug-aarch64-unknown-linux-musl" = aarch64LinuxMuslDebugBin;
+      "${pname}-debug-aarch64-unknown-linux-musl-oci" = buildImage aarch64LinuxMuslDebugBin;
+    }
+    // optionalAttrs (targets' ? "aarch64-apple-darwin" && prev.hostPlatform.isDarwin || prev.hostPlatform.system == aarch64-darwin) {
+      "${pname}-aarch64-apple-darwin" = aarch64DarwinBin;
+      "${pname}-aarch64-apple-darwin-oci" = buildImage aarch64DarwinBin;
+
+      "${pname}-debug-aarch64-apple-darwin" = aarch64DarwinDebugBin;
+      "${pname}-debug-aarch64-apple-darwin-oci" = buildImage aarch64DarwinDebugBin;
+    }
+    // optionalAttrs (targets' ? "wasm32-wasi") {
+      "${pname}-wasm32-wasi" = wasm32WasiBin;
+      "${pname}-wasm32-wasi-oci" = buildImage wasm32WasiBin;
+
+      "${pname}-debug-wasm32-wasi" = wasm32WasiDebugBin;
+      "${pname}-debug-wasm32-wasi-oci" = buildImage wasm32WasiDebugBin;
+    }
+    // optionalAttrs (prev.hostPlatform.system == x86_64-darwin) {
+      "${pname}-x86_64-apple-darwin" = x86_64DarwinBin;
+      "${pname}-x86_64-apple-darwin-oci" = buildImage x86_64DarwinBin;
+
+      "${pname}-debug-x86_64-apple-darwin" = x86_64DarwinDebugBin;
+      "${pname}-debug-x86_64-apple-darwin-oci" = buildImage x86_64DarwinDebugBin;
+    }
+    // optionalAttrs (targets' ? "x86_64-unknown-linux-musl" && !prev.hostPlatform.isDarwin) {
+      "${pname}-x86_64-unknown-linux-musl" = x86_64LinuxMuslBin;
+      "${pname}-x86_64-unknown-linux-musl-oci" = buildImage x86_64LinuxMuslBin;
+
+      "${pname}-debug-x86_64-unknown-linux-musl" = x86_64LinuxMuslDebugBin;
+      "${pname}-debug-x86_64-unknown-linux-musl-oci" = buildImage x86_64LinuxMuslDebugBin;
+    }
