@@ -15,29 +15,24 @@
   outputs = inputs: let
     lib = import ./lib inputs;
   in
-    lib.mkFlake {
-      withDevShells = {
-        pkgs,
-        devShells,
-        ...
-      }:
-        devShells
-        // {
-          default = devShells.default.overrideAttrs (attrs: {
-            buildInputs =
-              attrs.buildInputs
-              ++ [
-                pkgs.wasmtime
-              ];
-          });
-        };
-    }
-    // {
-      inherit lib;
+    with lib;
+      mkFlake {
+        withDevShells = {
+          pkgs,
+          devShells,
+          ...
+        }:
+          extendDerivations {
+            buildInputs = with pkgs; [
+              wasmtime
+            ];
+          }
+          devShells;
+      }
+      // {
+        inherit lib;
 
-      checks = import ./checks inputs;
-
-      templates.rust.description = "A basic Rust template";
-      templates.rust.path = ./templates/rust;
-    };
+        checks = import ./checks inputs;
+        templates = import ./templates inputs;
+      };
 }

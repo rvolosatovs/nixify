@@ -78,16 +78,12 @@ with self.lib.rust;
         withDevShells (cx
           // {
             devShells =
-              devShells
-              // {
-                default = devShells.default.overrideAttrs (attrs: {
-                  buildInputs =
-                    attrs.buildInputs
-                    ++ [
-                      pkgs."${pname}RustToolchain"
-                    ];
-                });
-              };
+              extendDerivations {
+                buildInputs = [
+                  pkgs."${pname}RustToolchain"
+                ];
+              }
+              devShells;
           });
 
       withOverlays = {overlays, ...} @ cx:
