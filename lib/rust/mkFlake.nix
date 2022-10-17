@@ -79,6 +79,10 @@ with self.lib.rust;
           // {
             devShells =
               extendDerivations {
+                nativeBuildInputs = [
+                  pkgs.pkg-config
+                ];
+
                 buildInputs = [
                   pkgs."${pname}RustToolchain"
                 ];

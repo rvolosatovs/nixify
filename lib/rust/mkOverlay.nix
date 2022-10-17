@@ -126,6 +126,10 @@ with self.lib.rust;
             optional final.stdenv.isDarwin
             final.darwin.apple_sdk.frameworks.Security;
 
+          nativeBuildInputs = [
+            final.pkg-config
+          ];
+
           cargoArtifacts = hostCargoArtifacts;
         }
         // extraArgs
@@ -172,7 +176,13 @@ with self.lib.rust;
       pkgsCross = pkgsFor target;
       kebab2snake = replaceStrings ["-"] ["_"];
       commonCrossArgs = with pkgsCross; {
-        depsBuildBuild = [stdenv.cc];
+        depsBuildBuild = [
+          stdenv.cc
+        ];
+
+        nativeBuildInputs = [
+          final.pkg-config
+        ];
 
         buildInputs =
           optional stdenv.isDarwin
