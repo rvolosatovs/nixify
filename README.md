@@ -8,6 +8,10 @@ See `examples` directory
 
 ## Rust
 
+`nixify` relies on two files to build Rust projects:
+- `Cargo.toml` (required), where `pname` and `version` will be taken from.
+- `rust-toolchain.toml` (optional), where targets will be taken from. Only builds to specified targets and host native target will be exposed by `nixify` as an overlay and as package output set.
+
 ### Template
 
 To nixify a Rust project:
