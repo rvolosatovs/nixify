@@ -176,6 +176,10 @@ with self.lib.rust;
       commonCrossArgs = with pkgsCross; {
         depsBuildBuild = [stdenv.cc];
 
+        buildInputs =
+          optional stdenv.isDarwin
+          darwin.apple_sdk.frameworks.Security;
+
         CARGO_BUILD_TARGET = target;
         "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
       };
