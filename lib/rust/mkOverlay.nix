@@ -8,15 +8,7 @@
   ...
 }:
 with self.lib.rust;
-  {
-    clippy ? defaultClippyConfig,
-    pname,
-    rustupToolchainFile,
-    src,
-    targets ? defaultRustTargets,
-    test ? defaultTestConfig,
-    version,
-  } @ args: final: pkgs:
+  args: final: pkgs:
     mkPackages (args
       // {
         inherit
