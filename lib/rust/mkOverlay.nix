@@ -96,8 +96,7 @@ with self.lib.rust;
 
     # buildPackage builds using `craneLib`.
     # `extraArgs` are passed through to `craneLib.buildPackage` verbatim.
-    build.package = craneLib: extraArgs: let
-    in
+    build.package = craneLib: extraArgs:
       craneLib.buildPackage (commonArgs
         // {
           cargoExtraArgs = "-j $NIX_BUILD_CORES";
@@ -128,7 +127,6 @@ with self.lib.rust;
             final.darwin.apple_sdk.frameworks.Security;
 
           cargoArtifacts = hostCargoArtifacts;
-          cargoExtraArgs = "-j $NIX_BUILD_CORES";
         }
         // extraArgs
       );
