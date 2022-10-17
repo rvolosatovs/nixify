@@ -28,15 +28,19 @@ with self.lib.rust;
     pname = cargoPackage.name;
     version = cargoPackage.version;
 
+    rustupToolchainFile = "${src}/rust-toolchain.toml";
+    targets = attrByPath ["toolchain" "targets"] [] (builtins.fromTOML (builtins.readFile rustupToolchainFile));
+
     overlay = mkOverlay {
       inherit
         clippy
         pname
+        rustupToolchainFile
         src
+        targets
         test
         version
         ;
-      rustupToolchainFile = "${src}/rust-toolchain.toml";
     };
   in
     self.lib.mkFlake {
@@ -60,35 +64,29 @@ with self.lib.rust;
         checks,
         pkgs,
         ...
-      } @ cx: let
-        checks' = checks // pkgs."${pname}Checks";
-      in
+      } @ cx:
         withChecks (cx
           // {
-            checks = checks';
+            checks = checks // pkgs."${pname}Checks";
           });
 
       withDevShells = {
         devShells,
         pkgs,
         ...
-      } @ cx: let
-        default = devShells.default.overrideAttrs (attrs: {
-          buildInputs =
-            attrs.buildInputs
-            ++ [
-              pkgs."${pname}RustToolchain"
-            ];
-        });
-      in
+      } @ cx:
         withDevShells (cx
           // {
             devShells =
               devShells
               // {
-                inherit
-                  default
-                  ;
+                default = devShells.default.overrideAttrs (attrs: {
+                  buildInputs =
+                    attrs.buildInputs
+                    ++ [
+                      pkgs."${pname}RustToolchain"
+                    ];
+                });
               };
           });
 
@@ -108,52 +106,41 @@ with self.lib.rust;
         packages,
         pkgs,
         ...
-      } @ cx: let
-        system = pkgs.hostPlatform.system;
-
-        packages' =
-          packages
-          // {
-            default = pkgs.${pname};
-          }
-          // genAttrs ([
-              "${pname}"
-              "${pname}-wasm32-wasi"
-              "${pname}-wasm32-wasi-oci"
-
-              "${pname}-debug"
-              "${pname}-debug-wasm32-wasi"
-              "${pname}-debug-wasm32-wasi-oci"
-            ]
-            ++ optionals (system != aarch64-darwin && system != x86_64-darwin) [
-              "${pname}-aarch64-unknown-linux-musl"
-              "${pname}-aarch64-unknown-linux-musl-oci"
-              "${pname}-x86_64-unknown-linux-musl"
-              "${pname}-x86_64-unknown-linux-musl-oci"
-
-              "${pname}-debug-aarch64-unknown-linux-musl"
-              "${pname}-debug-aarch64-unknown-linux-musl-oci"
-              "${pname}-debug-x86_64-unknown-linux-musl"
-              "${pname}-debug-x86_64-unknown-linux-musl-oci"
-            ]
-            ++ optionals (system == aarch64-darwin || system == x86_64-darwin) [
-              "${pname}-aarch64-apple-darwin"
-              "${pname}-aarch64-apple-darwin-oci"
-
-              "${pname}-debug-aarch64-apple-darwin"
-              "${pname}-debug-aarch64-apple-darwin-oci"
-            ]
-            ++ optionals (system == x86_64-darwin) [
-              # cross compilation to x86_64-darwin not supported due to https://github.com/NixOS/nixpkgs/issues/180771
-              "${pname}-x86_64-apple-darwin"
-              "${pname}-x86_64-apple-darwin-oci"
-
-              "${pname}-debug-x86_64-apple-darwin"
-              "${pname}-debug-x86_64-apple-darwin-oci"
-            ]) (name: pkgs.${name});
-      in
+      } @ cx:
         withPackages (cx
           // {
-            packages = packages';
+            packages =
+              packages
+              // {
+                default = pkgs.${pname};
+
+                ${pname} = pkgs.${pname};
+                "${pname}-debug" = pkgs."${pname}-debug";
+              }
+              // getAttrs (filter (name: pkgs ? ${name})
+                [
+                  "${pname}-aarch64-apple-darwin"
+                  "${pname}-aarch64-apple-darwin-oci"
+                  "${pname}-aarch64-unknown-linux-musl"
+                  "${pname}-aarch64-unknown-linux-musl-oci"
+                  "${pname}-wasm32-wasi"
+                  "${pname}-wasm32-wasi-oci"
+                  "${pname}-x86_64-apple-darwin"
+                  "${pname}-x86_64-apple-darwin-oci"
+                  "${pname}-x86_64-unknown-linux-musl"
+                  "${pname}-x86_64-unknown-linux-musl-oci"
+
+                  "${pname}-debug-aarch64-apple-darwin"
+                  "${pname}-debug-aarch64-apple-darwin-oci"
+                  "${pname}-debug-aarch64-unknown-linux-musl"
+                  "${pname}-debug-aarch64-unknown-linux-musl-oci"
+                  "${pname}-debug-wasm32-wasi"
+                  "${pname}-debug-wasm32-wasi-oci"
+                  "${pname}-debug-x86_64-apple-darwin"
+                  "${pname}-debug-x86_64-apple-darwin-oci"
+                  "${pname}-debug-x86_64-unknown-linux-musl"
+                  "${pname}-debug-x86_64-unknown-linux-musl-oci"
+                ])
+              pkgs;
           });
     }
