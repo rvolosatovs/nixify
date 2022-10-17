@@ -11,6 +11,7 @@ with flake-utils.lib.system;
 with nixlib.lib;
 with self.lib.rust;
   {
+    buildOverrides ? defaultBuildOverrides,
     clippy ? defaultClippyConfig,
     pname,
     rustupToolchainFile,
@@ -34,11 +35,16 @@ with self.lib.rust;
         src
         version
         ;
-
-      nativeBuildInputs = [
-        final.pkg-config
-      ];
     };
+
+    commonOverrideArgs =
+      commonArgs
+      // {
+        inherit nixpkgs;
+        pkgs = final;
+      };
+
+    hostBuildOverrides = buildOverrides commonOverrideArgs;
 
     mkCargoFlags = config:
       with config;
@@ -54,7 +60,8 @@ with self.lib.rust;
     # buildDeps builds dependencies of the crate given `craneLib`.
     # `extraArgs` are passed through to `craneLib.buildDepsOnly` verbatim.
     buildDeps = craneLib: extraArgs:
-      craneLib.buildDepsOnly (commonArgs
+      craneLib.buildDepsOnly (
+        commonArgs
         // {
           cargoExtraArgs = "-j $NIX_BUILD_CORES";
 
@@ -67,12 +74,15 @@ with self.lib.rust;
         // optionalAttrs (test != null) {
           cargoTestExtraArgs = mkCargoFlags test;
         }
-        // extraArgs);
+        // extraArgs
+        // hostBuildOverrides
+      );
 
     # hostCargoArtifacts are the cargo artifacts built for the host native triple.
     hostCargoArtifacts = buildDeps hostCraneLib {};
 
-    checks.clippy = hostCraneLib.cargoClippy (commonArgs
+    checks.clippy = hostCraneLib.cargoClippy (
+      commonArgs
       // {
         cargoArtifacts = hostCargoArtifacts;
         cargoExtraArgs = "-j $NIX_BUILD_CORES";
@@ -87,16 +97,21 @@ with self.lib.rust;
               ++ optionals (clippy ? warn) (map (lint: "--warn ${lint} ") warn)
             )
         }";
-      });
-    checks.fmt = hostCraneLib.cargoFmt commonArgs;
-    checks.nextest = hostCraneLib.cargoNextest (commonArgs
+      }
+      // hostBuildOverrides
+    );
+    checks.fmt = hostCraneLib.cargoFmt (commonArgs // hostBuildOverrides);
+    checks.nextest = hostCraneLib.cargoNextest (
+      commonArgs
       // {
         cargoArtifacts = hostCargoArtifacts;
         cargoExtraArgs = "-j $NIX_BUILD_CORES";
       }
       // optionalAttrs (test != null) {
         cargoNextestExtraArgs = mkCargoFlags test;
-      });
+      }
+      // hostBuildOverrides
+    );
 
     # buildPackage builds using `craneLib`.
     # `extraArgs` are passed through to `craneLib.buildPackage` verbatim.
@@ -126,13 +141,10 @@ with self.lib.rust;
     build.host.package = extraArgs:
       build.package hostCraneLib (
         {
-          buildInputs =
-            optional final.stdenv.isDarwin
-            final.darwin.apple_sdk.frameworks.Security;
-
           cargoArtifacts = hostCargoArtifacts;
         }
         // extraArgs
+        // hostBuildOverrides
       );
 
     withCrossSystem = crossSystem:
@@ -180,20 +192,23 @@ with self.lib.rust;
           stdenv.cc
         ];
 
-        buildInputs =
-          optional stdenv.isDarwin
-          darwin.apple_sdk.frameworks.Security;
-
         CARGO_BUILD_TARGET = target;
         "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
       };
       craneLib = mkCraneLib pkgsCross;
+
+      targetBuildOverrides = buildOverrides (commonOverrideArgs
+        // commonCrossArgs
+        // {
+          inherit pkgsCross;
+        });
     in
       build.package craneLib (commonCrossArgs
         // {
-          cargoArtifacts = buildDeps craneLib commonCrossArgs;
+          cargoArtifacts = buildDeps craneLib (commonCrossArgs // targetBuildOverrides);
         }
-        // extraArgs);
+        // extraArgs
+        // targetBuildOverrides);
 
     build.aarch64-apple-darwin.package = extraArgs:
       build.packageFor "aarch64-apple-darwin" ({
@@ -209,17 +224,22 @@ with self.lib.rust;
 
     build.wasm32-wasi.package = extraArgs: let
       commonWasiArgs = {
-        depsBuildBuild = [final.wasmtime];
+        depsBuildBuild = [
+          final.wasmtime
+        ];
 
         CARGO_BUILD_TARGET = wasm32-wasi;
 
         CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
       };
+
+      wasiBuildOverrides = buildOverrides (commonOverrideArgs // commonWasiArgs);
     in
       build.package hostCraneLib (commonWasiArgs
         // {
-          cargoArtifacts = buildDeps hostCraneLib commonWasiArgs;
-        });
+          cargoArtifacts = buildDeps hostCraneLib (commonWasiArgs // wasiBuildOverrides);
+        }
+        // wasiBuildOverrides);
 
     build.x86_64-apple-darwin.package = extraArgs:
       build.packageFor "x86_64-apple-darwin" ({

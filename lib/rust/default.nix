@@ -1,5 +1,10 @@
-{self, ...} @ inputs:
-with self.lib; {
+{
+  self,
+  nixlib,
+  ...
+} @ inputs:
+with self.lib;
+with nixlib.lib; {
   mkFlake = import ./mkFlake.nix inputs;
   mkOverlay = import ./mkOverlay.nix inputs;
 
@@ -20,6 +25,8 @@ with self.lib; {
   defaultTestConfig.noDefaultFeatures = false;
   defaultTestConfig.targets = [];
   defaultTestConfig.workspace = false;
+
+  defaultBuildOverrides = const {};
 
   defaultTargets = [
     "aarch64-apple-darwin"

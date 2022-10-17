@@ -12,10 +12,11 @@ with nixlib.lib;
 with self.lib;
 with self.lib.rust;
   {
-    src,
+    buildOverrides ? defaultBuildOverrides,
     clippy ? defaultClippyConfig,
     ignorePaths ? defaultIgnorePaths,
     overlays ? [],
+    src,
     systems ? defaultSystems,
     test ? defaultTestConfig,
     withChecks ? defaultWithChecks,
@@ -33,6 +34,7 @@ with self.lib.rust;
 
     overlay = mkOverlay {
       inherit
+        buildOverrides
         clippy
         pname
         rustupToolchainFile
@@ -79,10 +81,6 @@ with self.lib.rust;
           // {
             devShells =
               extendDerivations {
-                nativeBuildInputs = [
-                  pkgs.pkg-config
-                ];
-
                 buildInputs = [
                   pkgs."${pname}RustToolchain"
                 ];
