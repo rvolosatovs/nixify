@@ -8,10 +8,8 @@
   ...
 }:
 with self.lib.rust;
-  args: final: pkgs:
+  args: final: prev:
     mkPackages (args
       // {
-        inherit
-          pkgs
-          ;
+        pkgs = prev;
       })
