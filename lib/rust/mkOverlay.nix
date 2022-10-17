@@ -34,6 +34,10 @@ with self.lib.rust;
         src
         version
         ;
+
+      nativeBuildInputs = [
+        final.pkg-config
+      ];
     };
 
     mkCargoFlags = config:
@@ -126,10 +130,6 @@ with self.lib.rust;
             optional final.stdenv.isDarwin
             final.darwin.apple_sdk.frameworks.Security;
 
-          nativeBuildInputs = [
-            final.pkg-config
-          ];
-
           cargoArtifacts = hostCargoArtifacts;
         }
         // extraArgs
@@ -178,10 +178,6 @@ with self.lib.rust;
       commonCrossArgs = with pkgsCross; {
         depsBuildBuild = [
           stdenv.cc
-        ];
-
-        nativeBuildInputs = [
-          final.pkg-config
         ];
 
         buildInputs =
