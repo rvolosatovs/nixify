@@ -11,6 +11,8 @@ with flake-utils.lib.system; let
 
     mkFlake = import ./mkFlake.nix inputs self';
 
+    extendDerivations = import ./extendDerivations.nix inputs;
+
     defaultIgnorePaths = [
       "/.codecov.yml"
       "/.github"
