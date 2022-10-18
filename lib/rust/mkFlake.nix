@@ -16,6 +16,7 @@ with self.lib.rust;
     clippy ? defaultClippyConfig,
     ignorePaths ? defaultIgnorePaths,
     overlays ? [],
+    pkgsFor ? defaultPkgsFor,
     src,
     systems ? defaultSystems,
     test ? defaultTestConfig,
@@ -36,6 +37,7 @@ with self.lib.rust;
       inherit
         buildOverrides
         clippy
+        pkgsFor
         pname
         rustupToolchainFile
         src
