@@ -34,14 +34,6 @@ with nixlib.lib; {
 
   defaultBuildOverrides = const {};
 
-  defaultTargets = [
-    "aarch64-apple-darwin"
-    "aarch64-unknown-linux-musl"
-    "wasm32-wasi"
-    "x86_64-apple-darwin"
-    "x86_64-unknown-linux-musl"
-  ];
-
   defaultIgnorePaths =
     defaultIgnorePaths
     ++ [
