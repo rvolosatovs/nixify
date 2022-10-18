@@ -7,6 +7,7 @@
   rust-overlay,
   ...
 }:
+with builtins;
 with flake-utils.lib.system;
 with nixlib.lib;
 with self.lib;
@@ -25,13 +26,11 @@ with self.lib.rust;
     withFormatter ? defaultWithFormatter,
     withOverlays ? defaultWithOverlays,
     withPackages ? defaultWithPackages,
+    withToolchain ? defaultWithToolchain,
   }: let
-    cargoPackage = (builtins.fromTOML (builtins.readFile "${src}/Cargo.toml")).package;
+    cargoPackage = (fromTOML (readFile "${src}/Cargo.toml")).package;
     pname = cargoPackage.name;
     version = cargoPackage.version;
-
-    rustupToolchainFile = "${src}/rust-toolchain.toml";
-    targets = attrByPath ["toolchain" "targets"] [] (builtins.fromTOML (builtins.readFile rustupToolchainFile));
 
     overlay = mkOverlay {
       inherit
@@ -39,11 +38,10 @@ with self.lib.rust;
         clippy
         pkgsFor
         pname
-        rustupToolchainFile
         src
-        targets
         test
         version
+        withToolchain
         ;
     };
   in
