@@ -3,9 +3,9 @@
   crane,
   flake-utils,
   nixlib,
-  rust-overlay,
   ...
 }:
+with builtins;
 with flake-utils.lib.system;
 with nixlib.lib;
 with self.lib.rust;
@@ -14,13 +14,13 @@ with self.lib.rust;
     clippy ? defaultClippyConfig,
     pkgsFor ? defaultPkgsFor,
     pname,
-    rustupToolchainFile,
     src,
-    targets ? defaultRustTargets,
     test ? defaultTestConfig,
     version,
+    withToolchain ? defaultWithToolchain,
   }: final: prev: let
-    rustToolchain = final.rust-bin.fromRustupToolchainFile rustupToolchainFile;
+    rustupToolchain = (fromTOML (readFile "${src}/rust-toolchain.toml")).toolchain;
+    rustToolchain = withToolchain final rustupToolchain;
 
     # mkCraneLib constructs a crane library for specified `pkgs`.
     mkCraneLib = pkgs: (crane.mkLib pkgs).overrideToolchain rustToolchain;
@@ -244,7 +244,7 @@ with self.lib.rust;
         config.Env = ["PATH=${bin}/bin"];
       };
 
-    targets' = genAttrs targets (_: {});
+    targets' = genAttrs rustupToolchain.targets (_: {});
   in
     {
       "${pname}" = hostBin;
