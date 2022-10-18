@@ -22,7 +22,7 @@ in
     else if pkgs.hostPlatform.system == aarch64-linux && target == "aarch64-unknown-linux-gnu"
     then pkgs
     else if pkgs.hostPlatform.system == aarch64-linux && target == "aarch64-unknown-linux-musl"
-    then pkgs.pkgsStatic
+    then pkgs
     else if pkgs.hostPlatform.system == x86_64-darwin && target == "x86_64-apple-darwin"
     then pkgs
     else if pkgs.hostPlatform.system == x86_64-linux && target == "x86_64-unknown-linux-gnu"
