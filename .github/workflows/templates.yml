@@ -20,6 +20,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: cachix/install-nix-action@v18
+      with:
+        extra_nix_config: |
+          access-tokens = github.com=${{ github.token }}
     - uses: cachix/cachix-action@v11
       with:
         name: rvolosatovs
@@ -29,8 +32,8 @@ jobs:
         cargo new ci
         cd ci
         cargo run
-        nix flake init -L --show-trace --access-tokens 'github.com=${{ github.token }}' -t '..#templates.rust'
+        nix flake init -L --show-trace -t '..#templates.rust'
         git add .
-        nix flake check -L --show-trace --access-tokens 'github.com=${{ github.token }}' --override-input 'nixify' '..'
-        nix run -L --show-trace --access-tokens 'github.com=${{ github.token }}' --override-input 'nixify' '..'
-        nix develop -L --show-trace --access-tokens 'github.com=${{ github.token }}' --override-input 'nixify' '..' --ignore-environment -c cargo test
+        nix flake check -L --show-trace --override-input 'nixify' '..'
+        nix run -L --show-trace --override-input 'nixify' '..'
+        nix develop -L --show-trace --override-input 'nixify' '..' --ignore-environment -c cargo test
