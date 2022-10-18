@@ -35,7 +35,7 @@ jobs:
           target: wasm32-wasi
           flake: ./examples/rust-hello
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
-          test-oci: true
+          test-oci: echo "OCI runtime missing, skip test"
 
           # TODO: Support cross-compilation from Darwin to Linux
           #- host: macos-latest
@@ -52,7 +52,7 @@ jobs:
           target: x86_64-apple-darwin
           flake: ./examples/rust-hello
           test-bin: ./result/bin/rust-hello
-          test-oci: true
+          test-oci: echo "OCI runtime missing, skip test"
 
         - host: ubuntu-latest
           target: aarch64-unknown-linux-musl
@@ -70,7 +70,9 @@ jobs:
           target: x86_64-unknown-linux-musl
           flake: ./examples/rust-hello
           test-bin: ./result/bin/rust-hello
-          test-oci: docker load < ./result
+          test-oci: |
+            docker load < ./result
+            docker run --rm rust-hello:$(nix eval --raw --override-input 'nixify' '.' ./examples/rust-hello#rust-hello-x86_64-unknown-linux-musl-oci.imageTag)
 
     runs-on: ${{ matrix.platform.host }}
     steps:
