@@ -3,7 +3,6 @@
   crane,
   flake-utils,
   nixlib,
-  nixpkgs,
   rust-overlay,
   ...
 }:
@@ -13,6 +12,7 @@ with self.lib.rust;
   {
     buildOverrides ? defaultBuildOverrides,
     clippy ? defaultClippyConfig,
+    pkgsFor ? defaultPkgsFor,
     pname,
     rustupToolchainFile,
     src,
@@ -40,7 +40,6 @@ with self.lib.rust;
     commonOverrideArgs =
       commonArgs
       // {
-        inherit nixpkgs;
         pkgs = final;
       };
 
@@ -147,54 +146,31 @@ with self.lib.rust;
         // hostBuildOverrides
       );
 
-    withCrossSystem = crossSystem:
-      import nixpkgs {
-        inherit crossSystem;
-        localSystem = final.hostPlatform.system;
-      };
-
-    # pkgsFor constructs a package set for specified `crossSystem`.
-    pkgsFor = crossSystem:
-      if final.hostPlatform.system == crossSystem
-      then final
-      else if crossSystem == wasm32-wasi
-      then final
-      else if final.hostPlatform.system == aarch64-darwin && crossSystem == "aarch64-apple-darwin"
-      then final
-      else if final.hostPlatform.system == aarch64-linux && crossSystem == "aarch64-unknown-linux-gnu"
-      then final
-      else if final.hostPlatform.system == aarch64-linux && crossSystem == "aarch64-unknown-linux-musl"
-      then final
-      else if final.hostPlatform.system == x86_64-darwin && crossSystem == "x86_64-apple-darwin"
-      then final
-      else if final.hostPlatform.system == x86_64-linux && crossSystem == "x86_64-unknown-linux-gnu"
-      then final
-      else if final.hostPlatform.system == x86_64-linux && crossSystem == "x86_64-unknown-linux-musl"
-      then final
-      else if crossSystem == "aarch64-unknown-linux-musl"
-      then withCrossSystem aarch64-linux
-      else if crossSystem == "aarch64-apple-darwin"
-      then final.pkgsCross.aarch64-darwin
-      else if crossSystem == "x86_64-unknown-linux-musl"
-      then withCrossSystem x86_64-linux
-      else if crossSystem == "x86_64-apple-darwin"
-      then final.pkgsCross.x86_64-darwin
-      else withCrossSystem crossSystem;
-
     # build.packageFor builds for `target`.
     # `extraArgs` are passed through to `build.package` verbatim.
     # NOTE: Upstream only provides binary caches for a subset of supported systems.
     build.packageFor = target: extraArgs: let
-      pkgsCross = pkgsFor target;
+      pkgsCross = pkgsFor final target;
       kebab2snake = replaceStrings ["-"] ["_"];
-      commonCrossArgs = with pkgsCross; {
-        depsBuildBuild = [
-          stdenv.cc
-        ];
+      commonCrossArgs = with pkgsCross;
+        {
+          depsBuildBuild =
+            if target == wasm32-wasi
+            then [
+              final.wasmtime
+            ]
+            else [
+              stdenv.cc
+            ];
 
-        CARGO_BUILD_TARGET = target;
-        "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
-      };
+          CARGO_BUILD_TARGET = target;
+        }
+        // optionalAttrs (target == wasm32-wasi) {
+          CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
+        }
+        // optionalAttrs (target != wasm32-wasi) {
+          "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
+        };
       craneLib = mkCraneLib pkgsCross;
 
       targetBuildOverrides = buildOverrides (commonOverrideArgs
@@ -222,24 +198,7 @@ with self.lib.rust;
         }
         // extraArgs);
 
-    build.wasm32-wasi.package = extraArgs: let
-      commonWasiArgs = {
-        depsBuildBuild = [
-          final.wasmtime
-        ];
-
-        CARGO_BUILD_TARGET = wasm32-wasi;
-
-        CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
-      };
-
-      wasiBuildOverrides = buildOverrides (commonOverrideArgs // commonWasiArgs);
-    in
-      build.package hostCraneLib (commonWasiArgs
-        // {
-          cargoArtifacts = buildDeps hostCraneLib (commonWasiArgs // wasiBuildOverrides);
-        }
-        // wasiBuildOverrides);
+    build.wasm32-wasi.package = build.packageFor wasm32-wasi;
 
     build.x86_64-apple-darwin.package = extraArgs:
       build.packageFor "x86_64-apple-darwin" ({
