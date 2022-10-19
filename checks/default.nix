@@ -71,6 +71,15 @@ with self.lib; let
 
     src = ../examples/rust-hello;
   };
+
+  flakes.rust.hello-multibin = rust.mkFlake {
+    inherit
+      overlays
+      withPackages
+      ;
+
+    src = ../examples/rust-hello-multibin;
+  };
 in
   genAttrs [
     aarch64-darwin
@@ -117,4 +126,17 @@ in
     assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-x86_64-unknown-linux-musl" || isDarwin;
     assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-x86_64-unknown-linux-musl-oci" || isDarwin;
     assert flakes.rust.hello.packages.${system} ? default;
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin";
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-aarch64-apple-darwin" || !isDarwin;
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-aarch64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-wasm32-wasi";
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-x86_64-apple-darwin" || system != x86_64-darwin;
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-x86_64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug";
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-aarch64-apple-darwin" || !isDarwin;
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-aarch64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-wasm32-wasi";
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-x86_64-apple-darwin" || system != x86_64-darwin;
+    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-x86_64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.hello-multibin.packages.${system} ? default;
       foldl (checks: example: checks // (assertRustOutputs flakes.rust.${example} "rust-${example}" system)) {} (attrNames flakes.rust))
