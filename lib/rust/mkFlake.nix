@@ -39,10 +39,8 @@ with self.lib.rust;
         cargoLock
         clippy
         pkgsFor
-        pname
         src
         test
-        version
         withToolchain
         ;
     };
@@ -111,14 +109,11 @@ with self.lib.rust;
           // {
             packages =
               packages
-              // {
-                default = pkgs.${pname};
-
-                ${pname} = pkgs.${pname};
-                "${pname}-debug" = pkgs."${pname}-debug";
-              }
               // getAttrs (filter (name: pkgs ? ${name})
                 [
+                  pname
+                  "default"
+                  "${pname}-debug"
                   "${pname}-aarch64-apple-darwin"
                   "${pname}-aarch64-apple-darwin-oci"
                   "${pname}-aarch64-unknown-linux-musl"

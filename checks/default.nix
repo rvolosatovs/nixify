@@ -5,7 +5,8 @@
   ...
 }:
 with flake-utils.lib.system;
-with nixlib.lib; let
+with nixlib.lib;
+with self.lib; let
   assertRustOutputs = flake: name:
     assert name != "default";
     assert name != "hello";
@@ -19,37 +20,11 @@ with nixlib.lib; let
     assert flake.overlays ? "${name}";
     assert flake.overlays ? default;
     assert flake.overlays ? rust;
-      system: let
-        isDarwin = system == aarch64-darwin || system == x86_64-darwin;
-      in
-        # TODO: Support cross-compilation to Linux from Darwin
+      system:
         assert flake.checks.${system} ? clippy;
         assert flake.checks.${system} ? fmt;
         assert flake.checks.${system} ? nextest;
         assert flake.devShells.${system} ? default;
-        assert flake.packages.${system} ? "${name}";
-        assert flake.packages.${system} ? "${name}-aarch64-apple-darwin" || !isDarwin;
-        assert flake.packages.${system} ? "${name}-aarch64-apple-darwin-oci" || !isDarwin;
-        assert flake.packages.${system} ? "${name}-aarch64-unknown-linux-musl" || isDarwin;
-        assert flake.packages.${system} ? "${name}-aarch64-unknown-linux-musl-oci" || isDarwin;
-        assert flake.packages.${system} ? "${name}-wasm32-wasi";
-        assert flake.packages.${system} ? "${name}-wasm32-wasi-oci";
-        assert flake.packages.${system} ? "${name}-x86_64-apple-darwin" || system != x86_64-darwin;
-        assert flake.packages.${system} ? "${name}-x86_64-apple-darwin-oci" || system != x86_64-darwin;
-        assert flake.packages.${system} ? "${name}-x86_64-unknown-linux-musl" || isDarwin;
-        assert flake.packages.${system} ? "${name}-x86_64-unknown-linux-musl-oci" || isDarwin;
-        assert flake.packages.${system} ? "${name}-debug";
-        assert flake.packages.${system} ? "${name}-debug-aarch64-apple-darwin" || !isDarwin;
-        assert flake.packages.${system} ? "${name}-debug-aarch64-apple-darwin-oci" || !isDarwin;
-        assert flake.packages.${system} ? "${name}-debug-aarch64-unknown-linux-musl" || isDarwin;
-        assert flake.packages.${system} ? "${name}-debug-aarch64-unknown-linux-musl-oci" || isDarwin;
-        assert flake.packages.${system} ? "${name}-debug-wasm32-wasi";
-        assert flake.packages.${system} ? "${name}-debug-wasm32-wasi-oci";
-        assert flake.packages.${system} ? "${name}-debug-x86_64-apple-darwin" || system != x86_64-darwin;
-        assert flake.packages.${system} ? "${name}-debug-x86_64-apple-darwin-oci" || system != x86_64-darwin;
-        assert flake.packages.${system} ? "${name}-debug-x86_64-unknown-linux-musl" || isDarwin;
-        assert flake.packages.${system} ? "${name}-debug-x86_64-unknown-linux-musl-oci" || isDarwin;
-        assert flake.packages.${system} ? default;
         assert flake.packages.${system} ? hello;
         assert flake.packages.${system} ? test-final;
         assert flake.packages.${system} ? test-prev;
@@ -78,7 +53,17 @@ with nixlib.lib; let
       hello = pkgs.hello;
     };
 
-  rust-hello-flake = self.lib.rust.mkFlake {
+  flakes.rust.lib = rust.mkFlake {
+    inherit
+      overlays
+      withPackages
+      ;
+
+    src = ../examples/rust-lib;
+    cargoLock = ../examples/rust-lib/Cargo.test.lock;
+  };
+
+  flakes.rust.hello = rust.mkFlake {
     inherit
       overlays
       withPackages
@@ -92,6 +77,44 @@ in
     aarch64-linux
     x86_64-darwin
     x86_64-linux
-  ] (
-    assertRustOutputs rust-hello-flake "rust-hello"
-  )
+  ]
+  (system: let
+    isDarwin = system == aarch64-darwin || system == x86_64-darwin;
+  in
+    # TODO: Support cross-compilation to Linux from Darwin
+    assert flakes.rust.lib.checks.${system} ? "rust-lib";
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-aarch64-apple-darwin" || !isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-aarch64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-wasm32-wasi";
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-x86_64-apple-darwin" || system != x86_64-darwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-x86_64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug";
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-aarch64-apple-darwin" || !isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-aarch64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-wasm32-wasi";
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-x86_64-apple-darwin" || system != x86_64-darwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-x86_64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello";
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-aarch64-apple-darwin" || !isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-aarch64-apple-darwin-oci" || !isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-aarch64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-aarch64-unknown-linux-musl-oci" || isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-wasm32-wasi";
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-wasm32-wasi-oci";
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-x86_64-apple-darwin" || system != x86_64-darwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-x86_64-apple-darwin-oci" || system != x86_64-darwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-x86_64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-x86_64-unknown-linux-musl-oci" || isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug";
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-aarch64-apple-darwin" || !isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-aarch64-apple-darwin-oci" || !isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-aarch64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-aarch64-unknown-linux-musl-oci" || isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-wasm32-wasi";
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-wasm32-wasi-oci";
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-x86_64-apple-darwin" || system != x86_64-darwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-x86_64-apple-darwin-oci" || system != x86_64-darwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-x86_64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-x86_64-unknown-linux-musl-oci" || isDarwin;
+    assert flakes.rust.hello.packages.${system} ? default;
+      foldl (checks: example: checks // (assertRustOutputs flakes.rust.${example} "rust-${example}" system)) {} (attrNames flakes.rust))
