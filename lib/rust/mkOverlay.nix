@@ -11,6 +11,7 @@ with nixlib.lib;
 with self.lib.rust;
   {
     buildOverrides ? defaultBuildOverrides,
+    cargoLock ? null,
     clippy ? defaultClippyConfig,
     pkgsFor ? defaultPkgsFor,
     pname,
@@ -69,6 +70,11 @@ with self.lib.rust;
             sed -i '/^artifact = "bin"$/d' $out/Cargo.toml
             sed -i '/^target = ".*"$/d' $out/Cargo.toml
           '';
+        }
+        // optionalAttrs (cargoLock != null) {
+          cargoVendorDir = craneLib.vendorCargoDeps {
+            inherit cargoLock;
+          };
         }
         // optionalAttrs (test != null) {
           cargoTestExtraArgs = mkCargoFlags test;
