@@ -3,8 +3,8 @@
 
   inputs.crane.inputs.flake-utils.follows = "flake-utils";
   inputs.crane.inputs.nixpkgs.follows = "nixpkgs";
-  # TODO: Switch to upstream once https://github.com/ipetkov/crane/pull/126 is merged
-  inputs.crane.url = github:rvolosatovs/crane/fix/no_std;
+  inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
+  inputs.crane.url = github:ipetkov/crane;
   inputs.flake-utils.url = github:numtide/flake-utils;
   inputs.nixlib.url = github:nix-community/nixpkgs.lib;
   inputs.nixpkgs.url = github:nixos/nixpkgs/nixpkgs-22.05-darwin;
