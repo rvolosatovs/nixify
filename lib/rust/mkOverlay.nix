@@ -14,12 +14,24 @@ with self.lib.rust;
     cargoLock ? null,
     clippy ? defaultClippyConfig,
     pkgsFor ? defaultPkgsFor,
-    pname,
     src,
     test ? defaultTestConfig,
-    version,
     withToolchain ? defaultWithToolchain,
   }: final: prev: let
+    cargoToml = fromTOML (readFile "${src}/Cargo.toml");
+    pname = cargoToml.package.name;
+    version = cargoToml.package.version;
+    autobins =
+      if cargoToml.package ? autobins
+      then cargoToml.package.autobins
+      else true;
+    bins =
+      unique
+      (optional (cargoToml ? bin) (map ({name, ...}: name))
+        ++ optional (autobins && pathExists "${src}/src/main.rs") pname
+        ++ optionals (autobins && pathExists "${src}/src/bin") (map (removeSuffix ".rs") (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name) (readDir "${src}/src/bin")))));
+    isLib = length bins == 0;
+
     rustupToolchain = (fromTOML (readFile "${src}/rust-toolchain.toml")).toolchain;
     rustToolchain = withToolchain final rustupToolchain;
 
@@ -73,7 +85,10 @@ with self.lib.rust;
         }
         // optionalAttrs (cargoLock != null) {
           cargoVendorDir = craneLib.vendorCargoDeps {
-            inherit cargoLock;
+            inherit
+              cargoLock
+              src
+              ;
           };
         }
         // optionalAttrs (test != null) {
@@ -91,6 +106,14 @@ with self.lib.rust;
       // {
         cargoArtifacts = hostCargoArtifacts;
         cargoExtraArgs = "-j $NIX_BUILD_CORES";
+      }
+      // optionalAttrs (cargoLock != null) {
+        cargoVendorDir = hostCraneLib.vendorCargoDeps {
+          inherit
+            cargoLock
+            src
+            ;
+        };
       }
       // optionalAttrs (clippy != null) {
         cargoClippyExtraArgs = "${mkCargoFlags clippy} -- ${
@@ -112,6 +135,14 @@ with self.lib.rust;
         cargoArtifacts = hostCargoArtifacts;
         cargoExtraArgs = "-j $NIX_BUILD_CORES";
       }
+      // optionalAttrs (cargoLock != null) {
+        cargoVendorDir = hostCraneLib.vendorCargoDeps {
+          inherit
+            cargoLock
+            src
+            ;
+        };
+      }
       // optionalAttrs (test != null) {
         cargoNextestExtraArgs = mkCargoFlags test;
       }
@@ -124,19 +155,31 @@ with self.lib.rust;
       craneLib.buildPackage (commonArgs
         // {
           cargoExtraArgs = "-j $NIX_BUILD_CORES";
-
+        }
+        // optionalAttrs (!isLib) {
           installPhaseCommand = ''
             mkdir -p $out/bin
             profileDir=''${CARGO_PROFILE:-debug}
-            case ''${CARGO_BUILD_TARGET} in
-                ${wasm32-wasi})
-                    cp target/${wasm32-wasi}/''${profileDir}/${pname}.wasm $out/bin/${pname};;
-                "")
-                    cp target/''${profileDir}/${pname} $out/bin/${pname};;
-                *)
-                    cp target/''${CARGO_BUILD_TARGET}/''${profileDir}/${pname} $out/bin/${pname};;
-            esac
+            ${concatMapStringsSep "\n" (name: ''
+                case ''${CARGO_BUILD_TARGET} in
+                    ${wasm32-wasi})
+                        cp target/${wasm32-wasi}/''${profileDir}/${name}.wasm $out/bin/${name};;
+                    "")
+                        cp target/''${profileDir}/${name} $out/bin/${name};;
+                    *)
+                        cp target/''${CARGO_BUILD_TARGET}/''${profileDir}/${name} $out/bin/${name};;
+                esac
+              '')
+              bins}
           '';
+        }
+        // optionalAttrs (cargoLock != null) {
+          cargoVendorDir = craneLib.vendorCargoDeps {
+            inherit
+              cargoLock
+              src
+              ;
+          };
         }
         // optionalAttrs (test != null) {
           cargoTestExtraArgs = mkCargoFlags test;
@@ -251,46 +294,44 @@ with self.lib.rust;
       };
 
     targets' = genAttrs rustupToolchain.targets (_: {});
+    targetBins =
+      optionalAttrs (targets' ? "aarch64-unknown-linux-musl" && !prev.hostPlatform.isDarwin) {
+        "${pname}-aarch64-unknown-linux-musl" = aarch64LinuxMuslBin;
+        "${pname}-debug-aarch64-unknown-linux-musl" = aarch64LinuxMuslDebugBin;
+      }
+      // optionalAttrs (targets' ? "aarch64-apple-darwin" && prev.hostPlatform.isDarwin || prev.hostPlatform.system == aarch64-darwin) {
+        "${pname}-aarch64-apple-darwin" = aarch64DarwinBin;
+        "${pname}-debug-aarch64-apple-darwin" = aarch64DarwinDebugBin;
+      }
+      // optionalAttrs (targets' ? "wasm32-wasi") {
+        "${pname}-wasm32-wasi" = wasm32WasiBin;
+        "${pname}-debug-wasm32-wasi" = wasm32WasiDebugBin;
+      }
+      // optionalAttrs (prev.hostPlatform.system == x86_64-darwin) {
+        "${pname}-x86_64-apple-darwin" = x86_64DarwinBin;
+        "${pname}-debug-x86_64-apple-darwin" = x86_64DarwinDebugBin;
+      }
+      // optionalAttrs (targets' ? "x86_64-unknown-linux-musl" && !prev.hostPlatform.isDarwin) {
+        "${pname}-x86_64-unknown-linux-musl" = x86_64LinuxMuslBin;
+        "${pname}-debug-x86_64-unknown-linux-musl" = x86_64LinuxMuslDebugBin;
+      };
+
+    bins' = genAttrs bins (_: {});
+    targetImages = optionalAttrs (bins' ? ${pname}) (mapAttrs' (target: bin: nameValuePair "${target}-oci" (buildImage bin)) targetBins);
+
+    packages =
+      {
+        "${pname}" = hostBin;
+        "${pname}-debug" = hostDebugBin;
+      }
+      // targetBins
+      // targetImages;
   in
     {
-      "${pname}" = hostBin;
-      "${pname}-debug" = hostDebugBin;
-
-      "${pname}Checks" = checks;
+      "${pname}Checks" = checks // optionalAttrs isLib packages;
       "${pname}RustToolchain" = rustToolchain;
     }
-    // optionalAttrs (targets' ? "aarch64-unknown-linux-musl" && !prev.hostPlatform.isDarwin) {
-      "${pname}-aarch64-unknown-linux-musl" = aarch64LinuxMuslBin;
-      "${pname}-aarch64-unknown-linux-musl-oci" = buildImage aarch64LinuxMuslBin;
-
-      "${pname}-debug-aarch64-unknown-linux-musl" = aarch64LinuxMuslDebugBin;
-      "${pname}-debug-aarch64-unknown-linux-musl-oci" = buildImage aarch64LinuxMuslDebugBin;
-    }
-    // optionalAttrs (targets' ? "aarch64-apple-darwin" && prev.hostPlatform.isDarwin || prev.hostPlatform.system == aarch64-darwin) {
-      "${pname}-aarch64-apple-darwin" = aarch64DarwinBin;
-      "${pname}-aarch64-apple-darwin-oci" = buildImage aarch64DarwinBin;
-
-      "${pname}-debug-aarch64-apple-darwin" = aarch64DarwinDebugBin;
-      "${pname}-debug-aarch64-apple-darwin-oci" = buildImage aarch64DarwinDebugBin;
-    }
-    // optionalAttrs (targets' ? "wasm32-wasi") {
-      "${pname}-wasm32-wasi" = wasm32WasiBin;
-      "${pname}-wasm32-wasi-oci" = buildImage wasm32WasiBin;
-
-      "${pname}-debug-wasm32-wasi" = wasm32WasiDebugBin;
-      "${pname}-debug-wasm32-wasi-oci" = buildImage wasm32WasiDebugBin;
-    }
-    // optionalAttrs (prev.hostPlatform.system == x86_64-darwin) {
-      "${pname}-x86_64-apple-darwin" = x86_64DarwinBin;
-      "${pname}-x86_64-apple-darwin-oci" = buildImage x86_64DarwinBin;
-
-      "${pname}-debug-x86_64-apple-darwin" = x86_64DarwinDebugBin;
-      "${pname}-debug-x86_64-apple-darwin-oci" = buildImage x86_64DarwinDebugBin;
-    }
-    // optionalAttrs (targets' ? "x86_64-unknown-linux-musl" && !prev.hostPlatform.isDarwin) {
-      "${pname}-x86_64-unknown-linux-musl" = x86_64LinuxMuslBin;
-      "${pname}-x86_64-unknown-linux-musl-oci" = buildImage x86_64LinuxMuslBin;
-
-      "${pname}-debug-x86_64-unknown-linux-musl" = x86_64LinuxMuslDebugBin;
-      "${pname}-debug-x86_64-unknown-linux-musl-oci" = buildImage x86_64LinuxMuslDebugBin;
+    // optionalAttrs (!isLib) packages
+    // optionalAttrs (!isLib) {
+      default = packages.${pname};
     }
