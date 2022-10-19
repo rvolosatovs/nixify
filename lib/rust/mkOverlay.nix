@@ -216,6 +216,8 @@ with self.lib.rust;
               stdenv.cc
             ];
 
+          pnameSuffix = target;
+
           CARGO_BUILD_TARGET = target;
         }
         // optionalAttrs (target == wasm32-wasi) {
