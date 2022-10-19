@@ -14,6 +14,7 @@ with self.lib;
 with self.lib.rust;
   {
     buildOverrides ? defaultBuildOverrides,
+    cargoLock ? null,
     clippy ? defaultClippyConfig,
     ignorePaths ? defaultIgnorePaths,
     overlays ? [],
@@ -35,6 +36,7 @@ with self.lib.rust;
     overlay = mkOverlay {
       inherit
         buildOverrides
+        cargoLock
         clippy
         pkgsFor
         pname
