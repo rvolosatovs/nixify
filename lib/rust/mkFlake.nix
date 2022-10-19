@@ -17,6 +17,7 @@ with self.lib.rust;
     cargoLock ? null,
     clippy ? defaultClippyConfig,
     ignorePaths ? defaultIgnorePaths,
+    name ? null,
     overlays ? [],
     pkgsFor ? defaultPkgsFor,
     src,
@@ -29,9 +30,14 @@ with self.lib.rust;
     withPackages ? defaultWithPackages,
     withToolchain ? defaultWithToolchain,
   }: let
-    cargoPackage = (fromTOML (readFile "${src}/Cargo.toml")).package;
-    pname = cargoPackage.name;
-    version = cargoPackage.version;
+    cargoToml = fromTOML (readFile "${src}/Cargo.toml");
+    pname =
+      if name != null
+      then name
+      else
+        cargoToml.package.name
+        or (throw "`name` must either be specified in `Cargo.toml` `[package]` section or passed as an argument");
+    version = cargoToml.package.version or "0.0.0-unspecified";
 
     overlay = mkOverlay {
       inherit
@@ -39,8 +45,10 @@ with self.lib.rust;
         cargoLock
         clippy
         pkgsFor
+        pname
         src
         test
+        version
         withToolchain
         ;
     };

@@ -14,25 +14,29 @@ with self.lib.rust;
     cargoLock ? null,
     clippy ? defaultClippyConfig,
     pkgsFor ? defaultPkgsFor,
+    pname,
     src,
     test ? defaultTestConfig,
+    version,
     withToolchain ? defaultWithToolchain,
   }: final: prev: let
-    cargoToml = fromTOML (readFile "${src}/Cargo.toml");
-    pname = cargoToml.package.name;
-    version = cargoToml.package.version;
-    autobins =
-      if cargoToml.package ? autobins
-      then cargoToml.package.autobins
-      else true;
-    bins =
-      unique
-      (optional (cargoToml ? bin) (map ({name, ...}: name))
-        ++ optional (autobins && pathExists "${src}/src/main.rs") pname
-        ++ optionals (autobins && pathExists "${src}/src/bin") (map (removeSuffix ".rs") (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name) (readDir "${src}/src/bin")))));
+    readTOML = file: fromTOML (readFile file);
+
+    crateBins = src: let
+      cargoToml = readTOML "${src}/Cargo.toml";
+      autobins = cargoToml.package.autobins or true;
+      workspaceMembers = cargoToml.workspace.members or [];
+      name = cargoToml.package.name or pname;
+    in
+      (map ({name, ...}: name) (cargoToml.bin or []))
+      ++ optional (autobins && pathExists "${src}/src/main.rs") name
+      ++ optionals (autobins && pathExists "${src}/src/bin") (map (removeSuffix ".rs") (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name) (readDir "${src}/src/bin"))))
+      ++ flatten (map (path: crateBins "${src}/${path}") workspaceMembers);
+
+    bins = unique (crateBins src);
     isLib = length bins == 0;
 
-    rustupToolchain = (fromTOML (readFile "${src}/rust-toolchain.toml")).toolchain;
+    rustupToolchain = (readTOML "${src}/rust-toolchain.toml").toolchain;
     rustToolchain = withToolchain final rustupToolchain;
 
     # mkCraneLib constructs a crane library for specified `pkgs`.

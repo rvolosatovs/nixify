@@ -10,6 +10,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  rust-lib:
+    strategy:
+      matrix:
+        os: [ macos-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: cachix/install-nix-action@v18
+      with:
+        extra_nix_config: |
+          access-tokens = github.com=${{ github.token }}
+    - uses: cachix/cachix-action@v11
+      with:
+        name: rvolosatovs
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+    - run: nix flake check -L --show-trace --keep-going --override-input 'nixify' '.' './examples/rust-lib'
+
   rust-hello:
     strategy:
       matrix:
@@ -124,24 +142,6 @@ jobs:
       if: ${{ matrix.config.test-oci }}
     - run: ${{ matrix.config.test-oci }}
 
-  rust-lib:
-    strategy:
-      matrix:
-        os: [ macos-latest, ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v18
-      with:
-        extra_nix_config: |
-          access-tokens = github.com=${{ github.token }}
-    - uses: cachix/cachix-action@v11
-      with:
-        name: rvolosatovs
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
-    - run: nix flake check -L --show-trace --keep-going --override-input 'nixify' '.' './examples/rust-lib'
-
   rust-hello-multibin:
     strategy:
       matrix:
@@ -180,3 +180,37 @@ jobs:
         nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin#rust-hello-multibin-debug-wasm32-wasi'
         nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/hello
         nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/bye
+
+  rust-workspace:
+    strategy:
+      matrix:
+        os: [ macos-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: cachix/install-nix-action@v18
+      with:
+        extra_nix_config: |
+          access-tokens = github.com=${{ github.token }}
+    - uses: cachix/cachix-action@v11
+      with:
+        name: rvolosatovs
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+    - run: nix flake check -L --show-trace --keep-going --override-input 'nixify' '.' './examples/rust-workspace'
+
+    - run: |
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-workspace'
+        ./result/bin/hello-workspace
+    - run: |
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-workspace#rust-hello-workspace'
+        ./result/bin/hello-workspace
+    - run: |
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-workspace#rust-hello-workspace-debug'
+        ./result/bin/hello-workspace
+    - run: |
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-workspace#rust-hello-workspace-wasm32-wasi'
+        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/hello-workspace
+    - run: |
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-workspace#rust-hello-workspace-debug-wasm32-wasi'
+        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/hello-workspace
