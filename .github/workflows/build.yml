@@ -1,4 +1,4 @@
-name: build
+name: examples
 
 on:
   workflow_dispatch:
@@ -10,71 +10,102 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  rust-hello:
     strategy:
       matrix:
-        platform:
-        - host: macos-latest
-          target: aarch64-apple-darwin
-          flake: ./examples/rust-hello
+        config:
+        # Darwin
+        - os: macos-latest
+          package: default
+          test-bin: ./result/bin/rust-hello
+
+        - os: macos-latest
+          package: rust-hello
+          test-bin: ./result/bin/rust-hello
+
+        - os: macos-latest
+          package: rust-hello-aarch64-apple-darwin
           test-bin: file ./result/bin/rust-hello
-          test-oci: true
+          test-oci: echo "OCI runtime missing, skip test"
 
-          # TODO: Support cross-compilation from Darwin to Linux
-          #- host: macos-latest
-          #  target: aarch64-unknown-linux-musl
-          #  flake: ./examples/rust-hello
-          #  test-bin: file ./result/bin/rust-hello
-          #  test-oci: |
-          #    nix profile install --inputs-from . 'nixpkgs#podman'
-          #    podman machine init
-          #    podman machine start
-          #    podman load < ./result
-
-        - host: macos-latest
-          target: wasm32-wasi
-          flake: ./examples/rust-hello
+        - os: macos-latest
+          package: rust-hello-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
           test-oci: echo "OCI runtime missing, skip test"
 
-          # TODO: Support cross-compilation from Darwin to Linux
-          #- host: macos-latest
-          #  target: x86_64-unknown-linux-musl
-          #  flake: ./examples/rust-hello
-          #  test-bin: file ./result/bin/rust-hello
-          #  test-oci: |
-          #    nix profile install --inputs-from . 'nixpkgs#podman'
-          #    podman machine init
-          #    podman machine start
-          #    podman load < ./result
-
-        - host: macos-latest
-          target: x86_64-apple-darwin
-          flake: ./examples/rust-hello
+        - os: macos-latest
+          package: rust-hello-x86_64-apple-darwin
           test-bin: ./result/bin/rust-hello
           test-oci: echo "OCI runtime missing, skip test"
 
-        - host: ubuntu-latest
-          target: aarch64-unknown-linux-musl
-          flake: ./examples/rust-hello
+        - os: macos-latest
+          package: rust-hello-debug
+          test-bin: ./result/bin/rust-hello
+
+        - os: macos-latest
+          package: rust-hello-debug-aarch64-apple-darwin
+          test-bin: file ./result/bin/rust-hello
+          test-oci: echo "OCI runtime missing, skip test"
+
+        - os: macos-latest
+          package: rust-hello-debug-wasm32-wasi
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
+          test-oci: echo "OCI runtime missing, skip test"
+
+        - os: macos-latest
+          package: rust-hello-debug-x86_64-apple-darwin
+          test-bin: ./result/bin/rust-hello
+          test-oci: echo "OCI runtime missing, skip test"
+
+
+        # Linux
+        - os: ubuntu-latest
+          package: default
+          test-bin: ./result/bin/rust-hello
+
+        - os: ubuntu-latest
+          package: rust-hello
+          test-bin: ./result/bin/rust-hello
+
+        - os: ubuntu-latest
+          package: rust-hello-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - host: ubuntu-latest
-          target: wasm32-wasi
-          flake: ./examples/rust-hello
+        - os: ubuntu-latest
+          package: rust-hello-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - host: ubuntu-latest
-          target: x86_64-unknown-linux-musl
-          flake: ./examples/rust-hello
+        - os: ubuntu-latest
+          package: rust-hello-x86_64-unknown-linux-musl
           test-bin: ./result/bin/rust-hello
           test-oci: |
             docker load < ./result
             docker run --rm rust-hello:$(nix eval --raw --override-input 'nixify' '.' ./examples/rust-hello#rust-hello-x86_64-unknown-linux-musl-oci.imageTag)
 
-    runs-on: ${{ matrix.platform.host }}
+        - os: ubuntu-latest
+          package: rust-hello-debug
+          test-bin: ./result/bin/rust-hello
+
+        - os: ubuntu-latest
+          package: rust-hello-debug-aarch64-unknown-linux-musl
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - os: ubuntu-latest
+          package: rust-hello-debug-wasm32-wasi
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - os: ubuntu-latest
+          package: rust-hello-debug-x86_64-unknown-linux-musl
+          test-bin: ./result/bin/rust-hello
+          test-oci: |
+            docker load < ./result
+            docker run --rm rust-hello:$(nix eval --raw --override-input 'nixify' '.' ./examples/rust-hello#rust-hello-x86_64-unknown-linux-musl-oci.imageTag)
+
+    runs-on: ${{ matrix.config.os }}
     steps:
     - uses: actions/checkout@v3
     - uses: cachix/install-nix-action@v18
@@ -86,8 +117,66 @@ jobs:
         name: rvolosatovs
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-    - run: nix build -L --show-trace --override-input 'nixify' '.' '${{ matrix.platform.flake }}#rust-hello-${{ matrix.platform.target }}'
-    - run: ${{ matrix.platform.test-bin }}
+    - run: nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#${{ matrix.config.package }}'
+    - run: ${{ matrix.config.test }}
 
-    - run: nix build -L --show-trace --override-input 'nixify' '.' '${{ matrix.platform.flake }}#rust-hello-${{ matrix.platform.target }}-oci'
-    - run: ${{ matrix.platform.test-oci }}
+    - run: nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#${{ matrix.config.package }}-oci'
+      if: ${{ matrix.config.test-oci }}
+    - run: ${{ matrix.config.test-oci }}
+
+  rust-lib:
+    strategy:
+      matrix:
+        os: [ macos-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: cachix/install-nix-action@v18
+      with:
+        extra_nix_config: |
+          access-tokens = github.com=${{ github.token }}
+    - uses: cachix/cachix-action@v11
+      with:
+        name: rvolosatovs
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+    - run: nix flake check -L --show-trace --keep-going --override-input 'nixify' '.' './examples/rust-lib'
+
+  rust-hello-multibin:
+    strategy:
+      matrix:
+        os: [ macos-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: cachix/install-nix-action@v18
+      with:
+        extra_nix_config: |
+          access-tokens = github.com=${{ github.token }}
+    - uses: cachix/cachix-action@v11
+      with:
+        name: rvolosatovs
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+    - run: nix flake check -L --show-trace --keep-going --override-input 'nixify' '.' './examples/rust-hello-multibin'
+
+    - run: |
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin'
+        ./result/bin/hello
+        ./result/bin/bye
+    - run: |
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin#rust-hello-multibin'
+        ./result/bin/hello
+        ./result/bin/bye
+    - run: |
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin#rust-hello-multibin-debug'
+        ./result/bin/hello
+        ./result/bin/bye
+    - run: |
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin#rust-hello-multibin-wasm32-wasi'
+        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/hello
+        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/bye
+    - run: |
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin#rust-hello-multibin-debug-wasm32-wasi'
+        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/hello
+        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/bye
