@@ -1,0 +1,30 @@
+version: 2
+updates:
+- package-ecosystem: "cargo"
+  directory: "/examples/rust-hello"
+  schedule:
+    interval: "daily"
+- package-ecosystem: "cargo"
+  directory: "/examples/rust-hello-multibin"
+  schedule:
+    interval: "daily"
+- package-ecosystem: "cargo"
+  directory: "/examples/rust-lib"
+  schedule:
+    interval: "daily"
+- package-ecosystem: "cargo"
+  directory: "/examples/rust-workspace"
+  schedule:
+    interval: "daily"
+- package-ecosystem: "cargo"
+  directory: "/examples/rust-workspace/hello"
+  schedule:
+    interval: "daily"
+- package-ecosystem: "cargo"
+  directory: "/examples/rust-workspace/lib"
+  schedule:
+    interval: "daily"
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: "daily"
