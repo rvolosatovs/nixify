@@ -81,6 +81,16 @@ with self.lib; let
     src = ../examples/rust-hello-multibin;
   };
 
+  flakes.rust.unsupported-target = rust.mkFlake {
+    inherit
+      overlays
+      withPackages
+      ;
+
+    src = ../examples/rust-unsupported-target;
+    targets.x86_64-unknown-none = false;
+  };
+
   flakes.rust.workspace = rust.mkFlake {
     inherit
       overlays
@@ -149,6 +159,13 @@ in
     assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-wasm32-wasi";
     assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-x86_64-apple-darwin" || system != x86_64-darwin;
     assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-x86_64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.unsupported-target.packages.${system} ? "default";
+    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target";
+    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-aarch64-apple-darwin" || system != aarch64-darwin;
+    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-x86_64-apple-darwin" || system != x86_64-darwin;
+    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-debug";
+    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-debug-aarch64-apple-darwin" || system != aarch64-darwin;
+    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-debug-x86_64-apple-darwin" || system != x86_64-darwin;
     assert flakes.rust.workspace.packages.${system} ? "default";
     assert flakes.rust.workspace.packages.${system} ? "rust-workspace";
     assert flakes.rust.workspace.packages.${system} ? "rust-workspace-aarch64-apple-darwin" || !isDarwin;
