@@ -20,8 +20,9 @@ jobs:
       - uses: peter-evans/create-pull-request@v4
         with:
           branch: nix-update
-          commit-message: ${{ steps.nix-update.outputs.commit-message }}
-          title: ${{ steps.nix-update.outputs.pull-request-title }}
+          commit-message: "build(nix): update flake lock"
+          title: "build(nix): update flake lock"
           body: ${{ steps.nix-update.outputs.pull-request-body }}
           labels: dependencies, nix
           assignees: rvolosatovs
+          signoff: true
