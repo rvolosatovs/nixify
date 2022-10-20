@@ -16,6 +16,7 @@ with self.lib.rust;
     pkgsFor ? defaultPkgsFor,
     pname,
     src,
+    targets ? null,
     test ? defaultTestConfig,
     version,
     withToolchain ? defaultWithToolchain,
@@ -297,25 +298,51 @@ with self.lib.rust;
         config.Env = ["PATH=${bin}/bin"];
       };
 
-    targets' = genAttrs rustupToolchain.targets (_: {});
+    targets' = let
+      default.aarch64-apple-darwin = prev.hostPlatform.system == aarch64-darwin;
+      default.aarch64-unknown-linux-musl = false;
+      default.wasm32-wasi = false;
+      default.x86_64-apple-darwin = prev.hostPlatform.system == x86_64-darwin;
+      default.x86_64-unknown-linux-musl = false;
+
+      all =
+        default
+        // genAttrs rustupToolchain.targets (target:
+          if target == "aarch64-apple-darwin"
+          then prev.hostPlatform.isDarwin
+          else if target == "aarch64-unknown-linux-musl"
+          then !prev.hostPlatform.isDarwin
+          else if target == "x86_64-apple-darwin"
+          then prev.hostPlatform.system == x86_64-darwin
+          else if target == "x86_64-unknown-linux-musl"
+          then !prev.hostPlatform.isDarwin
+          else true)
+        // optionalAttrs (targets != null) targets;
+    in
+      mapAttrs' (target: enabled:
+        warnIf (enabled && !(default ? ${target})) ''
+          target `${target}` is not supported
+          set `targets.${target} = false` to remove this warning'' (nameValuePair target enabled))
+      all;
+
     targetBins =
-      optionalAttrs (targets' ? "aarch64-unknown-linux-musl" && !prev.hostPlatform.isDarwin) {
+      optionalAttrs targets'.aarch64-unknown-linux-musl {
         "${pname}-aarch64-unknown-linux-musl" = aarch64LinuxMuslBin;
         "${pname}-debug-aarch64-unknown-linux-musl" = aarch64LinuxMuslDebugBin;
       }
-      // optionalAttrs (targets' ? "aarch64-apple-darwin" && prev.hostPlatform.isDarwin || prev.hostPlatform.system == aarch64-darwin) {
+      // optionalAttrs targets'.aarch64-apple-darwin {
         "${pname}-aarch64-apple-darwin" = aarch64DarwinBin;
         "${pname}-debug-aarch64-apple-darwin" = aarch64DarwinDebugBin;
       }
-      // optionalAttrs (targets' ? "wasm32-wasi") {
+      // optionalAttrs targets'.wasm32-wasi {
         "${pname}-wasm32-wasi" = wasm32WasiBin;
         "${pname}-debug-wasm32-wasi" = wasm32WasiDebugBin;
       }
-      // optionalAttrs (prev.hostPlatform.system == x86_64-darwin) {
+      // optionalAttrs targets'.x86_64-apple-darwin {
         "${pname}-x86_64-apple-darwin" = x86_64DarwinBin;
         "${pname}-debug-x86_64-apple-darwin" = x86_64DarwinDebugBin;
       }
-      // optionalAttrs (targets' ? "x86_64-unknown-linux-musl" && !prev.hostPlatform.isDarwin) {
+      // optionalAttrs targets'.x86_64-unknown-linux-musl {
         "${pname}-x86_64-unknown-linux-musl" = x86_64LinuxMuslBin;
         "${pname}-debug-x86_64-unknown-linux-musl" = x86_64LinuxMuslDebugBin;
       };

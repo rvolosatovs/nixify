@@ -22,6 +22,7 @@ with self.lib.rust;
     pkgsFor ? defaultPkgsFor,
     src,
     systems ? defaultSystems,
+    targets ? null,
     test ? defaultTestConfig,
     withChecks ? defaultWithChecks,
     withDevShells ? defaultWithDevShells,
@@ -47,6 +48,7 @@ with self.lib.rust;
         pkgsFor
         pname
         src
+        targets
         test
         version
         withToolchain
