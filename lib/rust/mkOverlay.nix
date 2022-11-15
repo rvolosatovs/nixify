@@ -10,6 +10,7 @@ with flake-utils.lib.system;
 with nixlib.lib;
 with self.lib.rust;
   {
+    build ? defaultBuildConfig,
     buildOverrides ? defaultBuildOverrides,
     cargoLock ? null,
     clippy ? defaultClippyConfig,
@@ -23,22 +24,48 @@ with self.lib.rust;
   }: final: prev: let
     readTOML = file: fromTOML (readFile file);
 
+    rustupToolchain = (readTOML "${src}/rust-toolchain.toml").toolchain;
+    rustToolchain = withToolchain final rustupToolchain;
+
     crateBins = src: let
       cargoToml = readTOML "${src}/Cargo.toml";
-      autobins = cargoToml.package.autobins or true;
-      workspaceMembers = cargoToml.workspace.members or [];
-      name = cargoToml.package.name or pname;
+
+      isPackage = cargoToml ? package;
+
+      autobins = isPackage && cargoToml.package.autobins or true;
+      bin = optionals isPackage cargoToml.bin or [];
+      workspace = cargoToml.workspace.members or [];
+
+      unglob' = prefix: parts:
+        if parts == []
+        then [prefix]
+        else let
+          h = head parts;
+          t = tail parts;
+        in
+          if hasInfix "*" h
+          then let
+            regex = "^${replaceStrings ["*"] [".*"] h}$";
+            names = filter (name: match regex name != null) (attrNames (readDir prefix));
+          in
+            map (h': unglob' "${prefix}/${h'}" t) names
+          else unglob' "${prefix}/${h}" t;
+
+      unglob = glob: let
+        prefix = optionalString (!(hasPrefix "/" glob)) src;
+        parts = splitString "/" glob;
+      in
+        optionals (glob != "") (unglob' prefix parts);
+
+      workspace' = unique (flatten (map unglob workspace));
     in
-      (map ({name, ...}: name) (cargoToml.bin or []))
-      ++ optional (autobins && pathExists "${src}/src/main.rs") name
+      (map ({name, ...}: name) bin)
+      ++ optional (autobins && pathExists "${src}/src/main.rs") cargoToml.package.name
       ++ optionals (autobins && pathExists "${src}/src/bin") (map (removeSuffix ".rs") (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name) (readDir "${src}/src/bin"))))
-      ++ flatten (map (path: crateBins "${src}/${path}") workspaceMembers);
+      ++ optionals (!isPackage || build.workspace) (flatten (map crateBins workspace'));
 
     bins = unique (crateBins src);
     isLib = length bins == 0;
-
-    rustupToolchain = (readTOML "${src}/rust-toolchain.toml").toolchain;
-    rustToolchain = withToolchain final rustupToolchain;
 
     # mkCraneLib constructs a crane library for specified `pkgs`.
     mkCraneLib = pkgs: (crane.mkLib pkgs).overrideToolchain rustToolchain;
@@ -47,12 +74,30 @@ with self.lib.rust;
     hostCraneLib = mkCraneLib final;
 
     # commonArgs is a set of arguments that is common to all crane invocations.
-    commonArgs = {
+    commonArgs = let
+      buildArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
+      testArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags test}";
+
+      clippyArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags clippy} -- ${
+        with clippy;
+          concatStrings (
+            optionals (clippy ? allow) (map (lint: "--allow ${lint} ") allow)
+            ++ optionals (clippy ? deny) (map (lint: "--deny ${lint} ") deny)
+            ++ optionals (clippy ? forbid) (map (lint: "--forbid ${lint} ") forbid)
+            ++ optionals (clippy ? warn) (map (lint: "--warn ${lint} ") warn)
+          )
+      }";
+    in {
       inherit
         pname
         src
         version
         ;
+
+      cargoBuildCommand = "cargoWithProfile build ${buildArgs}";
+      cargoClippyExtraArgs = clippyArgs;
+      cargoNextestExtraArgs = testArgs;
+      cargoTestExtraArgs = testArgs;
     };
 
     commonOverrideArgs =
@@ -80,8 +125,6 @@ with self.lib.rust;
       craneLib.buildDepsOnly (
         commonArgs
         // {
-          cargoExtraArgs = "-j $NIX_BUILD_CORES";
-
           # Remove binary dependency specification, since that breaks on generated "dummy source"
           extraDummyScript = ''
             sed -i '/^artifact = "bin"$/d' $out/Cargo.toml
@@ -96,9 +139,6 @@ with self.lib.rust;
               ;
           };
         }
-        // optionalAttrs (test != null) {
-          cargoTestExtraArgs = mkCargoFlags test;
-        }
         // extraArgs
         // hostBuildOverrides
       );
@@ -110,7 +150,6 @@ with self.lib.rust;
       commonArgs
       // {
         cargoArtifacts = hostCargoArtifacts;
-        cargoExtraArgs = "-j $NIX_BUILD_CORES";
       }
       // optionalAttrs (cargoLock != null) {
         cargoVendorDir = hostCraneLib.vendorCargoDeps {
@@ -119,17 +158,6 @@ with self.lib.rust;
             src
             ;
         };
-      }
-      // optionalAttrs (clippy != null) {
-        cargoClippyExtraArgs = "${mkCargoFlags clippy} -- ${
-          with clippy;
-            concatStrings (
-              optionals (clippy ? allow) (map (lint: "--allow ${lint} ") allow)
-              ++ optionals (clippy ? deny) (map (lint: "--deny ${lint} ") deny)
-              ++ optionals (clippy ? forbid) (map (lint: "--forbid ${lint} ") forbid)
-              ++ optionals (clippy ? warn) (map (lint: "--warn ${lint} ") warn)
-            )
-        }";
       }
       // hostBuildOverrides
     );
@@ -138,7 +166,6 @@ with self.lib.rust;
       commonArgs
       // {
         cargoArtifacts = hostCargoArtifacts;
-        cargoExtraArgs = "-j $NIX_BUILD_CORES";
       }
       // optionalAttrs (cargoLock != null) {
         cargoVendorDir = hostCraneLib.vendorCargoDeps {
@@ -148,19 +175,13 @@ with self.lib.rust;
             ;
         };
       }
-      // optionalAttrs (test != null) {
-        cargoNextestExtraArgs = mkCargoFlags test;
-      }
       // hostBuildOverrides
     );
 
     # buildPackage builds using `craneLib`.
     # `extraArgs` are passed through to `craneLib.buildPackage` verbatim.
-    build.package = craneLib: extraArgs:
+    buildPackage = craneLib: extraArgs:
       craneLib.buildPackage (commonArgs
-        // {
-          cargoExtraArgs = "-j $NIX_BUILD_CORES";
-        }
         // optionalAttrs (!isLib) {
           installPhaseCommand = ''
             mkdir -p $out/bin
@@ -186,13 +207,10 @@ with self.lib.rust;
               ;
           };
         }
-        // optionalAttrs (test != null) {
-          cargoTestExtraArgs = mkCargoFlags test;
-        }
         // extraArgs);
 
-    build.host.package = extraArgs:
-      build.package hostCraneLib (
+    buildHostPackage = extraArgs:
+      buildPackage hostCraneLib (
         {
           cargoArtifacts = hostCargoArtifacts;
         }
@@ -200,10 +218,10 @@ with self.lib.rust;
         // hostBuildOverrides
       );
 
-    # build.packageFor builds for `target`.
-    # `extraArgs` are passed through to `build.package` verbatim.
+    # buildPackageFor builds for `target`.
+    # `extraArgs` are passed through to `buildPackage` verbatim.
     # NOTE: Upstream only provides binary caches for a subset of supported systems.
-    build.packageFor = target: extraArgs: let
+    buildPackageFor = target: extraArgs: let
       pkgsCross = pkgsFor final target;
       kebab2snake = replaceStrings ["-"] ["_"];
       commonCrossArgs = with pkgsCross;
@@ -233,35 +251,35 @@ with self.lib.rust;
           inherit pkgsCross;
         });
     in
-      build.package craneLib (commonCrossArgs
+      buildPackage craneLib (commonCrossArgs
         // {
           cargoArtifacts = buildDeps craneLib (commonCrossArgs // targetBuildOverrides);
         }
         // extraArgs
         // targetBuildOverrides);
 
-    build.aarch64-apple-darwin.package = extraArgs:
-      build.packageFor "aarch64-apple-darwin" ({
+    buildCrossPackage.aarch64-apple-darwin = extraArgs:
+      buildPackageFor "aarch64-apple-darwin" ({
           CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
         }
         // extraArgs);
 
-    build.aarch64-unknown-linux-musl.package = extraArgs:
-      build.packageFor "aarch64-unknown-linux-musl" ({
+    buildCrossPackage.aarch64-unknown-linux-musl = extraArgs:
+      buildPackageFor "aarch64-unknown-linux-musl" ({
           CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
         }
         // extraArgs);
 
-    build.wasm32-wasi.package = build.packageFor wasm32-wasi;
+    buildCrossPackage.wasm32-wasi = buildPackageFor wasm32-wasi;
 
-    build.x86_64-apple-darwin.package = extraArgs:
-      build.packageFor "x86_64-apple-darwin" ({
+    buildCrossPackage.x86_64-apple-darwin = extraArgs:
+      buildPackageFor "x86_64-apple-darwin" ({
           CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
         }
         // extraArgs);
 
-    build.x86_64-unknown-linux-musl.package = extraArgs:
-      build.packageFor "x86_64-unknown-linux-musl" ({
+    buildCrossPackage.x86_64-unknown-linux-musl = extraArgs:
+      buildPackageFor "x86_64-unknown-linux-musl" ({
           CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
         }
         // extraArgs);
@@ -271,23 +289,23 @@ with self.lib.rust;
       CARGO_PROFILE = "";
     };
 
-    hostBin = build.host.package commonReleaseArgs;
-    hostDebugBin = build.host.package commonDebugArgs;
+    hostBin = buildHostPackage commonReleaseArgs;
+    hostDebugBin = buildHostPackage commonDebugArgs;
 
-    aarch64LinuxMuslBin = build.aarch64-unknown-linux-musl.package commonReleaseArgs;
-    aarch64LinuxMuslDebugBin = build.aarch64-unknown-linux-musl.package commonDebugArgs;
+    aarch64LinuxMuslBin = buildCrossPackage.aarch64-unknown-linux-musl commonReleaseArgs;
+    aarch64LinuxMuslDebugBin = buildCrossPackage.aarch64-unknown-linux-musl commonDebugArgs;
 
-    aarch64DarwinBin = build.aarch64-apple-darwin.package commonReleaseArgs;
-    aarch64DarwinDebugBin = build.aarch64-apple-darwin.package commonDebugArgs;
+    aarch64DarwinBin = buildCrossPackage.aarch64-apple-darwin commonReleaseArgs;
+    aarch64DarwinDebugBin = buildCrossPackage.aarch64-apple-darwin commonDebugArgs;
 
-    wasm32WasiBin = build.wasm32-wasi.package commonReleaseArgs;
-    wasm32WasiDebugBin = build.wasm32-wasi.package commonDebugArgs;
+    wasm32WasiBin = buildCrossPackage.wasm32-wasi commonReleaseArgs;
+    wasm32WasiDebugBin = buildCrossPackage.wasm32-wasi commonDebugArgs;
 
-    x86_64LinuxMuslBin = build.x86_64-unknown-linux-musl.package commonReleaseArgs;
-    x86_64LinuxMuslDebugBin = build.x86_64-unknown-linux-musl.package commonDebugArgs;
+    x86_64LinuxMuslBin = buildCrossPackage.x86_64-unknown-linux-musl commonReleaseArgs;
+    x86_64LinuxMuslDebugBin = buildCrossPackage.x86_64-unknown-linux-musl commonDebugArgs;
 
-    x86_64DarwinBin = build.x86_64-apple-darwin.package commonReleaseArgs;
-    x86_64DarwinDebugBin = build.x86_64-apple-darwin.package commonDebugArgs;
+    x86_64DarwinBin = buildCrossPackage.x86_64-apple-darwin commonReleaseArgs;
+    x86_64DarwinDebugBin = buildCrossPackage.x86_64-apple-darwin commonDebugArgs;
 
     buildImage = bin:
       final.dockerTools.buildImage {

@@ -13,6 +13,7 @@ with nixlib.lib;
 with self.lib;
 with self.lib.rust;
   {
+    build ? defaultBuildConfig,
     buildOverrides ? defaultBuildOverrides,
     cargoLock ? null,
     clippy ? defaultClippyConfig,
@@ -42,6 +43,7 @@ with self.lib.rust;
 
     overlay = mkOverlay {
       inherit
+        build
         buildOverrides
         cargoLock
         clippy

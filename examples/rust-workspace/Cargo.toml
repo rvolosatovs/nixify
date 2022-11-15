@@ -1,2 +1,8 @@
 [workspace]
-members = ["hello", "lib"]
+members = [
+    "*el*o*",
+    "lib",
+    "",
+    "other/*",
+    "other/*/",
+]
