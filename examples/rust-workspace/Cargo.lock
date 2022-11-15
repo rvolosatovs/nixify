@@ -3,7 +3,15 @@
 version = 3
 
 [[package]]
-name = "hellox"
+name = "fourty-two"
+version = "0.1.0"
+
+[[package]]
+name = "hello-workspace"
+version = "0.1.0"
+
+[[package]]
+name = "hello2"
 version = "0.1.0"
 
 [[package]]

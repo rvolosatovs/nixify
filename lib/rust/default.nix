@@ -14,6 +14,12 @@ with nixlib.lib; {
   defaultPkgsFor = import ./defaultPkgsFor.nix inputs;
   defaultWithToolchain = pkgs: pkgs.rust-bin.fromRustupToolchain;
 
+  defaultBuildConfig.allFeatures = false;
+  defaultBuildConfig.allTargets = false;
+  defaultBuildConfig.features = [];
+  defaultBuildConfig.noDefaultFeatures = false;
+  defaultBuildConfig.workspace = false;
+
   defaultClippyConfig.allFeatures = false;
   defaultClippyConfig.allow = [];
   defaultClippyConfig.allTargets = false;
