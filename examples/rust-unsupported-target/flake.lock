@@ -4,26 +4,28 @@
       "inputs": {
         "flake-compat": "flake-compat",
         "flake-utils": [
+          "nixify",
           "flake-utils"
         ],
         "nixpkgs": [
+          "nixify",
           "nixpkgs"
         ],
         "rust-overlay": [
+          "nixify",
           "rust-overlay"
         ]
       },
       "locked": {
-        "lastModified": 1667064003,
-        "narHash": "sha256-VuP+wzlUmuEqx43b8WOodjXJgFMlyQv/cNL4CdFcSqM=",
+        "lastModified": 1668047118,
+        "narHash": "sha256-F4xP7dAU6ca+hYa3qF0CtnwfQJT3YH4qEh/IxO+p9t0=",
         "owner": "ipetkov",
         "repo": "crane",
-        "rev": "f48777a96601e8fa3f537f3cab22d7a858bcde19",
+        "rev": "074825a9e8d6446564e2ae6949ac3feb79aa7397",
         "type": "github"
       },
       "original": {
         "owner": "ipetkov",
-        "ref": "v0.9.0",
         "repo": "crane",
         "type": "github"
       }
@@ -56,6 +58,28 @@
       "original": {
         "owner": "numtide",
         "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "nixify": {
+      "inputs": {
+        "crane": "crane",
+        "flake-utils": "flake-utils",
+        "nixlib": "nixlib",
+        "nixpkgs": "nixpkgs",
+        "rust-overlay": "rust-overlay"
+      },
+      "locked": {
+        "lastModified": 1668543857,
+        "narHash": "sha256-Zu8g/vEmHyQ6G/bhqBOBXsUwmt2P3zko8DKk8JskPzw=",
+        "owner": "rvolosatovs",
+        "repo": "nixify",
+        "rev": "490b1e03ef2dbbb97f8dd4f557e7cb094a4cc444",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rvolosatovs",
+        "repo": "nixify",
         "type": "github"
       }
     },
@@ -92,19 +116,17 @@
     },
     "root": {
       "inputs": {
-        "crane": "crane",
-        "flake-utils": "flake-utils",
-        "nixlib": "nixlib",
-        "nixpkgs": "nixpkgs",
-        "rust-overlay": "rust-overlay"
+        "nixify": "nixify"
       }
     },
     "rust-overlay": {
       "inputs": {
         "flake-utils": [
+          "nixify",
           "flake-utils"
         ],
         "nixpkgs": [
+          "nixify",
           "nixpkgs"
         ]
       },
