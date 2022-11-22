@@ -325,7 +325,7 @@ with self.lib.rust;
 
       all =
         default
-        // genAttrs rustupToolchain.targets (target:
+        // genAttrs (rustupToolchain.targets or []) (target:
           if target == "aarch64-apple-darwin"
           then prev.hostPlatform.isDarwin
           else if target == "aarch64-unknown-linux-musl"
