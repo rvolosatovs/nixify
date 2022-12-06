@@ -98,6 +98,8 @@ with self.lib.rust;
       cargoClippyExtraArgs = clippyArgs;
       cargoNextestExtraArgs = testArgs;
       cargoTestExtraArgs = testArgs;
+
+      installCargoArtifactsMode = "use-zstd";
     };
 
     commonOverrideArgs =
