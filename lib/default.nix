@@ -25,7 +25,6 @@ with flake-utils.lib.system; let
     defaultSystems = [
       aarch64-darwin
       aarch64-linux
-      powerpc64le-linux
       x86_64-darwin
       x86_64-linux
     ];
