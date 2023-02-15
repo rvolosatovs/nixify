@@ -1,9 +1,6 @@
 {
   self,
-  flake-utils,
   nixlib,
-  nixpkgs,
-  rust-overlay,
   ...
 } @ inputs:
 with self.lib;
