@@ -9,6 +9,7 @@
 }: {
   defaultIgnorePaths,
   defaultSystems,
+  defaultWithApps,
   defaultWithChecks,
   defaultWithDevShells,
   defaultWithFormatter,
@@ -24,6 +25,7 @@ with nixlib.lib;
     src ? null,
     systems ? defaultSystems,
     version ? null,
+    withApps ? defaultWithApps,
     withChecks ? defaultWithChecks,
     withDevShells ? defaultWithDevShells,
     withFormatter ? defaultWithFormatter,
@@ -71,7 +73,25 @@ with nixlib.lib;
               pkgs
               ;
           };
+
+        packages = withPackages (commonPkgsArgs
+          // {
+            packages = {};
+          });
       in {
+        inherit packages;
+
+        apps = withApps (commonPkgsArgs
+          // {
+            inherit packages;
+
+            apps = optionalAttrs (packages ? default) {
+              default = flake-utils.lib.mkApp {
+                drv = packages.default;
+              };
+            };
+          });
+
         checks = withChecks (commonPkgsArgs
           // {
             checks = {};
@@ -92,11 +112,6 @@ with nixlib.lib;
         formatter = withFormatter (commonPkgsArgs
           // {
             formatter = pkgs.alejandra;
-          });
-
-        packages = withPackages (commonPkgsArgs
-          // {
-            packages = {};
           });
       }
     )

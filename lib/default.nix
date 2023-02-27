@@ -29,6 +29,7 @@ with flake-utils.lib.system; let
       x86_64-linux
     ];
 
+    defaultWithApps = {apps, ...}: apps;
     defaultWithChecks = {checks, ...}: checks;
     defaultWithDevShells = {devShells, ...}: devShells;
     defaultWithFormatter = {formatter, ...}: formatter;
