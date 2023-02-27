@@ -320,7 +320,10 @@ with self.lib.rust;
       final.dockerTools.buildImage {
         name = pname;
         tag = version;
-        contents = [bin];
+        copyToRoot = final.buildEnv {
+          name = pname;
+          paths = [bin];
+        };
         config.Cmd = [pname];
         config.Env = ["PATH=${bin}/bin"];
       };
