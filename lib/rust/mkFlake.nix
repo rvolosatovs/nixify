@@ -25,6 +25,7 @@ with self.lib.rust;
     systems ? defaultSystems,
     targets ? null,
     test ? defaultTestConfig,
+    withApps ? defaultWithApps,
     withChecks ? defaultWithChecks,
     withDevShells ? defaultWithDevShells,
     withFormatter ? defaultWithFormatter,
@@ -74,6 +75,29 @@ with self.lib.rust;
           overlay
         ];
 
+      withApps = {
+        apps,
+        packages,
+        pkgs,
+        ...
+      } @ cx:
+        withApps (cx
+          // {
+            apps =
+              apps
+              # TODO: Add cross apps
+              // optionalAttrs (packages ? "${pname}") {
+                "${pname}" = flake-utils.lib.mkApp {
+                  drv = packages."${pname}";
+                };
+              }
+              // optionalAttrs (packages ? "${pname}-debug") {
+                "${pname}-debug" = flake-utils.lib.mkApp {
+                  drv = packages."${pname}-debug";
+                };
+              };
+          });
+
       withChecks = {
         checks,
         pkgs,
@@ -119,13 +143,10 @@ with self.lib.rust;
       } @ cx:
         withPackages (cx
           // {
-            packages =
-              packages
-              // getAttrs (filter (name: pkgs ? ${name})
+            packages = let
+              overlayPkgs = getAttrs (filter (name: pkgs ? ${name})
                 [
-                  pname
-                  "default"
-                  "${pname}-debug"
+                  "${pname}"
                   "${pname}-aarch64-apple-darwin"
                   "${pname}-aarch64-apple-darwin-oci"
                   "${pname}-aarch64-unknown-linux-musl"
@@ -137,6 +158,7 @@ with self.lib.rust;
                   "${pname}-x86_64-unknown-linux-musl"
                   "${pname}-x86_64-unknown-linux-musl-oci"
 
+                  "${pname}-debug"
                   "${pname}-debug-aarch64-apple-darwin"
                   "${pname}-debug-aarch64-apple-darwin-oci"
                   "${pname}-debug-aarch64-unknown-linux-musl"
@@ -149,5 +171,11 @@ with self.lib.rust;
                   "${pname}-debug-x86_64-unknown-linux-musl-oci"
                 ])
               pkgs;
+            in
+              packages
+              // overlayPkgs
+              // optionalAttrs (overlayPkgs ? "${pname}"){
+                default = overlayPkgs."${pname}";
+              };
           });
     }

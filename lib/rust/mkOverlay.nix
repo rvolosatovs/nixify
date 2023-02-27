@@ -23,7 +23,10 @@ with self.lib.rust;
     withToolchain ? defaultWithToolchain,
   }: final: prev: let
     readTOML = file: fromTOML (readFile file);
-    readTOMLOr = path: def: if pathExists path then readTOML path else def;
+    readTOMLOr = path: def:
+      if pathExists path
+      then readTOML path
+      else def;
 
     defaultRustupToolchain.toolchain.channel = "stable";
     defaultRustupToolchain.toolchain.components = ["rustfmt" "clippy"];
@@ -387,6 +390,3 @@ with self.lib.rust;
       "${pname}RustToolchain" = rustToolchain;
     }
     // optionalAttrs (!isLib) packages
-    // optionalAttrs (!isLib) {
-      default = packages.${pname};
-    }
