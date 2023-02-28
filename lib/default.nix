@@ -13,6 +13,22 @@ with flake-utils.lib.system; let
 
     extendDerivations = import ./extendDerivations.nix inputs;
 
+    ignoreSourcePaths = {
+      paths ? defaultIgnorePaths,
+      src,
+    }: let
+      paths' = genAttrs paths (_: {});
+      removeStorePrefix = x:
+        if isStorePath x
+        then "/" + concatStringsSep "/" (drop 1 (splitString "/" (removePrefix storeDir (strings.normalizePath x))))
+        else strings.normalizePath x;
+    in
+      cleanSourceWith {
+        inherit src;
+        filter = name: type:
+          !(paths' ? ${removeStorePrefix name});
+      };
+
     defaultIgnorePaths = [
       "/.codecov.yml"
       "/.github"
