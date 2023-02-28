@@ -293,7 +293,7 @@ with self.lib.rust;
     in
       buildPackage craneLib (commonCrossArgs
         // {
-          cargoArtifacts = buildDeps craneLib (commonCrossArgs // targetBuildOverrides);
+          cargoArtifacts = buildDeps craneLib (commonCrossArgs // extraArgs // targetBuildOverrides);
         }
         // extraArgs
         // targetBuildOverrides);
