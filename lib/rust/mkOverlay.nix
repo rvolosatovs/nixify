@@ -97,9 +97,21 @@ with self.lib.rust;
     # hostCraneLib is the crane library for the host native triple.
     hostCraneLib = mkCraneLib final hostRustToolchain;
 
+    mkCargoFlags = config:
+      with config;
+        concatStrings (
+          optionals (config ? targets) (map (target: "--target ${target} ") config.targets)
+          ++ optional (config ? features && length config.features > 0) "--features ${concatStringsSep "," config.features} "
+          ++ optional (config ? allFeatures && config.allFeatures) "--all-features "
+          ++ optional (config ? allTargets && config.allTargets) "--all-targets "
+          ++ optional (config ? noDefaultFeatures && config.noDefaultFeatures) "--no-default-features "
+          ++ optional (config ? workspace && config.workspace) "--workspace "
+        );
+
     # commonArgs is a set of arguments that is common to all crane invocations.
     commonArgs = let
       buildArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
+      checkArgs = "-j $NIX_BUILD_CORES";
       testArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags test}";
 
       clippyArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags clippy} -- ${
@@ -119,6 +131,7 @@ with self.lib.rust;
         ;
 
       cargoBuildCommand = "cargoWithProfile build ${buildArgs}";
+      cargoCheckCommand = "cargoWithProfile check ${checkArgs}";
       cargoClippyExtraArgs = clippyArgs;
       cargoNextestExtraArgs = testArgs;
       cargoTestExtraArgs = testArgs;
@@ -133,17 +146,6 @@ with self.lib.rust;
       };
 
     hostBuildOverrides = buildOverrides commonOverrideArgs;
-
-    mkCargoFlags = config:
-      with config;
-        concatStrings (
-          optionals (config ? targets) (map (target: "--target ${target} ") config.targets)
-          ++ optional (config ? features && length config.features > 0) "--features ${concatStringsSep "," config.features} "
-          ++ optional (config ? allFeatures && config.allFeatures) "--all-features "
-          ++ optional (config ? allTargets && config.allTargets) "--all-targets "
-          ++ optional (config ? noDefaultFeatures && config.noDefaultFeatures) "--no-default-features "
-          ++ optional (config ? workspace && config.workspace) "--workspace "
-        );
 
     # buildDeps builds dependencies of the crate given `craneLib`.
     # `extraArgs` are passed through to `craneLib.buildDepsOnly` verbatim.
