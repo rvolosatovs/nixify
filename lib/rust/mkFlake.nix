@@ -87,7 +87,7 @@ with self.lib.rust;
               apps
               # TODO: Add cross apps
               // optionalAttrs (packages ? "${pname}") {
-                "${pname}" = flake-utils.lib.mkApp {
+                ${pname} = flake-utils.lib.mkApp {
                   drv = packages."${pname}";
                 };
               }
@@ -174,7 +174,7 @@ with self.lib.rust;
             in
               packages
               // overlayPkgs
-              // optionalAttrs (overlayPkgs ? "${pname}"){
+              // optionalAttrs (overlayPkgs ? "${pname}") {
                 default = overlayPkgs."${pname}";
               };
           });
