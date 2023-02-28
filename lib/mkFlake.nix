@@ -40,14 +40,10 @@ with nixlib.lib;
         inherit version;
       }
       // optionalAttrs (src != null) {
-        src = let
-          ignorePaths' = genAttrs ignorePaths (_: {});
-          removeSrc = removePrefix "${src}";
-        in
-          cleanSourceWith {
-            inherit src;
-            filter = name: type: !(ignorePaths' ? ${removeSrc name});
-          };
+        src = ignoreSourcePaths {
+          inherit src;
+          paths = ignorePaths;
+        };
       };
   in
     {

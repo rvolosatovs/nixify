@@ -33,7 +33,12 @@ with self.lib.rust;
     withPackages ? defaultWithPackages,
     withToolchain ? defaultWithToolchain,
   }: let
-    cargoToml = fromTOML (readFile "${src}/Cargo.toml");
+    src' = ignoreSourcePaths {
+      inherit src;
+      paths = ignorePaths;
+    };
+
+    cargoToml = fromTOML (readFile "${src'}/Cargo.toml");
     pname =
       if name != null
       then name
@@ -50,23 +55,23 @@ with self.lib.rust;
         clippy
         pkgsFor
         pname
-        src
         targets
         test
         version
         withToolchain
         ;
+      src = src';
     };
   in
     self.lib.mkFlake {
       inherit
         ignorePaths
         pname
-        src
         systems
         version
         withFormatter
         ;
+      src = src';
 
       overlays =
         overlays
