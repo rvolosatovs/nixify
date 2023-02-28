@@ -7,15 +7,15 @@
       src = ./.;
 
       ## Paths, which are not required by any cargo invocation
-      #ignorePaths = [
-      #  "/.codecov.yml"
-      #  "/.github"
-      #  "/.gitignore"
-      #  "/.mailmap"
-      #  "/deny.toml"
-      #  "/flake.lock"
-      #  "/flake.nix"
-      #  "/rust-toolchain.toml"
+      #excludePaths = [
+      #  ".codecov.yml"
+      #  ".github"
+      #  ".gitignore"
+      #  ".mailmap"
+      #  "deny.toml"
+      #  "flake.lock"
+      #  "flake.nix"
+      #  "rust-toolchain.toml"
       #];
       #
       ## Overlays to use in nixpkgs instantiaion

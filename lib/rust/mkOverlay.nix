@@ -8,6 +8,7 @@
 with builtins;
 with flake-utils.lib.system;
 with nixlib.lib;
+with self.lib;
 with self.lib.rust;
   {
     build ? defaultBuildConfig,
@@ -17,6 +18,7 @@ with self.lib.rust;
     pkgsFor ? defaultPkgsFor,
     pname,
     src,
+    rustupToolchain ? defaultRustupToolchain,
     targets ? null,
     test ? defaultTestConfig,
     version,
@@ -24,16 +26,6 @@ with self.lib.rust;
   }: final: prev: let
     eq = x: y: x == y;
 
-    readTOML = file: fromTOML (readFile file);
-    readTOMLOr = path: def:
-      if pathExists path
-      then readTOML path
-      else def;
-
-    defaultRustupToolchain.toolchain.channel = "stable";
-    defaultRustupToolchain.toolchain.components = ["rustfmt" "clippy"];
-
-    rustupToolchain = (readTOMLOr "${src}/rust-toolchain.toml" defaultRustupToolchain).toolchain;
     rustupToolchainTargets = rustupToolchain.targets or [];
     rustupToolchainWithTarget = target:
       if any (eq target) rustupToolchainTargets

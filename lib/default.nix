@@ -2,10 +2,12 @@
   flake-utils,
   nixlib,
   nixpkgs,
+  nix-filter,
   ...
 } @ inputs:
-with nixlib.lib;
-with flake-utils.lib.system; let
+with builtins;
+with flake-utils.lib.system;
+with nixlib.lib; let
   f = self': {
     rust = import ./rust inputs;
 
@@ -13,29 +15,32 @@ with flake-utils.lib.system; let
 
     extendDerivations = import ./extendDerivations.nix inputs;
 
-    ignoreSourcePaths = {
-      paths ? defaultIgnorePaths,
+    filterSource = {
+      include ? null,
+      exclude ? self'.defaultExcludePaths,
       src,
-    }: let
-      paths' = genAttrs paths (_: {});
-      removeStorePrefix = x:
-        if isStorePath x
-        then "/" + concatStringsSep "/" (drop 1 (splitString "/" (removePrefix storeDir (strings.normalizePath x))))
-        else strings.normalizePath x;
-    in
-      cleanSourceWith {
-        inherit src;
-        filter = name: type:
-          !(paths' ? ${removeStorePrefix name});
-      };
+    }:
+      nix-filter.lib.filter ({
+          inherit exclude;
+          root = src;
+        }
+        // optionalAttrs (include != null) {
+          inherit include;
+        });
 
-    defaultIgnorePaths = [
-      "/.codecov.yml"
-      "/.github"
-      "/.gitignore"
-      "/.mailmap"
-      "/flake.lock"
-      "/flake.nix"
+    readTOML = file: fromTOML (readFile file);
+    readTOMLOr = path: def:
+      if pathExists path
+      then self'.readTOML path
+      else def;
+
+    defaultExcludePaths = [
+      ".codecov.yml"
+      ".github"
+      ".gitignore"
+      ".mailmap"
+      "flake.lock"
+      "flake.nix"
     ];
 
     defaultSystems = [

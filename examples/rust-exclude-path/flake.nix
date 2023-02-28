@@ -5,10 +5,7 @@
     nixify.lib.rust.mkFlake {
       src = ./.;
       excludePaths = [
-        ".gitignore"
-        "flake.lock"
-        "flake.nix"
-        "rust-toolchain.toml"
+        "tests/ignore.rs"
       ];
     };
 }

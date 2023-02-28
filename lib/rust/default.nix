@@ -28,6 +28,9 @@ with nixlib.lib; {
   defaultClippyConfig.warn = [];
   defaultClippyConfig.workspace = false;
 
+  defaultRustupToolchain.toolchain.channel = "stable";
+  defaultRustupToolchain.toolchain.components = ["rustfmt" "clippy"];
+
   defaultTestConfig.allFeatures = false;
   defaultTestConfig.allTargets = false;
   defaultTestConfig.features = [];
@@ -37,10 +40,9 @@ with nixlib.lib; {
 
   defaultBuildOverrides = const {};
 
-  defaultIgnorePaths =
-    defaultIgnorePaths
+  defaultExcludePaths =
+    defaultExcludePaths
     ++ [
-      "/deny.toml"
-      "/rust-toolchain.toml"
+      "rust-toolchain.toml"
     ];
 }
