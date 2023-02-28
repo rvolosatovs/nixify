@@ -213,7 +213,11 @@ with self.lib.rust;
         // optionalAttrs (!isLib) {
           installPhaseCommand = ''
             mkdir -p $out/bin
-            profileDir=''${CARGO_PROFILE:-debug}
+            if [ "''${CARGO_PROFILE}" == 'dev' ]; then
+                profileDir=debug
+            else
+                profileDir=''${CARGO_PROFILE:-debug}
+            fi
             ${concatMapStringsSep "\n" (name: ''
                 case ''${CARGO_BUILD_TARGET} in
                     ${wasm32-wasi})
@@ -240,7 +244,7 @@ with self.lib.rust;
     buildHostPackage = extraArgs:
       buildPackage hostCraneLib (
         {
-          cargoArtifacts = hostCargoArtifacts;
+          cargoArtifacts = buildDeps hostCraneLib extraArgs;
         }
         // extraArgs
         // hostBuildOverrides
@@ -317,7 +321,7 @@ with self.lib.rust;
 
     commonReleaseArgs = {};
     commonDebugArgs = {
-      CARGO_PROFILE = "";
+      CARGO_PROFILE = "dev";
     };
 
     hostBin = buildHostPackage commonReleaseArgs;
