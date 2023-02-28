@@ -72,9 +72,22 @@ with self.lib.rust;
 
       workspace' = unique (flatten (map unglob workspace));
     in
-      (map ({name, ...}: name) bin)
-      ++ optional (autobins && pathExists "${src}/src/main.rs") cargoToml.package.name
-      ++ optionals (autobins && pathExists "${src}/src/bin") (map (removeSuffix ".rs") (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name) (readDir "${src}/src/bin"))))
+      # NOTE: `listToAttrs` seems to discard keys already present in the set
+      attrValues (
+        optionalAttrs (autobins && pathExists "${src}/src/main.rs") {
+          "src/main.rs" = cargoToml.package.name;
+        }
+        // listToAttrs (optionals (autobins && pathExists "${src}/src/bin") (map (name:
+          nameValuePair "src/bin/${name}" (removeSuffix ".rs" name))
+        (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name) (readDir "${src}/src/bin")))))
+        // listToAttrs (map ({
+          name,
+          path,
+          ...
+        }:
+          nameValuePair path name)
+        bin)
+      )
       ++ optionals (!isPackage || build.workspace) (flatten (map crateBins workspace'));
 
     bins = unique (crateBins src);
