@@ -53,16 +53,6 @@ with self.lib; let
       hello = pkgs.hello;
     };
 
-  flakes.rust.lib = rust.mkFlake {
-    inherit
-      overlays
-      withPackages
-      ;
-
-    src = ../examples/rust-lib;
-    cargoLock = ../examples/rust-lib/Cargo.test.lock;
-  };
-
   flakes.rust.hello = rust.mkFlake {
     inherit
       overlays
@@ -79,6 +69,28 @@ with self.lib; let
       ;
 
     src = ../examples/rust-hello-multibin;
+  };
+
+  flakes.rust.lib = rust.mkFlake {
+    inherit
+      overlays
+      withPackages
+      ;
+
+    src = ../examples/rust-lib;
+    cargoLock = ../examples/rust-lib/Cargo.test.lock;
+  };
+
+  flakes.rust.exclude-path = rust.mkFlake {
+    inherit
+      overlays
+      withPackages
+      ;
+
+    src = ../examples/rust-exclude-path;
+    excludePaths = [
+      "tests/exclude.rs"
+    ];
   };
 
   flakes.rust.unsupported-target = rust.mkFlake {
@@ -111,18 +123,6 @@ in
     isDarwin = system == aarch64-darwin || system == x86_64-darwin;
   in
     # TODO: Support cross-compilation to Linux from Darwin
-    assert flakes.rust.lib.checks.${system} ? "rust-lib";
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-aarch64-apple-darwin" || !isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-aarch64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-wasm32-wasi";
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-x86_64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug";
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-aarch64-apple-darwin" || !isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-aarch64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-wasm32-wasi";
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-x86_64-unknown-linux-musl" || isDarwin;
     assert flakes.rust.hello.packages.${system} ? "default";
     assert flakes.rust.hello.packages.${system} ? "rust-hello";
     assert flakes.rust.hello.packages.${system} ? "rust-hello-aarch64-apple-darwin" || !isDarwin;
@@ -159,6 +159,18 @@ in
     assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-wasm32-wasi";
     assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-x86_64-apple-darwin" || system != x86_64-darwin;
     assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-x86_64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib";
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-aarch64-apple-darwin" || !isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-aarch64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-wasm32-wasi";
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-x86_64-apple-darwin" || system != x86_64-darwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-x86_64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug";
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-aarch64-apple-darwin" || !isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-aarch64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-wasm32-wasi";
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-x86_64-apple-darwin" || system != x86_64-darwin;
+    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-x86_64-unknown-linux-musl" || isDarwin;
     assert flakes.rust.unsupported-target.packages.${system} ? "default";
     assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target";
     assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-aarch64-apple-darwin" || system != aarch64-darwin;

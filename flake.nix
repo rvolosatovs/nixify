@@ -6,6 +6,7 @@
   inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
   inputs.crane.url = github:ipetkov/crane/v0.10.0;
   inputs.flake-utils.url = github:numtide/flake-utils;
+  inputs.nix-filter.url = github:numtide/nix-filter;
   inputs.nixlib.url = github:nix-community/nixpkgs.lib;
   inputs.nixpkgs.url = github:nixos/nixpkgs/nixpkgs-22.11-darwin;
   inputs.rust-overlay.inputs.flake-utils.follows = "flake-utils";

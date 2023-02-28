@@ -7,7 +7,7 @@
   rust-overlay,
   ...
 }: {
-  defaultIgnorePaths,
+  defaultExcludePaths,
   defaultSystems,
   defaultWithApps,
   defaultWithChecks,
@@ -19,7 +19,8 @@
 }:
 with nixlib.lib;
   {
-    ignorePaths ? defaultIgnorePaths,
+    excludePaths ? defaultExcludePaths,
+    includePaths ? null,
     overlays ? [],
     pname ? null,
     src ? null,
@@ -40,9 +41,10 @@ with nixlib.lib;
         inherit version;
       }
       // optionalAttrs (src != null) {
-        src = ignoreSourcePaths {
+        src = filterSource {
           inherit src;
-          paths = ignorePaths;
+          exclude = excludePaths;
+          include = includePaths;
         };
       };
   in

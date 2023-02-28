@@ -4,12 +4,15 @@
       "inputs": {
         "flake-compat": "flake-compat",
         "flake-utils": [
+          "nixify",
           "flake-utils"
         ],
         "nixpkgs": [
+          "nixify",
           "nixpkgs"
         ],
         "rust-overlay": [
+          "nixify",
           "rust-overlay"
         ]
       },
@@ -59,18 +62,25 @@
         "type": "github"
       }
     },
-    "nix-filter": {
+    "nixify": {
+      "inputs": {
+        "crane": "crane",
+        "flake-utils": "flake-utils",
+        "nixlib": "nixlib",
+        "nixpkgs": "nixpkgs",
+        "rust-overlay": "rust-overlay"
+      },
       "locked": {
-        "lastModified": 1676294984,
-        "narHash": "sha256-hdLUa/3RH1VJ+gMUysQE0JGM4F2Q/tIIFbtoxAOurJQ=",
-        "owner": "numtide",
-        "repo": "nix-filter",
-        "rev": "fc282c5478e4141842f9644c239a41cfe9586732",
+        "lastModified": 1677573906,
+        "narHash": "sha256-U6UUgjNnoxZ3L9S5HNvGmR9t6WyTOhoZj3t/Y1hq+Xc=",
+        "owner": "rvolosatovs",
+        "repo": "nixify",
+        "rev": "770c86cfb68417e6bb86f46f6be6a6639815f0e4",
         "type": "github"
       },
       "original": {
-        "owner": "numtide",
-        "repo": "nix-filter",
+        "owner": "rvolosatovs",
+        "repo": "nixify",
         "type": "github"
       }
     },
@@ -107,20 +117,17 @@
     },
     "root": {
       "inputs": {
-        "crane": "crane",
-        "flake-utils": "flake-utils",
-        "nix-filter": "nix-filter",
-        "nixlib": "nixlib",
-        "nixpkgs": "nixpkgs",
-        "rust-overlay": "rust-overlay"
+        "nixify": "nixify"
       }
     },
     "rust-overlay": {
       "inputs": {
         "flake-utils": [
+          "nixify",
           "flake-utils"
         ],
         "nixpkgs": [
+          "nixify",
           "nixpkgs"
         ]
       },

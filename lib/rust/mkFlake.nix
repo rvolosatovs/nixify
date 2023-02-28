@@ -7,7 +7,6 @@
   rust-overlay,
   ...
 }:
-with builtins;
 with flake-utils.lib.system;
 with nixlib.lib;
 with self.lib;
@@ -17,7 +16,8 @@ with self.lib.rust;
     buildOverrides ? defaultBuildOverrides,
     cargoLock ? null,
     clippy ? defaultClippyConfig,
-    ignorePaths ? defaultIgnorePaths,
+    excludePaths ? defaultExcludePaths,
+    includePaths ? null,
     name ? null,
     overlays ? [],
     pkgsFor ? defaultPkgsFor,
@@ -33,12 +33,7 @@ with self.lib.rust;
     withPackages ? defaultWithPackages,
     withToolchain ? defaultWithToolchain,
   }: let
-    src' = ignoreSourcePaths {
-      inherit src;
-      paths = ignorePaths;
-    };
-
-    cargoToml = fromTOML (readFile "${src'}/Cargo.toml");
+    cargoToml = readTOML "${src}/Cargo.toml";
     pname =
       if name != null
       then name
@@ -46,6 +41,14 @@ with self.lib.rust;
         cargoToml.package.name
         or (throw "`name` must either be specified in `Cargo.toml` `[package]` section or passed as an argument");
     version = cargoToml.package.version or "0.0.0-unspecified";
+
+    rustupToolchain = (readTOMLOr "${src}/rust-toolchain.toml" defaultRustupToolchain).toolchain;
+
+    src' = filterSource {
+      inherit src;
+      exclude = excludePaths;
+      include = includePaths;
+    };
 
     overlay = mkOverlay {
       inherit
@@ -55,6 +58,7 @@ with self.lib.rust;
         clippy
         pkgsFor
         pname
+        rustupToolchain
         targets
         test
         version
@@ -65,7 +69,8 @@ with self.lib.rust;
   in
     self.lib.mkFlake {
       inherit
-        ignorePaths
+        excludePaths
+        includePaths
         pname
         systems
         version
