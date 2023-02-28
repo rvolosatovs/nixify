@@ -22,6 +22,8 @@ with self.lib.rust;
     version,
     withToolchain ? defaultWithToolchain,
   }: final: prev: let
+    eq = x: y: x == y;
+
     readTOML = file: fromTOML (readFile file);
     readTOMLOr = path: def:
       if pathExists path
@@ -32,7 +34,19 @@ with self.lib.rust;
     defaultRustupToolchain.toolchain.components = ["rustfmt" "clippy"];
 
     rustupToolchain = (readTOMLOr "${src}/rust-toolchain.toml" defaultRustupToolchain).toolchain;
-    rustToolchain = withToolchain final rustupToolchain;
+    rustupToolchainTargets = rustupToolchain.targets or [];
+    rustupToolchainWithTarget = target:
+      if any (eq target) rustupToolchainTargets
+      then rustupToolchain
+      else if target == "aarch64-apple-darwin" && prev.hostPlatform.system == aarch64-darwin
+      then rustupToolchain
+      else if target == "x86_64-apple-darwin" && prev.hostPlatform.system == x86_64-darwin
+      then rustupToolchain
+      else
+        rustupToolchain
+        // {
+          targets = rustupToolchainTargets ++ [target];
+        };
 
     crateBins = src: let
       cargoToml = readTOML "${src}/Cargo.toml";
@@ -75,10 +89,13 @@ with self.lib.rust;
     isLib = length bins == 0;
 
     # mkCraneLib constructs a crane library for specified `pkgs`.
-    mkCraneLib = pkgs: (crane.mkLib pkgs).overrideToolchain rustToolchain;
+    mkCraneLib = pkgs: rustToolchain: (crane.mkLib pkgs).overrideToolchain rustToolchain;
+
+    # hostRustToolchain is the default Rust toolchain.
+    hostRustToolchain = withToolchain final rustupToolchain;
 
     # hostCraneLib is the crane library for the host native triple.
-    hostCraneLib = mkCraneLib final;
+    hostCraneLib = mkCraneLib final hostRustToolchain;
 
     # commonArgs is a set of arguments that is common to all crane invocations.
     commonArgs = let
@@ -252,7 +269,10 @@ with self.lib.rust;
         // optionalAttrs (target != wasm32-wasi) {
           "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
         };
-      craneLib = mkCraneLib pkgsCross;
+
+      rustupToolchain = rustupToolchainWithTarget target;
+      rustToolchain = withToolchain final rustupToolchain;
+      craneLib = mkCraneLib pkgsCross rustToolchain;
 
       targetBuildOverrides = buildOverrides (commonOverrideArgs
         // commonCrossArgs
@@ -329,24 +349,14 @@ with self.lib.rust;
       };
 
     targets' = let
-      default.aarch64-apple-darwin = prev.hostPlatform.system == aarch64-darwin;
-      default.aarch64-unknown-linux-musl = false;
-      default.wasm32-wasi = false;
+      default.aarch64-apple-darwin = prev.hostPlatform.isDarwin;
+      default.aarch64-unknown-linux-musl = !prev.hostPlatform.isDarwin;
+      default.wasm32-wasi = true;
       default.x86_64-apple-darwin = prev.hostPlatform.system == x86_64-darwin;
-      default.x86_64-unknown-linux-musl = false;
+      default.x86_64-unknown-linux-musl = !prev.hostPlatform.isDarwin;
 
       all =
         default
-        // genAttrs (rustupToolchain.targets or []) (target:
-          if target == "aarch64-apple-darwin"
-          then prev.hostPlatform.isDarwin
-          else if target == "aarch64-unknown-linux-musl"
-          then !prev.hostPlatform.isDarwin
-          else if target == "x86_64-apple-darwin"
-          then prev.hostPlatform.system == x86_64-darwin
-          else if target == "x86_64-unknown-linux-musl"
-          then !prev.hostPlatform.isDarwin
-          else true)
         // optionalAttrs (targets != null) targets;
     in
       mapAttrs' (target: enabled:
@@ -390,6 +400,6 @@ with self.lib.rust;
   in
     {
       "${pname}Checks" = checks // optionalAttrs isLib packages;
-      "${pname}RustToolchain" = rustToolchain;
+      "${pname}RustToolchain" = hostRustToolchain;
     }
     // optionalAttrs (!isLib) packages
