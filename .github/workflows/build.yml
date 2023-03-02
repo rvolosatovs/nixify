@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v19
+    - uses: cachix/install-nix-action@v20
       with:
         extra_nix_config: |
           access-tokens = github.com=${{ github.token }}
@@ -126,7 +126,7 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     steps:
     - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v19
+    - uses: cachix/install-nix-action@v20
       with:
         extra_nix_config: |
           access-tokens = github.com=${{ github.token }}
@@ -149,7 +149,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v19
+    - uses: cachix/install-nix-action@v20
       with:
         extra_nix_config: |
           access-tokens = github.com=${{ github.token }}
@@ -188,7 +188,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v19
+    - uses: cachix/install-nix-action@v20
       with:
         extra_nix_config: |
           access-tokens = github.com=${{ github.token }}
