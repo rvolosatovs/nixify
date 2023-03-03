@@ -53,6 +53,16 @@ with self.lib; let
       hello = pkgs.hello;
     };
 
+  flakes.rust.bindeps = rust.mkFlake {
+    inherit
+      overlays
+      withPackages
+      ;
+
+    src = ../examples/rust-bindeps;
+  };
+
+
   flakes.rust.hello = rust.mkFlake {
     inherit
       overlays

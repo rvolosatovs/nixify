@@ -157,13 +157,6 @@ with self.lib.rust;
     buildDeps = craneLib: extraArgs:
       craneLib.buildDepsOnly (
         commonArgs
-        // {
-          # Remove binary dependency specification, since that breaks on generated "dummy source"
-          extraDummyScript = ''
-            sed -i '/^artifact = "bin"$/d' $out/Cargo.toml
-            sed -i '/^target = ".*"$/d' $out/Cargo.toml
-          '';
-        }
         // optionalAttrs (cargoLock != null) {
           cargoVendorDir = craneLib.vendorCargoDeps {
             inherit
