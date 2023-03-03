@@ -4,7 +4,7 @@
   inputs.crane.inputs.flake-utils.follows = "flake-utils";
   inputs.crane.inputs.nixpkgs.follows = "nixpkgs";
   inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
-  inputs.crane.url = github:ipetkov/crane/v0.11.3;
+  inputs.crane.url = github:rvolosatovs/crane/feat/bindeps;
   inputs.flake-utils.url = github:numtide/flake-utils;
   inputs.nix-filter.url = github:numtide/nix-filter;
   inputs.nixlib.url = github:nix-community/nixpkgs.lib;
