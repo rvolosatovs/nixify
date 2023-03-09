@@ -117,6 +117,7 @@ with self.lib.rust;
     commonArgs = let
       buildArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
       checkArgs = "-j $NIX_BUILD_CORES";
+      docArgs = "-j $NIX_BUILD_CORES";
       testArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags test}";
 
       clippyArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags clippy} -- ${
@@ -138,6 +139,7 @@ with self.lib.rust;
       cargoBuildCommand = "cargoWithProfile build ${buildArgs}";
       cargoCheckCommand = "cargoWithProfile check ${checkArgs}";
       cargoClippyExtraArgs = clippyArgs;
+      cargoDocExtraArgs = docArgs;
       cargoNextestExtraArgs = testArgs;
       cargoTestExtraArgs = testArgs;
 
@@ -173,6 +175,21 @@ with self.lib.rust;
     hostCargoArtifacts = buildDeps hostCraneLib {};
 
     checks.clippy = hostCraneLib.cargoClippy (
+      commonArgs
+      // {
+        cargoArtifacts = hostCargoArtifacts;
+      }
+      // optionalAttrs (cargoLock != null) {
+        cargoVendorDir = hostCraneLib.vendorCargoDeps {
+          inherit
+            cargoLock
+            src
+            ;
+        };
+      }
+      // hostBuildOverrides
+    );
+    checks.doc = hostCraneLib.cargoDoc (
       commonArgs
       // {
         cargoArtifacts = hostCargoArtifacts;
