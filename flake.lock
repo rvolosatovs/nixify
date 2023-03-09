@@ -14,17 +14,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1678095307,
-        "narHash": "sha256-Er/rND09bz5AIf8hRVQ4JA1vSzkVPe7h+hH/i7Wc2sU=",
-        "owner": "rvolosatovs",
+        "lastModified": 1678152261,
+        "narHash": "sha256-cPRDxwygVMleiSEGELrvAiq9vYAN4c3KK/K4UEO13vU=",
+        "owner": "ipetkov",
         "repo": "crane",
-        "rev": "45ff90cfc0ad6766c6b16028e05da0cd570d78dd",
+        "rev": "5291dd0aa7a52d607fc952763ef60714e4c881d4",
         "type": "github"
       },
       "original": {
-        "owner": "rvolosatovs",
-        "ref": "feat/bindeps",
+        "owner": "ipetkov",
         "repo": "crane",
+        "rev": "5291dd0aa7a52d607fc952763ef60714e4c881d4",
         "type": "github"
       }
     },
