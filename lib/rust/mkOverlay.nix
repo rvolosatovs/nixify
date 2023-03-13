@@ -79,7 +79,7 @@ with self.lib.rust;
         }
         // listToAttrs (optionals (autobins && pathExists "${src}/src/bin") (map (name:
           nameValuePair "src/bin/${name}" (removeSuffix ".rs" name))
-        (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name) (readDir "${src}/src/bin")))))
+        (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name || type == "directory") (readDir "${src}/src/bin")))))
         // listToAttrs (map ({
           name,
           path,
