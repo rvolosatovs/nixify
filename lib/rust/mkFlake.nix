@@ -37,10 +37,8 @@ with self.lib.rust;
     pname =
       if name != null
       then name
-      else
-        cargoToml.package.name
-        or (throw "`name` must either be specified in `Cargo.toml` `[package]` section or passed as an argument");
-    version = cargoToml.package.version or "0.0.0-unspecified";
+      else pnameFromCargoToml cargoToml;
+    version = cargoToml.package.version or defaultVersion;
 
     rustupToolchain = (readTOMLOr "${src}/rust-toolchain.toml" defaultRustupToolchain).toolchain;
 
