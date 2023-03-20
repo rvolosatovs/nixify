@@ -8,6 +8,14 @@ with nixlib.lib; {
   mkFlake = import ./mkFlake.nix inputs;
   mkOverlay = import ./mkOverlay.nix inputs;
 
+  # extract package name from parsed Cargo.toml
+  pnameFromCargoToml = cargoToml:
+    cargoToml.package.name
+    or (throw "`name` must either be specified in `Cargo.toml` `[package]` section or passed as an argument");
+
+  # version used when not specified in Cargo.toml
+  defaultVersion = "0.0.0-unspecified";
+
   defaultPkgsFor = import ./defaultPkgsFor.nix inputs;
   defaultWithToolchain = pkgs: pkgs.rust-bin.fromRustupToolchain;
 

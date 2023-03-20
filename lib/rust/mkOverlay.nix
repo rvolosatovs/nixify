@@ -16,15 +16,26 @@ with self.lib.rust;
     cargoLock ? null,
     clippy ? defaultClippyConfig,
     pkgsFor ? defaultPkgsFor,
-    pname,
-    src,
+    pname ? null,
     rustupToolchain ? defaultRustupToolchain,
+    src,
     targets ? null,
     test ? defaultTestConfig,
-    version,
+    version ? null,
     withToolchain ? defaultWithToolchain,
   }: final: prev: let
     eq = x: y: x == y;
+
+    cargoToml = readTOML "${src}/Cargo.toml";
+    pname' =
+      if pname != null
+      then pname
+      else pnameFromCargoToml cargoToml;
+
+    version' =
+      if version != null
+      then version
+      else cargoToml.package.version or defaultVersion;
 
     rustupToolchainTargets = rustupToolchain.targets or [];
     rustupToolchainWithTarget = target:
@@ -77,11 +88,10 @@ with self.lib.rust;
           )
       }";
     in {
-      inherit
-        pname
-        src
-        version
-        ;
+      inherit src;
+
+      pname = pname';
+      version = version';
 
       cargoBuildCommand = "cargoWithProfile build ${buildArgs}";
       cargoCheckCommand = "cargoWithProfile check ${checkArgs}";
@@ -396,51 +406,51 @@ with self.lib.rust;
 
     targetBins =
       optionalAttrs targets'.aarch64-unknown-linux-musl {
-        "${pname}-aarch64-unknown-linux-musl" = aarch64LinuxMuslBin;
-        "${pname}-debug-aarch64-unknown-linux-musl" = aarch64LinuxMuslDebugBin;
+        "${pname'}-aarch64-unknown-linux-musl" = aarch64LinuxMuslBin;
+        "${pname'}-debug-aarch64-unknown-linux-musl" = aarch64LinuxMuslDebugBin;
       }
       // optionalAttrs targets'.aarch64-apple-darwin {
-        "${pname}-aarch64-apple-darwin" = aarch64DarwinBin;
-        "${pname}-debug-aarch64-apple-darwin" = aarch64DarwinDebugBin;
+        "${pname'}-aarch64-apple-darwin" = aarch64DarwinBin;
+        "${pname'}-debug-aarch64-apple-darwin" = aarch64DarwinDebugBin;
       }
       // optionalAttrs targets'.wasm32-wasi {
-        "${pname}-wasm32-wasi" = wasm32WasiBin;
-        "${pname}-debug-wasm32-wasi" = wasm32WasiDebugBin;
+        "${pname'}-wasm32-wasi" = wasm32WasiBin;
+        "${pname'}-debug-wasm32-wasi" = wasm32WasiDebugBin;
       }
       // optionalAttrs targets'.x86_64-apple-darwin {
-        "${pname}-x86_64-apple-darwin" = x86_64DarwinBin;
-        "${pname}-debug-x86_64-apple-darwin" = x86_64DarwinDebugBin;
+        "${pname'}-x86_64-apple-darwin" = x86_64DarwinBin;
+        "${pname'}-debug-x86_64-apple-darwin" = x86_64DarwinDebugBin;
       }
       // optionalAttrs targets'.x86_64-unknown-linux-musl {
-        "${pname}-x86_64-unknown-linux-musl" = x86_64LinuxMuslBin;
-        "${pname}-debug-x86_64-unknown-linux-musl" = x86_64LinuxMuslDebugBin;
+        "${pname'}-x86_64-unknown-linux-musl" = x86_64LinuxMuslBin;
+        "${pname'}-debug-x86_64-unknown-linux-musl" = x86_64LinuxMuslDebugBin;
       };
 
     bins' = genAttrs bins (_: {});
-    targetImages = optionalAttrs (bins' ? ${pname}) (mapAttrs' (target: bin:
+    targetImages = optionalAttrs (bins' ? ${pname'}) (mapAttrs' (target: bin:
       nameValuePair "${target}-oci" (final.dockerTools.buildImage {
-        name = pname;
-        tag = version;
+        name = pname';
+        tag = version';
         copyToRoot = final.buildEnv {
-          name = pname;
+          name = pname';
           paths = [bin];
         };
-        config.Cmd = [pname];
+        config.Cmd = [pname'];
         config.Env = ["PATH=${bin}/bin"];
       }))
     targetBins);
 
     packages =
       {
-        "${pname}" = hostBin;
-        "${pname}-debug" = hostDebugBin;
+        "${pname'}" = hostBin;
+        "${pname'}-debug" = hostDebugBin;
       }
       // targetBins
       // targetImages;
   in
     {
-      "${pname}Checks" = checks // optionalAttrs isLib packages;
-      "${pname}RustToolchain" = hostRustToolchain;
-      "${pname}Lib" = buildLib;
+      "${pname'}Checks" = checks // optionalAttrs isLib packages;
+      "${pname'}RustToolchain" = hostRustToolchain;
+      "${pname'}Lib" = buildLib;
     }
     // optionalAttrs (!isLib) packages
