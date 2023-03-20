@@ -40,59 +40,6 @@ with self.lib.rust;
           targets = rustupToolchainTargets ++ [target];
         };
 
-    crateBins = src: let
-      cargoToml = readTOML "${src}/Cargo.toml";
-
-      isPackage = cargoToml ? package;
-
-      autobins = isPackage && cargoToml.package.autobins or true;
-      bin = optionals isPackage cargoToml.bin or [];
-      workspace = cargoToml.workspace.members or [];
-
-      unglob' = prefix: parts:
-        if parts == []
-        then [prefix]
-        else let
-          h = head parts;
-          t = tail parts;
-        in
-          if hasInfix "*" h
-          then let
-            regex = "^${replaceStrings ["*"] [".*"] h}$";
-            names = filter (name: match regex name != null) (attrNames (readDir prefix));
-          in
-            map (h': unglob' "${prefix}/${h'}" t) names
-          else unglob' "${prefix}/${h}" t;
-
-      unglob = glob: let
-        prefix = optionalString (!(hasPrefix "/" glob)) src;
-        parts = splitString "/" glob;
-      in
-        optionals (glob != "") (unglob' prefix parts);
-
-      workspace' = unique (flatten (map unglob workspace));
-    in
-      # NOTE: `listToAttrs` seems to discard keys already present in the set
-      attrValues (
-        optionalAttrs (autobins && pathExists "${src}/src/main.rs") {
-          "src/main.rs" = cargoToml.package.name;
-        }
-        // listToAttrs (optionals (autobins && pathExists "${src}/src/bin") (map (name:
-          nameValuePair "src/bin/${name}" (removeSuffix ".rs" name))
-        (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name || type == "directory") (readDir "${src}/src/bin")))))
-        // listToAttrs (map ({
-          name,
-          path,
-          ...
-        }:
-          nameValuePair path name)
-        bin)
-      )
-      ++ optionals (!isPackage || build.workspace) (flatten (map crateBins workspace'));
-
-    bins = unique (crateBins src);
-    isLib = length bins == 0;
-
     # mkCraneLib constructs a crane library for specified `pkgs`.
     mkCraneLib = pkgs: rustToolchain: (crane.mkLib pkgs).overrideToolchain rustToolchain;
 
@@ -174,6 +121,129 @@ with self.lib.rust;
     # hostCargoArtifacts are the cargo artifacts built for the host native triple.
     hostCargoArtifacts = buildDeps hostCraneLib {};
 
+    rustToolchainFor = target: let
+      rustupToolchain = rustupToolchainWithTarget target;
+    in
+      withToolchain final rustupToolchain;
+
+    commonReleaseArgs = {};
+    commonDebugArgs = {
+      CARGO_PROFILE = "dev";
+    };
+
+    buildLib = {
+      inherit
+        buildDeps
+        commonArgs
+        commonBuildOverrides
+        commonDebugArgs
+        commonReleaseArgs
+        hostBuildOverrides
+        hostCargoArtifacts
+        hostCraneLib
+        mkCargoFlags
+        mkCraneLib
+        rustToolchainFor
+        ;
+    };
+
+    crateBins = src: let
+      cargoToml = readTOML "${src}/Cargo.toml";
+
+      isPackage = cargoToml ? package;
+
+      autobins = isPackage && cargoToml.package.autobins or true;
+      bin = optionals isPackage cargoToml.bin or [];
+      workspace = cargoToml.workspace.members or [];
+
+      unglob' = prefix: parts:
+        if parts == []
+        then [prefix]
+        else let
+          h = head parts;
+          t = tail parts;
+        in
+          if hasInfix "*" h
+          then let
+            regex = "^${replaceStrings ["*"] [".*"] h}$";
+            names = filter (name: match regex name != null) (attrNames (readDir prefix));
+          in
+            map (h': unglob' "${prefix}/${h'}" t) names
+          else unglob' "${prefix}/${h}" t;
+
+      unglob = glob: let
+        prefix = optionalString (!(hasPrefix "/" glob)) src;
+        parts = splitString "/" glob;
+      in
+        optionals (glob != "") (unglob' prefix parts);
+
+      workspace' = unique (flatten (map unglob workspace));
+    in
+      # NOTE: `listToAttrs` seems to discard keys already present in the set
+      attrValues (
+        optionalAttrs (autobins && pathExists "${src}/src/main.rs") {
+          "src/main.rs" = cargoToml.package.name;
+        }
+        // listToAttrs (optionals (autobins && pathExists "${src}/src/bin") (map (name:
+          nameValuePair "src/bin/${name}" (removeSuffix ".rs" name))
+        (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name || type == "directory") (readDir "${src}/src/bin")))))
+        // listToAttrs (map ({
+          name,
+          path,
+          ...
+        }:
+          nameValuePair path name)
+        bin)
+      )
+      ++ optionals (!isPackage || build.workspace) (flatten (map crateBins workspace'));
+
+    bins = unique (crateBins src);
+    isLib = length bins == 0;
+
+    # buildPackage builds using `craneLib`.
+    # `extraArgs` are passed through to `craneLib.buildPackage` verbatim.
+    buildPackage = craneLib: extraArgs:
+      craneLib.buildPackage (commonArgs
+        // optionalAttrs (!isLib) {
+          installPhaseCommand = ''
+            mkdir -p $out/bin
+            if [ "''${CARGO_PROFILE}" == 'dev' ]; then
+                profileDir=debug
+            else
+                profileDir=''${CARGO_PROFILE:-debug}
+            fi
+            ${concatMapStringsSep "\n" (name: ''
+                case ''${CARGO_BUILD_TARGET} in
+                    ${wasm32-wasi})
+                        cp target/${wasm32-wasi}/''${profileDir}/${name}.wasm $out/bin/${name};;
+                    "")
+                        cp target/''${profileDir}/${name} $out/bin/${name};;
+                    *)
+                        cp target/''${CARGO_BUILD_TARGET}/''${profileDir}/${name} $out/bin/${name};;
+                esac
+              '')
+              bins}
+          '';
+        }
+        // optionalAttrs (cargoLock != null) {
+          cargoVendorDir = craneLib.vendorCargoDeps {
+            inherit
+              cargoLock
+              src
+              ;
+          };
+        }
+        // extraArgs);
+
+    buildHostPackage = extraArgs:
+      buildPackage hostCraneLib (
+        {
+          cargoArtifacts = buildDeps hostCraneLib extraArgs;
+        }
+        // extraArgs
+        // hostBuildOverrides
+      );
+
     checks.clippy = hostCraneLib.cargoClippy (
       commonArgs
       // {
@@ -221,50 +291,6 @@ with self.lib.rust;
       // hostBuildOverrides
     );
 
-    # buildPackage builds using `craneLib`.
-    # `extraArgs` are passed through to `craneLib.buildPackage` verbatim.
-    buildPackage = craneLib: extraArgs:
-      craneLib.buildPackage (commonArgs
-        // optionalAttrs (!isLib) {
-          installPhaseCommand = ''
-            mkdir -p $out/bin
-            if [ "''${CARGO_PROFILE}" == 'dev' ]; then
-                profileDir=debug
-            else
-                profileDir=''${CARGO_PROFILE:-debug}
-            fi
-            ${concatMapStringsSep "\n" (name: ''
-                case ''${CARGO_BUILD_TARGET} in
-                    ${wasm32-wasi})
-                        cp target/${wasm32-wasi}/''${profileDir}/${name}.wasm $out/bin/${name};;
-                    "")
-                        cp target/''${profileDir}/${name} $out/bin/${name};;
-                    *)
-                        cp target/''${CARGO_BUILD_TARGET}/''${profileDir}/${name} $out/bin/${name};;
-                esac
-              '')
-              bins}
-          '';
-        }
-        // optionalAttrs (cargoLock != null) {
-          cargoVendorDir = craneLib.vendorCargoDeps {
-            inherit
-              cargoLock
-              src
-              ;
-          };
-        }
-        // extraArgs);
-
-    buildHostPackage = extraArgs:
-      buildPackage hostCraneLib (
-        {
-          cargoArtifacts = buildDeps hostCraneLib extraArgs;
-        }
-        // extraArgs
-        // hostBuildOverrides
-      );
-
     # buildPackageFor builds for `target`.
     # `extraArgs` are passed through to `buildPackage` verbatim.
     # NOTE: Upstream only provides binary caches for a subset of supported systems.
@@ -291,8 +317,7 @@ with self.lib.rust;
           "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
         };
 
-      rustupToolchain = rustupToolchainWithTarget target;
-      rustToolchain = withToolchain final rustupToolchain;
+      rustToolchain = rustToolchainFor target;
       craneLib = mkCraneLib pkgsCross rustToolchain;
 
       targetBuildOverrides = buildOverrides (commonOverrideArgs
@@ -334,11 +359,6 @@ with self.lib.rust;
         }
         // extraArgs);
 
-    commonReleaseArgs = {};
-    commonDebugArgs = {
-      CARGO_PROFILE = "dev";
-    };
-
     hostBin = buildHostPackage commonReleaseArgs;
     hostDebugBin = buildHostPackage commonDebugArgs;
 
@@ -356,18 +376,6 @@ with self.lib.rust;
 
     x86_64DarwinBin = buildCrossPackage.x86_64-apple-darwin commonReleaseArgs;
     x86_64DarwinDebugBin = buildCrossPackage.x86_64-apple-darwin commonDebugArgs;
-
-    buildImage = bin:
-      final.dockerTools.buildImage {
-        name = pname;
-        tag = version;
-        copyToRoot = final.buildEnv {
-          name = pname;
-          paths = [bin];
-        };
-        config.Cmd = [pname];
-        config.Env = ["PATH=${bin}/bin"];
-      };
 
     targets' = let
       default.aarch64-apple-darwin = prev.hostPlatform.isDarwin;
@@ -409,7 +417,18 @@ with self.lib.rust;
       };
 
     bins' = genAttrs bins (_: {});
-    targetImages = optionalAttrs (bins' ? ${pname}) (mapAttrs' (target: bin: nameValuePair "${target}-oci" (buildImage bin)) targetBins);
+    targetImages = optionalAttrs (bins' ? ${pname}) (mapAttrs' (target: bin:
+      nameValuePair "${target}-oci" (final.dockerTools.buildImage {
+        name = pname;
+        tag = version;
+        copyToRoot = final.buildEnv {
+          name = pname;
+          paths = [bin];
+        };
+        config.Cmd = [pname];
+        config.Env = ["PATH=${bin}/bin"];
+      }))
+    targetBins);
 
     packages =
       {
@@ -422,5 +441,6 @@ with self.lib.rust;
     {
       "${pname}Checks" = checks // optionalAttrs isLib packages;
       "${pname}RustToolchain" = hostRustToolchain;
+      "${pname}Lib" = buildLib;
     }
     // optionalAttrs (!isLib) packages

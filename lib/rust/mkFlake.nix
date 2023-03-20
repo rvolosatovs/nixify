@@ -153,6 +153,9 @@ with self.lib.rust;
       } @ cx:
         withPackages (cx
           // {
+            buildLib = pkgs."${pname}Lib";
+            hostRustToolchain = pkgs."${pname}RustToolchain";
+
             packages = let
               overlayPkgs = getAttrs (filter (name: pkgs ? ${name})
                 [
