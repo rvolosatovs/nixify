@@ -37,16 +37,18 @@ with self.lib.rust;
       then version
       else cargoToml.package.version or defaultVersion;
 
-    rustupToolchainTargets = rustupToolchain.targets or [];
+    rustupToolchain' = rustupToolchain.toolchain or {};
+
+    rustupToolchainTargets = rustupToolchain'.targets or [];
     rustupToolchainWithTarget = target:
       if any (eq target) rustupToolchainTargets
-      then rustupToolchain
+      then rustupToolchain'
       else if target == "aarch64-apple-darwin" && prev.hostPlatform.system == aarch64-darwin
-      then rustupToolchain
+      then rustupToolchain'
       else if target == "x86_64-apple-darwin" && prev.hostPlatform.system == x86_64-darwin
-      then rustupToolchain
+      then rustupToolchain'
       else
-        rustupToolchain
+        rustupToolchain'
         // {
           targets = rustupToolchainTargets ++ [target];
         };
@@ -55,7 +57,7 @@ with self.lib.rust;
     mkCraneLib = pkgs: rustToolchain: (crane.mkLib pkgs).overrideToolchain rustToolchain;
 
     # hostRustToolchain is the default Rust toolchain.
-    hostRustToolchain = withToolchain final rustupToolchain;
+    hostRustToolchain = withToolchain final rustupToolchain';
 
     # hostCraneLib is the crane library for the host native triple.
     hostCraneLib = mkCraneLib final hostRustToolchain;

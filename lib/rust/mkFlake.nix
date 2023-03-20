@@ -40,7 +40,7 @@ with self.lib.rust;
       else pnameFromCargoToml cargoToml;
     version = cargoToml.package.version or defaultVersion;
 
-    rustupToolchain = (readTOMLOr "${src}/rust-toolchain.toml" defaultRustupToolchain).toolchain;
+    rustupToolchain = readTOMLOr "${src}/rust-toolchain.toml" defaultRustupToolchain;
 
     src' = filterSource {
       inherit src;
