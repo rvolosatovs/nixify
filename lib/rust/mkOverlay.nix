@@ -164,7 +164,6 @@ with self.lib.rust;
 
       autobins = isPackage && cargoToml.package.autobins or true;
       bin = optionals isPackage cargoToml.bin or [];
-      workspace = cargoToml.workspace.members or [];
 
       unglob' = prefix: parts:
         if parts == []
@@ -186,8 +185,27 @@ with self.lib.rust;
         parts = splitString "/" glob;
       in
         optionals (glob != "") (unglob' prefix parts);
+      workspaceMembers = cargoToml.workspace.members or [];
+      workspaceMembers' = flatten (map unglob workspaceMembers);
 
-      workspace' = unique (flatten (map unglob workspace));
+      collectPathDeps = attrs: let
+        depAttrs =
+          filterAttrs (k: _: k == "build-dependencies" || k == "dependencies" || k == "dev-dependencies")
+          attrs;
+        deps = collect (dep: dep ? path && path.subpath.normalise dep.path != "./.") depAttrs;
+      in
+        map ({path, ...}:
+          if hasPrefix "/" path
+          then path
+          else "${src}/${path}")
+        deps;
+
+      pathDeps =
+        collectPathDeps cargoToml
+        ++ optionals (cargoToml ? target) (flatten (mapAttrs (_: v: collectPathDeps v) cargoToml.target))
+        ++ optionals (cargoToml ? workspace) (collectPathDeps cargoToml.workspace);
+
+      workspace = unique (workspaceMembers' ++ pathDeps);
     in
       # NOTE: `listToAttrs` seems to discard keys already present in the set
       attrValues (
@@ -205,7 +223,7 @@ with self.lib.rust;
           nameValuePair path name)
         bin)
       )
-      ++ optionals (!isPackage || build.workspace) (flatten (map crateBins workspace'));
+      ++ optionals (!isPackage || build.workspace) (flatten (map crateBins workspace));
 
     bins = unique (crateBins src);
     isLib = length bins == 0;

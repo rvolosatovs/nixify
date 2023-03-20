@@ -6,5 +6,8 @@ edition = "2021"
 [dependencies]
 foo = { workspace = true }
 
+[dev-dependencies]
+rust-bindeps = { path = "." }
+
 [workspace.dependencies]
 foo = { path = "./foo", target = "wasm32-unknown-unknown", artifact = ["cdylib", "bin", "staticlib"] }
