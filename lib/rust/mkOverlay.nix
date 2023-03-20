@@ -158,7 +158,7 @@ with self.lib.rust;
     };
 
     crateBins = src: let
-      cargoToml = readTOML "${src}/Cargo.toml";
+      cargoToml = readTOMLOr "${src}/Cargo.toml" {};
 
       isPackage = cargoToml ? package;
 
