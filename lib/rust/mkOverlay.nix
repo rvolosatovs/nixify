@@ -209,26 +209,27 @@ with self.lib.rust;
 
       workspace = unique (workspaceMembers' ++ pathDeps);
     in
+      trace "${src} workspace: ${builtins.toJSON workspace}"
       # NOTE: `listToAttrs` seems to discard keys already present in the set
-      attrValues (
-        optionalAttrs (autobins && pathExists "${src}/src/main.rs") {
-          "src/main.rs" = cargoToml.package.name;
-        }
-        // listToAttrs (optionals (autobins && pathExists "${src}/src/bin") (map (name:
-          nameValuePair "src/bin/${name}" (removeSuffix ".rs" name))
-        (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name || type == "directory") (readDir "${src}/src/bin")))))
-        // listToAttrs (map ({
-          name,
-          path,
-          ...
-        }:
-          nameValuePair path name)
-        bin)
-      )
-      ++ optionals (!isPackage || build.workspace) (flatten (map crateBins workspace));
+      (attrValues (
+          optionalAttrs (autobins && pathExists "${src}/src/main.rs") {
+            "src/main.rs" = cargoToml.package.name;
+          }
+          // listToAttrs (optionals (autobins && pathExists "${src}/src/bin") (map (name:
+            nameValuePair "src/bin/${name}" (removeSuffix ".rs" name))
+          (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name || type == "directory") (readDir "${src}/src/bin")))))
+          // listToAttrs (map ({
+            name,
+            path,
+            ...
+          }:
+            nameValuePair path name)
+          bin)
+        )
+        ++ optionals (!isPackage || build.workspace) (flatten (map crateBins workspace)));
 
     bins = unique (crateBins src);
-    isLib = length bins == 0;
+    isLib = trace "bins: (${src}): ${builtins.toJSON bins}" (length bins == 0);
 
     # buildPackage builds using `craneLib`.
     # `extraArgs` are passed through to `craneLib.buildPackage` verbatim.
