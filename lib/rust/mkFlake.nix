@@ -141,7 +141,7 @@ with self.lib.rust;
           // {
             devShells =
               extendDerivations {
-                buildInputs = [
+                packages = [
                   attrs.hostRustToolchain
                 ];
               }
