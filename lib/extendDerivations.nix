@@ -7,6 +7,7 @@ with nixlib.lib;
 with builtins;
   {
     buildInputs ? [],
+    depsBuildBuild ? [],
     inputsFrom ? [],
     nativeBuildInputs ? [],
     packages ? [],
@@ -14,6 +15,7 @@ with builtins;
     mapAttrs (n: v:
       v.overrideAttrs (attrs: {
         buildInputs = (attrs.buildInputs or []) ++ buildInputs;
+        depsBuildBuild = (attrs.depsBuildBuild or []) ++ depsBuildBuild;
         inputsFrom = (attrs.inputsFrom or []) ++ inputsFrom;
         nativeBuildInputs = (attrs.nativeBuildInputs or []) ++ nativeBuildInputs;
         packages = (attrs.packages or []) ++ packages;

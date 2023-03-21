@@ -94,24 +94,43 @@ with builtins;
           packages
           ;
 
-        apps = withApps (commonPkgsArgs
+        apps = withApps (
+          commonPkgsArgs
           // {
-            inherit packages;
+            inherit
+              packages
+              ;
 
             apps = optionalAttrs (packages ? default) {
               default = flake-utils.lib.mkApp {
                 drv = packages.default;
               };
             };
-          });
+          }
+        );
 
-        devShells = withDevShells (commonPkgsArgs
+        devShells = withDevShells (
+          commonPkgsArgs
           // {
+            inherit
+              formatter
+              checks
+              packages
+              ;
+
             devShells.default = pkgs.mkShell (
               {
                 packages = [
                   formatter
                 ];
+              }
+              // optionalAttrs (packages ? default) {
+                inherit
+                  (packages.default)
+                  buildInputs
+                  depsBuildBuild
+                  nativeBuildInputs
+                  ;
               }
               // optionalAttrs (pname != null) {
                 inherit pname;
@@ -120,6 +139,7 @@ with builtins;
                 inherit version;
               }
             );
-          });
+          }
+        );
       }
     )
