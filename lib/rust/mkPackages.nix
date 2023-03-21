@@ -5,6 +5,7 @@ with self.lib.rust;
     buildOverrides ? defaultBuildOverrides,
     cargoLock ? null,
     clippy ? defaultClippyConfig,
+    doCheck ? true,
     pkgsFor ? defaultPkgsFor,
     pname ? null,
     rustupToolchain ? defaultRustupToolchain,
