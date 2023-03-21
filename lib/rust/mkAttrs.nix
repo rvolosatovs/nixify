@@ -80,7 +80,8 @@ with self.lib.rust;
     # buildPackage builds using `craneLib`.
     # `extraArgs` are passed through to `craneLib.buildPackage` verbatim.
     buildPackage = craneLib: extraArgs:
-      craneLib.buildPackage (commonArgs
+      craneLib.buildPackage (
+        commonArgs
         // optionalAttrs (!isLib) {
           installPhaseCommand = ''
             mkdir -p $out/bin
@@ -110,7 +111,8 @@ with self.lib.rust;
               ;
           };
         }
-        // extraArgs);
+        // extraArgs
+      );
   in
     final: let
       # hostRustToolchain is the default Rust toolchain.
@@ -144,13 +146,15 @@ with self.lib.rust;
           // hostBuildOverrides
         );
 
+      buildHostCargoArtifacts = buildDeps hostCraneLib;
+
       # hostCargoArtifacts are the cargo artifacts built for the host native triple.
-      hostCargoArtifacts = buildDeps hostCraneLib {};
+      hostCargoArtifacts = buildHostCargoArtifacts {};
 
       buildHostPackage = extraArgs:
         buildPackage hostCraneLib (
           {
-            cargoArtifacts = buildDeps hostCraneLib extraArgs;
+            cargoArtifacts = buildHostCargoArtifacts extraArgs;
           }
           // extraArgs
           // hostBuildOverrides
@@ -186,7 +190,10 @@ with self.lib.rust;
         }
         // hostBuildOverrides
       );
-      checks.fmt = hostCraneLib.cargoFmt (commonArgs // hostBuildOverrides);
+      checks.fmt = hostCraneLib.cargoFmt (
+        commonArgs
+        // hostBuildOverrides
+      );
       checks.nextest = hostCraneLib.cargoNextest (
         commonArgs
         // {
@@ -233,6 +240,8 @@ with self.lib.rust;
         buildPackageFor = target: extraArgs: let
           pkgsCross = pkgsFor final target;
           kebab2snake = replaceStrings ["-"] ["_"];
+          rustToolchain = rustToolchainFor target;
+          craneLib = mkCraneLib pkgsCross rustToolchain;
           commonCrossArgs = with pkgsCross;
             {
               depsBuildBuild =
@@ -252,9 +261,6 @@ with self.lib.rust;
             // optionalAttrs (target != wasm32-wasi) {
               "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
             };
-
-          rustToolchain = rustToolchainFor target;
-          craneLib = mkCraneLib pkgsCross rustToolchain;
 
           targetBuildOverrides = buildOverrides (commonOverrideArgs
             // commonCrossArgs
