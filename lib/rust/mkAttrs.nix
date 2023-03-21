@@ -15,6 +15,7 @@ with self.lib.rust;
     buildOverrides ? defaultBuildOverrides,
     cargoLock ? null,
     clippy ? defaultClippyConfig,
+    doCheck ? true,
     pkgsFor ? defaultPkgsFor,
     pname ? null,
     rustupToolchain ? defaultRustupToolchain,
@@ -62,7 +63,10 @@ with self.lib.rust;
           )
       }";
     in {
-      inherit src;
+      inherit
+        doCheck
+        src
+        ;
 
       pname = pname';
       version = version';
@@ -197,6 +201,8 @@ with self.lib.rust;
         commonArgs
         // {
           cargoArtifacts = hostCargoArtifacts;
+
+          doCheck = true; # without performing the actual testing, this check is useless
         }
         // optionalAttrs (cargoLock != null) {
           cargoVendorDir = hostCraneLib.vendorCargoDeps {
