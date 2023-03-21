@@ -131,7 +131,9 @@ with self.lib.rust;
           });
 
       withDevShells = {
+        checks,
         devShells,
+        packages,
         pkgs,
         ...
       } @ cx: let
@@ -140,11 +142,21 @@ with self.lib.rust;
         withDevShells (cx
           // {
             devShells =
-              extendDerivations {
-                packages = [
-                  attrs.hostRustToolchain
-                ];
-              }
+              extendDerivations (
+                {
+                  packages = [
+                    attrs.hostRustToolchain
+                  ];
+                }
+                // optionalAttrs (checks ? ${pname}) {
+                  inherit
+                    (checks.${pname})
+                    buildInputs
+                    depsBuildBuild
+                    nativeBuildInputs
+                    ;
+                }
+              )
               devShells;
           });
 
