@@ -22,6 +22,7 @@ with self.lib.rust;
     name ? null,
     overlays ? [],
     pkgsFor ? defaultPkgsFor,
+    rustupToolchain ? null,
     src,
     systems ? defaultSystems,
     targets ? null,
@@ -41,7 +42,10 @@ with self.lib.rust;
       else pnameFromCargoToml cargoToml;
     version = cargoToml.package.version or defaultVersion;
 
-    rustupToolchain = readTOMLOr "${src}/rust-toolchain.toml" defaultRustupToolchain;
+    rustupToolchain' =
+      if rustupToolchain == null
+      then readTOMLOr "${src}/rust-toolchain.toml" defaultRustupToolchain
+      else rustupToolchain;
 
     src' = filterSource {
       inherit src;
@@ -58,13 +62,13 @@ with self.lib.rust;
         clippy
         pkgsFor
         pname
-        rustupToolchain
         targets
         test
         version
         withToolchain
         ;
       src = src';
+      rustupToolchain = rustupToolchain';
     };
 
     overlay = let
