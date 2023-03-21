@@ -1,10 +1,4 @@
-{
-  self,
-  nixlib,
-  ...
-}:
-with builtins;
-with nixlib.lib;
+{self, ...}:
 with self.lib.rust;
   {
     build ? defaultBuildConfig,
@@ -19,9 +13,9 @@ with self.lib.rust;
     test ? defaultTestConfig,
     version ? null,
     withToolchain ? defaultWithToolchain,
-  } @ args: final: let
-    attrs = mkAttrs args final;
+  } @ args: pkgs: let
+    attrs = mkAttrs args pkgs;
   in
-    if attrs ? overlay
-    then attrs.overlay
-    else const {}
+    if attrs ? packages
+    then attrs.packages
+    else throw "no packages generated for library crate (set `build.workspace = true` if there are binary subcrates in the workspace)"
