@@ -1,12 +1,41 @@
 {
   self,
+  crane,
   nixlib,
   ...
 } @ inputs:
+with nixlib.lib;
 with self.lib;
-with nixlib.lib; {
+{
+  mkAttrs = import ./mkAttrs.nix inputs;
+  mkChecks = import ./mkChecks.nix inputs;
   mkFlake = import ./mkFlake.nix inputs;
   mkOverlay = import ./mkOverlay.nix inputs;
+  mkPackages = import ./mkPackages.nix inputs;
+
+  # mkCraneLib constructs a crane library for specified `pkgs`.
+  mkCraneLib = pkgs: rustToolchain: (crane.mkLib pkgs).overrideToolchain rustToolchain;
+
+  # mkCargoFlags constructs a set of cargo flags from `config`
+  mkCargoFlags = config:
+    with config;
+      concatStrings (
+        optionals (config ? targets) (map (target: "--target ${target} ") config.targets)
+        ++ optional (config ? features && length config.features > 0) "--features ${concatStringsSep "," config.features} "
+        ++ optional (config ? allFeatures && config.allFeatures) "--all-features "
+        ++ optional (config ? allTargets && config.allTargets) "--all-targets "
+        ++ optional (config ? noDefaultFeatures && config.noDefaultFeatures) "--no-default-features "
+        ++ optional (config ? workspace && config.workspace) "--workspace "
+      );
+
+  # commonDebugArgs is a set of common arguments to debug builds
+  commonDebugArgs.CARGO_PROFILE = "dev";
+
+  # commonReleaseArgs is a set of common arguments to release builds
+  commonReleaseArgs = {};
+
+  # crateBins returns a list of binaries that would be produced by cargo build
+  crateBins = import ./crateBins.nix inputs;
 
   # extract package name from parsed Cargo.toml
   pnameFromCargoToml = cargoToml:

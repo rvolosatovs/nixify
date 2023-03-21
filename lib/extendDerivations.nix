@@ -4,6 +4,7 @@
   ...
 }:
 with nixlib.lib;
+with builtins;
   {
     buildInputs ? [],
     nativeBuildInputs ? [],

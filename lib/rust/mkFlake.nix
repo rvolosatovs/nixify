@@ -9,6 +9,7 @@
 }:
 with flake-utils.lib.system;
 with nixlib.lib;
+with builtins;
 with self.lib;
 with self.lib.rust;
   {
@@ -48,7 +49,8 @@ with self.lib.rust;
       include = includePaths;
     };
 
-    overlay = mkOverlay {
+    # partially-applied `mkAttrs`
+    mkAttrs' = mkAttrs {
       inherit
         build
         buildOverrides
@@ -64,6 +66,16 @@ with self.lib.rust;
         ;
       src = src';
     };
+
+    overlay = let
+      overlay' = final: let
+        attrs = mkAttrs' final;
+      in
+        if attrs ? overlay
+        then attrs.overlay
+        else const {};
+    in
+      final: prev: overlay' final prev;
   in
     self.lib.mkFlake {
       inherit
@@ -110,23 +122,27 @@ with self.lib.rust;
         checks,
         pkgs,
         ...
-      } @ cx:
+      } @ cx: let
+        attrs = mkAttrs' pkgs;
+      in
         withChecks (cx
           // {
-            checks = checks // pkgs."${pname}Checks";
+            checks = checks // attrs.checks;
           });
 
       withDevShells = {
         devShells,
         pkgs,
         ...
-      } @ cx:
+      } @ cx: let
+        attrs = mkAttrs' pkgs;
+      in
         withDevShells (cx
           // {
             devShells =
               extendDerivations {
                 buildInputs = [
-                  pkgs."${pname}RustToolchain"
+                  attrs.hostRustToolchain
                 ];
               }
               devShells;
@@ -148,45 +164,19 @@ with self.lib.rust;
         packages,
         pkgs,
         ...
-      } @ cx:
+      } @ cx: let
+        attrs = mkAttrs' pkgs;
+        attrPkgs = optionalAttrs (attrs ? packages) attrs.packages;
+      in
         withPackages (cx
           // {
-            buildLib = pkgs."${pname}Lib";
-            hostRustToolchain = pkgs."${pname}RustToolchain";
-
-            packages = let
-              overlayPkgs = getAttrs (filter (name: pkgs ? ${name})
-                [
-                  "${pname}"
-                  "${pname}-aarch64-apple-darwin"
-                  "${pname}-aarch64-apple-darwin-oci"
-                  "${pname}-aarch64-unknown-linux-musl"
-                  "${pname}-aarch64-unknown-linux-musl-oci"
-                  "${pname}-wasm32-wasi"
-                  "${pname}-wasm32-wasi-oci"
-                  "${pname}-x86_64-apple-darwin"
-                  "${pname}-x86_64-apple-darwin-oci"
-                  "${pname}-x86_64-unknown-linux-musl"
-                  "${pname}-x86_64-unknown-linux-musl-oci"
-
-                  "${pname}-debug"
-                  "${pname}-debug-aarch64-apple-darwin"
-                  "${pname}-debug-aarch64-apple-darwin-oci"
-                  "${pname}-debug-aarch64-unknown-linux-musl"
-                  "${pname}-debug-aarch64-unknown-linux-musl-oci"
-                  "${pname}-debug-wasm32-wasi"
-                  "${pname}-debug-wasm32-wasi-oci"
-                  "${pname}-debug-x86_64-apple-darwin"
-                  "${pname}-debug-x86_64-apple-darwin-oci"
-                  "${pname}-debug-x86_64-unknown-linux-musl"
-                  "${pname}-debug-x86_64-unknown-linux-musl-oci"
-                ])
-              pkgs;
-            in
+            buildLib = attrs.lib;
+            hostRustToolchain = attrs.toolchain;
+            packages =
               packages
-              // overlayPkgs
-              // optionalAttrs (overlayPkgs ? "${pname}") {
-                default = overlayPkgs."${pname}";
+              // attrPkgs
+              // optionalAttrs (attrPkgs ? ${pname}) {
+                default = attrPkgs.${pname};
               };
           });
     }

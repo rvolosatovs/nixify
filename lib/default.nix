@@ -5,10 +5,12 @@
   nix-filter,
   ...
 } @ inputs:
-with builtins;
 with flake-utils.lib.system;
-with nixlib.lib; let
+with nixlib.lib;
+with builtins; let
   f = self': {
+    eq = x: y: x == y;
+
     rust = import ./rust inputs;
 
     mkFlake = import ./mkFlake.nix inputs self';

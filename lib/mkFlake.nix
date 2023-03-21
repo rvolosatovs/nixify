@@ -18,6 +18,7 @@
   ...
 }:
 with nixlib.lib;
+with builtins;
   {
     excludePaths ? defaultExcludePaths,
     includePaths ? null,
