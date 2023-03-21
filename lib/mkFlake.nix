@@ -73,12 +73,26 @@ with builtins;
               ;
           };
 
+        checks = withChecks (commonPkgsArgs
+          // {
+            checks = {};
+          });
+
+        formatter = withFormatter (commonPkgsArgs
+          // {
+            formatter = pkgs.alejandra;
+          });
+
         packages = withPackages (commonPkgsArgs
           // {
             packages = {};
           });
       in {
-        inherit packages;
+        inherit
+          formatter
+          checks
+          packages
+          ;
 
         apps = withApps (commonPkgsArgs
           // {
@@ -91,26 +105,21 @@ with builtins;
             };
           });
 
-        checks = withChecks (commonPkgsArgs
-          // {
-            checks = {};
-          });
-
         devShells = withDevShells (commonPkgsArgs
           // {
             devShells.default = pkgs.mkShell (
-              optionalAttrs (pname != null) {
+              {
+                packages = [
+                  formatter
+                ];
+              }
+              // optionalAttrs (pname != null) {
                 inherit pname;
               }
               // optionalAttrs (version != null) {
                 inherit version;
               }
             );
-          });
-
-        formatter = withFormatter (commonPkgsArgs
-          // {
-            formatter = pkgs.alejandra;
           });
       }
     )
