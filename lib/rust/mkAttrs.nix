@@ -48,7 +48,7 @@ with self.lib.rust;
     # commonArgs is a set of arguments that is common to all crane invocations.
     commonArgs = let
       buildArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
-      checkArgs = "-j $NIX_BUILD_CORES";
+      checkArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
       docArgs = "-j $NIX_BUILD_CORES";
       testArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags test}";
 
@@ -84,7 +84,6 @@ with self.lib.rust;
         commonArgs
         // optionalAttrs (!isLib) {
           installPhaseCommand = ''
-            mkdir -p $out/bin
             if [ "''${CARGO_PROFILE}" == 'dev' ]; then
                 profileDir=debug
             else
@@ -93,11 +92,11 @@ with self.lib.rust;
             ${concatMapStringsSep "\n" (name: ''
                 case ''${CARGO_BUILD_TARGET} in
                     ${wasm32-wasi})
-                        cp target/${wasm32-wasi}/''${profileDir}/${name}.wasm $out/bin/${name};;
+                        install -D target/${wasm32-wasi}/''${profileDir}/${name}.wasm $out/bin/${name};;
                     "")
-                        cp target/''${profileDir}/${name} $out/bin/${name};;
+                        install -D target/''${profileDir}/${name} $out/bin/${name};;
                     *)
-                        cp target/''${CARGO_BUILD_TARGET}/''${profileDir}/${name} $out/bin/${name};;
+                        install -D target/''${CARGO_BUILD_TARGET}/''${profileDir}/${name} $out/bin/${name};;
                 esac
               '')
               bins}

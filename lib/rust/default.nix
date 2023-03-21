@@ -5,8 +5,7 @@
   ...
 } @ inputs:
 with nixlib.lib;
-with self.lib;
-{
+with self.lib; {
   mkAttrs = import ./mkAttrs.nix inputs;
   mkChecks = import ./mkChecks.nix inputs;
   mkFlake = import ./mkFlake.nix inputs;
@@ -21,6 +20,7 @@ with self.lib;
     with config;
       concatStrings (
         optionals (config ? targets) (map (target: "--target ${target} ") config.targets)
+        ++ optionals (config ? packages) (map (package: "--package ${package} ") config.packages)
         ++ optional (config ? features && length config.features > 0) "--features ${concatStringsSep "," config.features} "
         ++ optional (config ? allFeatures && config.allFeatures) "--all-features "
         ++ optional (config ? allTargets && config.allTargets) "--all-targets "
@@ -52,6 +52,7 @@ with self.lib;
   defaultBuildConfig.allTargets = false;
   defaultBuildConfig.features = [];
   defaultBuildConfig.noDefaultFeatures = false;
+  defaultBuildConfig.packages = [];
   defaultBuildConfig.workspace = false;
 
   defaultClippyConfig.allFeatures = false;
@@ -61,6 +62,7 @@ with self.lib;
   defaultClippyConfig.features = [];
   defaultClippyConfig.forbid = [];
   defaultClippyConfig.noDefaultFeatures = false;
+  defaultClippyConfig.packages = [];
   defaultClippyConfig.targets = [];
   defaultClippyConfig.warn = [];
   defaultClippyConfig.workspace = false;
@@ -72,6 +74,7 @@ with self.lib;
   defaultTestConfig.allTargets = false;
   defaultTestConfig.features = [];
   defaultTestConfig.noDefaultFeatures = false;
+  defaultTestConfig.packages = [];
   defaultTestConfig.targets = [];
   defaultTestConfig.workspace = false;
 
