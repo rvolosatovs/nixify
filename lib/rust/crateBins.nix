@@ -12,10 +12,21 @@ with self.lib.rust;
     build ? defaultBuildConfig,
     src,
   }: let
+    build' = defaultBuildConfig // build;
+    packagesSelected = length build'.packages > 0;
+    readCargoToml = src: readTOMLOr "${src}/Cargo.toml" {};
+
     f = src: let
-      cargoToml = readTOMLOr "${src}/Cargo.toml" {};
+      cargoToml = readCargoToml src;
 
       isPackage = cargoToml ? package;
+
+      includeCrate =
+        if build'.workspace || !isPackage
+        then true
+        else if packagesSelected
+        then any (p: p == cargoToml.package.name) build'.packages
+        else true;
 
       autobins = isPackage && cargoToml.package.autobins or true;
       bin = optionals isPackage cargoToml.bin or [];
@@ -62,22 +73,24 @@ with self.lib.rust;
 
       workspace = unique (workspaceMembers' ++ pathDeps);
     in
-      # NOTE: `listToAttrs` seems to discard keys already present in the set
-      attrValues (
-        optionalAttrs (autobins && pathExists "${src}/src/main.rs") {
-          "src/main.rs" = cargoToml.package.name;
-        }
-        // listToAttrs (optionals (autobins && pathExists "${src}/src/bin") (map (name:
-          nameValuePair "src/bin/${name}" (removeSuffix ".rs" name))
-        (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name || type == "directory") (readDir "${src}/src/bin")))))
-        // listToAttrs (map ({
-          name,
-          path,
-          ...
-        }:
-          nameValuePair path name)
-        bin)
+      optionals includeCrate (
+        # NOTE: `listToAttrs` seems to discard keys already present in the set
+        attrValues (
+          optionalAttrs (autobins && pathExists "${src}/src/main.rs") {
+            "src/main.rs" = cargoToml.package.name;
+          }
+          // listToAttrs (optionals (autobins && pathExists "${src}/src/bin") (map (name:
+            nameValuePair "src/bin/${name}" (removeSuffix ".rs" name))
+          (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name || type == "directory") (readDir "${src}/src/bin")))))
+          // listToAttrs (map ({
+            name,
+            path,
+            ...
+          }:
+            nameValuePair path name)
+          bin)
+        )
       )
-      ++ optionals (!isPackage || build.workspace) (flatten (map f workspace));
+      ++ optionals (build'.workspace || !isPackage || packagesSelected) (flatten (map f workspace));
   in
     unique (f src)
