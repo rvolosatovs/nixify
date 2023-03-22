@@ -248,7 +248,7 @@ with self.lib.rust;
           rustToolchain = rustToolchainFor target;
           craneLib = mkCraneLib final rustToolchain;
           pkgsCross = pkgsFor final target;
-          commonCrossArgs = with pkgsCross;
+          commonCrossArgs =
             {
               depsBuildBuild =
                 if target == wasm32-wasi
@@ -256,13 +256,16 @@ with self.lib.rust;
                   final.wasmtime
                 ]
                 else [
-                  stdenv.cc
+                  pkgsCross.stdenv.cc
                 ];
 
               CARGO_BUILD_TARGET = target;
             }
             // optionalAttrs (target == wasm32-wasi) {
               CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
+            }
+            // optionalAttrs (final.hostPlatform.system != aarch64-linux && target == "aarch64-unknown-linux-musl") {
+              "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
             };
 
           targetBuildOverrides = buildOverrides (commonOverrideArgs
