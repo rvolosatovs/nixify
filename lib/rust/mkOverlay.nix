@@ -11,6 +11,7 @@ with self.lib.rust;
     buildOverrides ? defaultBuildOverrides,
     cargoLock ? null,
     clippy ? defaultClippyConfig,
+    doc ? defaultDocConfig,
     doCheck ? true,
     pkgsFor ? defaultPkgsFor,
     pname ? null,

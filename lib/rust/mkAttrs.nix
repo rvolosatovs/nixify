@@ -15,6 +15,7 @@ with self.lib.rust;
     buildOverrides ? defaultBuildOverrides,
     cargoLock ? null,
     clippy ? defaultClippyConfig,
+    doc ? defaultDocConfig,
     doCheck ? true,
     pkgsFor ? defaultPkgsFor,
     pname ? null,
@@ -50,7 +51,7 @@ with self.lib.rust;
     commonArgs = let
       buildArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
       checkArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
-      docArgs = "-j $NIX_BUILD_CORES";
+      docArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags doc}";
       testArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags test}";
 
       clippyArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags clippy} -- ${
@@ -72,7 +73,7 @@ with self.lib.rust;
       version = version';
 
       cargoBuildCommand = "cargoWithProfile build ${buildArgs}";
-      cargoCheckCommand = "cargoWithProfile check ${checkArgs}";
+      cargoCheckExtraArgs = checkArgs;
       cargoClippyExtraArgs = clippyArgs;
       cargoDocExtraArgs = docArgs;
       cargoNextestExtraArgs = testArgs;

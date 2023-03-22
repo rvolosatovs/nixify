@@ -67,6 +67,13 @@ with self.lib; {
   defaultClippyConfig.warn = [];
   defaultClippyConfig.workspace = false;
 
+  defaultDocConfig.allFeatures = false;
+  defaultDocConfig.allTargets = false;
+  defaultDocConfig.features = [];
+  defaultDocConfig.noDefaultFeatures = false;
+  defaultDocConfig.packages = [];
+  defaultDocConfig.workspace = false;
+
   defaultRustupToolchain.toolchain.channel = "stable";
   defaultRustupToolchain.toolchain.components = ["rustfmt" "clippy"];
 
