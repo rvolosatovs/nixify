@@ -244,10 +244,10 @@ with self.lib.rust;
         # `extraArgs` are passed through to `buildPackage` verbatim.
         # NOTE: Upstream only provides binary caches for a subset of supported systems.
         buildPackageFor = target: extraArgs: let
-          pkgsCross = pkgsFor final target;
           kebab2snake = replaceStrings ["-"] ["_"];
           rustToolchain = rustToolchainFor target;
-          craneLib = mkCraneLib pkgsCross rustToolchain;
+          craneLib = mkCraneLib final rustToolchain;
+          pkgsCross = pkgsFor final target;
           commonCrossArgs = with pkgsCross;
             {
               depsBuildBuild =
@@ -263,9 +263,6 @@ with self.lib.rust;
             }
             // optionalAttrs (target == wasm32-wasi) {
               CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
-            }
-            // optionalAttrs (target != wasm32-wasi) {
-              "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${stdenv.cc.targetPrefix}cc";
             };
 
           targetBuildOverrides = buildOverrides (commonOverrideArgs
