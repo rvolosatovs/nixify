@@ -327,10 +327,10 @@ with self.lib.rust;
 
         targets' = let
           default.aarch64-apple-darwin = prev.hostPlatform.isDarwin;
-          default.aarch64-unknown-linux-musl = !prev.hostPlatform.isDarwin;
+          default.aarch64-unknown-linux-musl = true;
           default.wasm32-wasi = true;
           default.x86_64-apple-darwin = prev.hostPlatform.system == x86_64-darwin;
-          default.x86_64-unknown-linux-musl = !prev.hostPlatform.isDarwin;
+          default.x86_64-unknown-linux-musl = true;
 
           all =
             default
