@@ -250,22 +250,25 @@ with self.lib.rust;
           pkgsCross = pkgsFor final target;
           commonCrossArgs =
             {
-              depsBuildBuild =
-                if target == wasm32-wasi
-                then [
-                  final.wasmtime
-                ]
-                else [
-                  pkgsCross.stdenv.cc
-                ];
-
               CARGO_BUILD_TARGET = target;
             }
-            // optionalAttrs (target == wasm32-wasi) {
-              CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
-            }
-            // optionalAttrs (final.hostPlatform.system != aarch64-linux && target == "aarch64-unknown-linux-musl") {
+            // optionalAttrs (final.stdenv.hostPlatform.config != target && target != wasm32-wasi) {
+              stdenv = pkgsCross.stdenv;
+
+              depsBuildBuild = [
+                pkgsCross.stdenv.cc
+              ];
+
+              HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
+
               "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
+            }
+            // optionalAttrs (target == wasm32-wasi) {
+              depsBuildBuild = [
+                final.wasmtime
+              ];
+
+              CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
             };
 
           targetBuildOverrides = buildOverrides (commonOverrideArgs
