@@ -5,15 +5,13 @@
   ...
 } @ inputs:
 with nixlib.lib;
-with self.lib; {
-  mkAttrs = import ./mkAttrs.nix inputs;
-  mkChecks = import ./mkChecks.nix inputs;
-  mkFlake = import ./mkFlake.nix inputs;
-  mkOverlay = import ./mkOverlay.nix inputs;
-  mkPackages = import ./mkPackages.nix inputs;
+with builtins;
+with self.lib; let
+  defaultRustupToolchain.toolchain.channel = "stable";
+  defaultRustupToolchain.toolchain.components = ["rustfmt" "clippy"];
 
-  # mkCraneLib constructs a crane library for specified `pkgs`.
-  mkCraneLib = pkgs: rustToolchain: (crane.mkLib pkgs).overrideToolchain rustToolchain;
+  # crateBins returns a list of binaries that would be produced by cargo build
+  crateBins = import ./crateBins.nix inputs;
 
   # mkCargoFlags constructs a set of cargo flags from `config`
   mkCargoFlags = config:
@@ -28,25 +26,70 @@ with self.lib; {
         ++ optional (config ? workspace && config.workspace) "--workspace "
       );
 
-  # commonDebugArgs is a set of common arguments to debug builds
-  commonDebugArgs.CARGO_PROFILE = "dev";
+  # mkCraneLib constructs a crane library for specified `pkgs`.
+  mkCraneLib = pkgs: rustToolchain: (crane.mkLib pkgs).overrideToolchain rustToolchain;
 
-  # commonReleaseArgs is a set of common arguments to release builds
-  commonReleaseArgs = {};
-
-  # crateBins returns a list of binaries that would be produced by cargo build
-  crateBins = import ./crateBins.nix inputs;
+  mkAttrs = import ./mkAttrs.nix inputs;
+  mkChecks = import ./mkChecks.nix inputs;
+  mkFlake = import ./mkFlake.nix inputs;
+  mkOverlay = import ./mkOverlay.nix inputs;
+  mkPackages = import ./mkPackages.nix inputs;
 
   # extract package name from parsed Cargo.toml
   pnameFromCargoToml = cargoToml:
     cargoToml.package.name
     or (throw "`name` must either be specified in `Cargo.toml` `[package]` section or passed as an argument");
 
+  withRustOverlayToolchain = pkgs: pkgs.rust-bin.fromRustupToolchain;
+  withFenixToolchain = pkgs: {
+    channel ? defaultRustupToolchain.toolchain.channel,
+    components ? defaultRustupToolchain.toolchain.components,
+    targets ? [],
+  } @ args:
+    with pkgs; let
+      channels.stable = "stable";
+      channels.beta = "beta";
+      channels.nightly = "latest";
+
+      channel' = channels.${channel};
+      targets' = map (target: fenix.targets.${target}.${channel'}.rust-std) targets;
+      toolchain = fenix.combine (
+        [
+          (fenix.${channel'}.withComponents (components ++ ["cargo"]))
+        ]
+        ++ targets'
+      );
+    in
+      if channels ? ${channel}
+      then toolchain
+      else warn "only one of ${toJSON (attrNames channels)} `channel` specifications are supported for `fenix`, falling back to rust-overlay (which may break some cross-compilation scenarios)" withRustOverlayToolchain args;
+in {
+  inherit
+    crateBins
+    defaultRustupToolchain
+    mkAttrs
+    mkCargoFlags
+    mkChecks
+    mkCraneLib
+    mkFlake
+    mkOverlay
+    mkPackages
+    pnameFromCargoToml
+    withFenixToolchain
+    withRustOverlayToolchain
+    ;
+
+  # commonDebugArgs is a set of common arguments to debug builds
+  commonDebugArgs.CARGO_PROFILE = "dev";
+
+  # commonReleaseArgs is a set of common arguments to release builds
+  commonReleaseArgs = {};
+
   # version used when not specified in Cargo.toml
   defaultVersion = "0.0.0-unspecified";
 
   defaultPkgsFor = import ./defaultPkgsFor.nix inputs;
-  defaultWithToolchain = pkgs: pkgs.rust-bin.fromRustupToolchain;
+  defaultWithToolchain = withFenixToolchain;
 
   defaultBuildConfig.allFeatures = false;
   defaultBuildConfig.allTargets = false;
@@ -74,9 +117,6 @@ with self.lib; {
   defaultDocConfig.packages = [];
   defaultDocConfig.workspace = false;
 
-  defaultRustupToolchain.toolchain.channel = "stable";
-  defaultRustupToolchain.toolchain.components = ["rustfmt" "clippy"];
-
   defaultTestConfig.allFeatures = false;
   defaultTestConfig.allTargets = false;
   defaultTestConfig.features = [];
@@ -85,7 +125,7 @@ with self.lib; {
   defaultTestConfig.targets = [];
   defaultTestConfig.workspace = false;
 
-  defaultBuildOverrides = const {};
+  defaultBuildOverrides = _: const {};
 
   defaultExcludePaths =
     defaultExcludePaths

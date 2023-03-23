@@ -8,7 +8,71 @@
 with flake-utils.lib.system;
 with nixlib.lib;
 with builtins; let
+  NIXIFY_LOG = let
+    env = getEnv "NIXIFY_LOG";
+  in
+    if env == ""
+    then "warn"
+    else env;
+
+  logLevel.isError = NIXIFY_LOG == "error";
+  logLevel.isWarn = NIXIFY_LOG == "warn";
+  logLevel.isInfo = NIXIFY_LOG == "info";
+  logLevel.isDebug = NIXIFY_LOG == "debug";
+  logLevel.isTrace =
+    (NIXIFY_LOG != "")
+    && (!logLevel.isError)
+    && (!logLevel.isWarn)
+    && (!logLevel.isInfo)
+    && (!logLevel.isDebug);
+
+  trace = msg:
+    with logLevel;
+      if isTrace
+      then builtins.trace "TRACE: ${msg}"
+      else x: x;
+
+  debug = msg:
+    with logLevel;
+      if isDebug || isTrace
+      then builtins.trace "DEBUG: ${msg}"
+      else x: x;
+
+  info = msg:
+    with logLevel;
+      if isInfo || isDebug || isTrace
+      # info already adds a prefix
+      then nixlib.lib.info msg
+      else x: x;
+
+  warn = msg:
+    with logLevel;
+      if isWarn || isInfo || isDebug || isTrace
+      # warn already adds a prefix and has additional functionality built-in
+      then nixlib.lib.warn msg
+      else x: x;
+
+  mkAttrLog = log: msg: attrs:
+    log "${msg} ${(toJSON attrs)}";
+
   f = self': {
+    inherit
+      trace
+      debug
+      info
+      warn
+      ;
+
+    warnIf = cond: msg:
+      if cond
+      then warn msg
+      else x: x;
+
+    trace' = mkAttrLog trace;
+    debug' = mkAttrLog debug;
+    info' = mkAttrLog info;
+    warn' = mkAttrLog warn;
+
     eq = x: y: x == y;
 
     rust = import ./rust inputs;

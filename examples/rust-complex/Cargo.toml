@@ -1,13 +1,15 @@
 [package]
-name = "rust-bindeps"
+name = "rust-complex"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 foo = { workspace = true }
+ring = { workspace = true }
 
 [dev-dependencies]
-rust-bindeps = { path = "." }
+rust-complex = { path = "." }
 
 [workspace.dependencies]
 foo = { path = "./foo", target = "wasm32-unknown-unknown", artifact = ["cdylib", "bin", "staticlib"] }
+ring = { version = "0.16.20", features = ["wasm32_c"] }

@@ -48,8 +48,11 @@ with self.lib.rust.targets;
     };
     isLib = length bins == 0;
 
-    # commonArgs is a set of arguments that is common to all crane invocations.
-    commonArgs = let
+    callCrane = {
+      craneArgs ? {},
+      craneLib,
+      overrideArgs,
+    }: f: let
       buildArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
       checkArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
       docArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags doc}";
@@ -64,49 +67,25 @@ with self.lib.rust.targets;
             ++ optionals (clippy ? warn) (map (lint: "--warn ${lint} ") warn)
           )
       }";
-    in {
-      inherit
-        doCheck
-        src
-        ;
 
-      pname = pname';
-      version = version';
+      commonArgs =
+        {
+          inherit
+            doCheck
+            src
+            ;
 
-      cargoBuildCommand = "cargoWithProfile build ${buildArgs}";
-      cargoCheckExtraArgs = checkArgs;
-      cargoClippyExtraArgs = clippyArgs;
-      cargoDocExtraArgs = docArgs;
-      cargoNextestExtraArgs = testArgs;
-      cargoTestExtraArgs = testArgs;
+          pname = pname';
+          version = version';
 
-      installCargoArtifactsMode = "use-zstd";
-    };
+          cargoBuildCommand = "cargoWithProfile build ${buildArgs}";
+          cargoCheckExtraArgs = checkArgs;
+          cargoClippyExtraArgs = clippyArgs;
+          cargoDocExtraArgs = docArgs;
+          cargoNextestExtraArgs = testArgs;
+          cargoTestExtraArgs = testArgs;
 
-    # buildPackage builds using `craneLib`.
-    # `extraArgs` are passed through to `craneLib.buildPackage` verbatim.
-    buildPackage = craneLib: extraArgs:
-      craneLib.buildPackage (
-        commonArgs
-        // optionalAttrs (!isLib) {
-          installPhaseCommand = ''
-            if [ "''${CARGO_PROFILE}" == 'dev' ]; then
-                profileDir=debug
-            else
-                profileDir=''${CARGO_PROFILE:-debug}
-            fi
-            ${concatMapStringsSep "\n" (name: ''
-                case ''${CARGO_BUILD_TARGET} in
-                    ${wasm32-wasi})
-                        install -D target/${wasm32-wasi}/''${profileDir}/${name}.wasm $out/bin/${name};;
-                    "")
-                        install -D target/''${profileDir}/${name} $out/bin/${name};;
-                    *)
-                        install -D target/''${CARGO_BUILD_TARGET}/''${profileDir}/${name} $out/bin/${name};;
-                esac
-              '')
-              bins}
-          '';
+          installCargoArtifactsMode = "use-zstd";
         }
         // optionalAttrs (cargoLock != null) {
           cargoVendorDir = craneLib.vendorCargoDeps {
@@ -116,106 +95,155 @@ with self.lib.rust.targets;
               ;
           };
         }
-        // extraArgs
-      );
+        // craneArgs;
+
+      craneArgs' =
+        trace' "callCrane.buildOverrides" {
+          inherit
+            commonArgs
+            craneArgs
+            ;
+        }
+        (commonArgs // buildOverrides overrideArgs commonArgs);
+    in
+      trace' "callCrane" {
+        inherit
+          craneArgs
+          craneArgs'
+          ;
+      }
+      f
+      craneArgs';
+
+    callCraneWithDeps = {
+      craneArgs ? {},
+      craneLib,
+      overrideArgs,
+    } @ args:
+      trace' "callCraneWithDeps" {
+        inherit craneArgs;
+      }
+      callCrane {
+        inherit
+          craneLib
+          overrideArgs
+          ;
+        craneArgs =
+          {
+            cargoArtifacts =
+              callCrane {
+                inherit
+                  craneLib
+                  overrideArgs
+                  ;
+                craneArgs = filterAttrs (name: _: name != "installPhaseCommand") craneArgs;
+              }
+              craneLib.buildDepsOnly;
+          }
+          // craneArgs;
+      };
+
+    # buildPackage builds using `craneLib`.
+    buildPackage = {
+      craneArgs ? {},
+      craneLib,
+      overrideArgs,
+    }:
+      trace' "callCraneWithDeps" {
+        inherit craneArgs;
+      }
+      callCraneWithDeps {
+        inherit
+          craneLib
+          overrideArgs
+          ;
+
+        craneArgs =
+          optionalAttrs (!isLib) {
+            installPhaseCommand = ''
+              if [ "''${CARGO_PROFILE}" == 'dev' ]; then
+                  profileDir=debug
+              else
+                  profileDir=''${CARGO_PROFILE:-debug}
+              fi
+              ${concatMapStringsSep "\n" (name: ''
+                  case ''${CARGO_BUILD_TARGET} in
+                      ${wasm32-wasi})
+                          install -D target/${wasm32-wasi}/''${profileDir}/${name}.wasm $out/bin/${name};;
+                      ${x86_64-pc-windows-gnu})
+                          install -D target/${x86_64-pc-windows-gnu}/''${profileDir}/${name}.exe $out/bin/${name}.exe;;
+                      "")
+                          install -D target/''${profileDir}/${name} $out/bin/${name};;
+                      *)
+                          install -D target/''${CARGO_BUILD_TARGET}/''${profileDir}/${name} $out/bin/${name};;
+                  esac
+                '')
+                bins}
+            '';
+          }
+          // craneArgs;
+      }
+      craneLib.buildPackage;
   in
     final: let
       # hostRustToolchain is the default Rust toolchain.
       hostRustToolchain = withToolchain final rustupToolchain';
 
       # hostCraneLib is the crane library for the host native triple.
-      hostCraneLib = mkCraneLib final hostRustToolchain;
+      hostCraneLib =
+        trace' "hostCraneLib" {
+          inherit
+            hostRustToolchain
+            ;
+          final.hostPlatform.config = final.hostPlatform.config;
+        }
+        mkCraneLib
+        final
+        hostRustToolchain;
 
-      commonOverrideArgs =
-        commonArgs
-        // {
-          pkgs = final;
+      mkHostArgs = {depsBuildBuild ? [], ...} @ craneArgs:
+        trace' "mkHostArgs" {
+          inherit craneArgs;
+        }
+        {
+          craneArgs =
+            craneArgs
+            // {
+              depsBuildBuild = depsBuildBuild ++ optional final.targetPlatform.isDarwin final.darwin.apple_sdk.frameworks.Security;
+            };
+          craneLib = hostCraneLib;
+
+          overrideArgs.pkgs = final;
         };
 
-      hostBuildOverrides = buildOverrides commonOverrideArgs;
-
-      # buildDeps builds dependencies of the crate given `craneLib`.
-      # `extraArgs` are passed through to `craneLib.buildDepsOnly` verbatim.
-      buildDeps = craneLib: extraArgs:
-        craneLib.buildDepsOnly (
-          commonArgs
-          // optionalAttrs (cargoLock != null) {
-            cargoVendorDir = craneLib.vendorCargoDeps {
-              inherit
-                cargoLock
-                src
-                ;
-            };
-          }
-          // extraArgs
-          // hostBuildOverrides
-        );
-
-      buildHostCargoArtifacts = buildDeps hostCraneLib;
-
-      # hostCargoArtifacts are the cargo artifacts built for the host native triple.
-      hostCargoArtifacts = buildHostCargoArtifacts {};
-
-      buildHostPackage = extraArgs:
-        buildPackage hostCraneLib (
-          {
-            cargoArtifacts = buildHostCargoArtifacts extraArgs;
-          }
-          // extraArgs
-          // hostBuildOverrides
-        );
-
-      checks.clippy = hostCraneLib.cargoClippy (
-        commonArgs
-        // {
-          cargoArtifacts = hostCargoArtifacts;
+      callHostCrane = craneArgs:
+        trace' "callHostCrane" {
+          inherit craneArgs;
         }
-        // optionalAttrs (cargoLock != null) {
-          cargoVendorDir = hostCraneLib.vendorCargoDeps {
-            inherit
-              cargoLock
-              src
-              ;
-          };
-        }
-        // hostBuildOverrides
-      );
-      checks.doc = hostCraneLib.cargoDoc (
-        commonArgs
-        // {
-          cargoArtifacts = hostCargoArtifacts;
-        }
-        // optionalAttrs (cargoLock != null) {
-          cargoVendorDir = hostCraneLib.vendorCargoDeps {
-            inherit
-              cargoLock
-              src
-              ;
-          };
-        }
-        // hostBuildOverrides
-      );
-      checks.fmt = hostCraneLib.cargoFmt (
-        commonArgs
-        // hostBuildOverrides
-      );
-      checks.nextest = hostCraneLib.cargoNextest (
-        commonArgs
-        // {
-          cargoArtifacts = hostCargoArtifacts;
+        callCrane (mkHostArgs craneArgs);
 
+      callHostCraneWithDeps = craneArgs:
+        trace' "callHostCraneWithDeps" {
+          inherit craneArgs;
+        }
+        callCraneWithDeps (mkHostArgs craneArgs);
+
+      checks.clippy = callHostCraneWithDeps {} hostCraneLib.cargoClippy;
+      checks.doc = callHostCraneWithDeps {} hostCraneLib.cargoDoc;
+      checks.fmt = callHostCrane {} hostCraneLib.cargoFmt;
+      checks.nextest =
+        callHostCraneWithDeps {
           doCheck = true; # without performing the actual testing, this check is useless
         }
-        // optionalAttrs (cargoLock != null) {
-          cargoVendorDir = hostCraneLib.vendorCargoDeps {
-            inherit
-              cargoLock
-              src
-              ;
-          };
+        hostCraneLib.cargoNextest;
+
+      buildHostPackage = craneArgs:
+        trace' "buildHostPackage" {
+          inherit craneArgs;
         }
-        // hostBuildOverrides
-      );
+        callHostCraneWithDeps
+        craneArgs
+        hostCraneLib.buildPackage;
 
       hostBin = buildHostPackage commonReleaseArgs;
       hostDebugBin = buildHostPackage commonDebugArgs;
@@ -224,68 +252,159 @@ with self.lib.rust.targets;
         rustupToolchainTargets = rustupToolchain'.targets or [];
 
         rustupToolchainWithTarget = target:
-          if any (eq target) rustupToolchainTargets
-          then rustupToolchain'
-          else if target == aarch64-apple-darwin && prev.hostPlatform.system == aarch64-darwin
-          then rustupToolchain'
-          else if target == x86_64-apple-darwin && prev.hostPlatform.system == x86_64-darwin
-          then rustupToolchain'
-          else
-            rustupToolchain'
-            // {
-              targets = rustupToolchainTargets ++ [target];
-            };
+          trace' "rustupToolchainWithTarget" {
+            inherit target;
+          }
+          (
+            if any (eq target) rustupToolchainTargets
+            then rustupToolchain'
+            else if target == aarch64-apple-darwin && prev.hostPlatform.system == aarch64-darwin
+            then rustupToolchain'
+            else if target == x86_64-apple-darwin && prev.hostPlatform.system == x86_64-darwin
+            then rustupToolchain'
+            else if target == x86_64-pc-windows-gnu && prev.hostPlatform.system == x86_64-pc-windows-gnu
+            then rustupToolchain'
+            else
+              rustupToolchain'
+              // {
+                targets = rustupToolchainTargets ++ [target];
+              }
+          );
 
         rustToolchainFor = target: let
           rustupToolchain = rustupToolchainWithTarget target;
         in
-          withToolchain final rustupToolchain;
+          trace' "rustupToolchainFor" {
+            inherit target;
+          }
+          withToolchain
+          final
+          rustupToolchain;
 
         # buildPackageFor builds for `target`.
         # `extraArgs` are passed through to `buildPackage` verbatim.
         # NOTE: Upstream only provides binary caches for a subset of supported systems.
-        buildPackageFor = target: extraArgs: let
+        buildPackageFor = target: craneArgs: let
           kebab2snake = replaceStrings ["-"] ["_"];
           rustToolchain = rustToolchainFor target;
           craneLib = mkCraneLib final rustToolchain;
           pkgsCross = pkgsFor final target;
-          commonCrossArgs =
+
+          useRosetta = final.hostPlatform.system == aarch64-darwin && pkgsCross.targetPlatform.system == x86_64-darwin;
+          useEmu = final.hostPlatform.system != pkgsCross.targetPlatform.system && !useRosetta && pkgsCross.targetPlatform.system != aarch64-darwin;
+
+          depsBuildBuild = optional pkgsCross.targetPlatform.isDarwin pkgsCross.darwin.apple_sdk.frameworks.Security;
+
+          targetArgs =
             {
+              inherit
+                depsBuildBuild
+                ;
+
               CARGO_BUILD_TARGET = target;
 
               RUSTFLAGS = "-C target-feature=+crt-static";
             }
-            // optionalAttrs (final.hostPlatform.config != pkgsCross.hostPlatform.config && target != wasm32-wasi) {
-              stdenv = pkgsCross.stdenv;
+            // optionalAttrs (final.hostPlatform.config != pkgsCross.targetPlatform.config) (
+              {
+                strictDeps = true;
 
-              depsBuildBuild = [
-                pkgsCross.stdenv.cc
-              ];
+                depsBuildBuild =
+                  depsBuildBuild
+                  ++ [
+                    pkgsCross.stdenv.cc
+                  ]
+                  ++ optional pkgsCross.targetPlatform.isWindows pkgsCross.windows.pthreads;
 
-              HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
+                checkInputs = optional useEmu (
+                  if pkgsCross.targetPlatform.isWasm
+                  then final.wasmtime
+                  else if pkgsCross.targetPlatform.isWindows
+                  then final.wine64
+                  else final.qemu
+                );
 
-              "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
-            }
-            // optionalAttrs (target == wasm32-wasi) {
-              depsBuildBuild = [
-                final.wasmtime
-              ];
+                HOST_AR = "${final.stdenv.cc.targetPrefix}ar";
+                HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
 
-              CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
-            };
+                "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
+                "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
+              }
+              // optionalAttrs (!pkgsCross.targetPlatform.isWasi) {
+                "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
+              }
+              // optionalAttrs (target == aarch64-apple-darwin) {
+                doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
+              }
+              // optionalAttrs (doCheck && useEmu) (
+                if target == armv7-unknown-linux-musleabihf
+                then
+                  {
+                    CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
+                  }
+                  // optionalAttrs final.hostPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == aarch64-unknown-linux-musl
+                then
+                  {
+                    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-aarch64";
+                  }
+                  // optionalAttrs final.hostPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == wasm32-wasi
+                then {
+                  CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
+                }
+                else if target == x86_64-unknown-linux-musl
+                then
+                  {
+                    CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-x86_64";
+                  }
+                  // optionalAttrs final.hostPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == x86_64-pc-windows-gnu
+                then {
+                  # TODO: This works locally, but for some reason does not within the sanbox
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
 
-          targetBuildOverrides = buildOverrides (commonOverrideArgs
-            // commonCrossArgs
-            // {
-              inherit pkgsCross;
-            });
+                  CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER = final.writeScript "wine-wrapper" ''
+                    export WINEPREFIX="$(mktemp -d)"
+                    exec wine64 $@
+                  '';
+                }
+                else warn "do not know which test runner to use for target `${target}`, set `CARGO_TARGET_${toUpper (kebab2snake target)}_RUNNER` to appropriate `qemu` binary name" {}
+              )
+            );
         in
-          buildPackage craneLib (commonCrossArgs
-            // {
-              cargoArtifacts = buildDeps craneLib (commonCrossArgs // extraArgs // targetBuildOverrides);
-            }
-            // extraArgs
-            // targetBuildOverrides);
+          trace' "buildPackageFor" {
+            inherit
+              craneArgs
+              target
+              targetArgs
+              useRosetta
+              useEmu
+              ;
+
+            final.hostPlatform.config = final.hostPlatform.config;
+            pkgsCross.targetPlatform.config = pkgsCross.targetPlatform.config;
+          }
+          buildPackage {
+            inherit
+              craneLib
+              ;
+
+            overrideArgs = {
+              inherit
+                pkgsCross
+                target
+                ;
+              pkgs = final;
+            };
+            craneArgs = targetArgs // craneArgs;
+          };
 
         targets' = let
           default.${aarch64-apple-darwin} = prev.hostPlatform.isDarwin;
@@ -341,10 +460,11 @@ with self.lib.rust.targets;
     in
       {
         inherit
-          commonArgs
-          commonOverrideArgs
-          hostBuildOverrides
-          hostCargoArtifacts
+          buildHostPackage
+          callCrane
+          callCraneWithDeps
+          callHostCrane
+          callHostCraneWithDeps
           hostCraneLib
           hostRustToolchain
           ;
