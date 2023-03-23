@@ -92,4 +92,12 @@ with self.lib; {
     ++ [
       "rust-toolchain.toml"
     ];
+
+  targets.aarch64-apple-darwin = "aarch64-apple-darwin";
+  targets.aarch64-unknown-linux-musl = "aarch64-unknown-linux-musl";
+  targets.armv7-unknown-linux-musleabihf = "armv7-unknown-linux-musleabihf";
+  targets.wasm32-wasi = "wasm32-wasi";
+  targets.x86_64-apple-darwin = "x86_64-apple-darwin";
+  targets.x86_64-pc-windows-gnu = "x86_64-pc-windows-gnu";
+  targets.x86_64-unknown-linux-musl = "x86_64-unknown-linux-musl";
 }

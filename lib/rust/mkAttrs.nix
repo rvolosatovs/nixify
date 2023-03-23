@@ -10,6 +10,7 @@ with nixlib.lib;
 with builtins;
 with self.lib;
 with self.lib.rust;
+with self.lib.rust.targets;
   {
     build ? defaultBuildConfig,
     buildOverrides ? defaultBuildOverrides,
@@ -225,9 +226,9 @@ with self.lib.rust;
         rustupToolchainWithTarget = target:
           if any (eq target) rustupToolchainTargets
           then rustupToolchain'
-          else if target == "aarch64-apple-darwin" && prev.hostPlatform.system == aarch64-darwin
+          else if target == aarch64-apple-darwin && prev.hostPlatform.system == aarch64-darwin
           then rustupToolchain'
-          else if target == "x86_64-apple-darwin" && prev.hostPlatform.system == x86_64-darwin
+          else if target == x86_64-apple-darwin && prev.hostPlatform.system == x86_64-darwin
           then rustupToolchain'
           else
             rustupToolchain'
@@ -251,6 +252,8 @@ with self.lib.rust;
           commonCrossArgs =
             {
               CARGO_BUILD_TARGET = target;
+
+              RUSTFLAGS = "-C target-feature=+crt-static";
             }
             // optionalAttrs (final.hostPlatform.config != pkgsCross.hostPlatform.config && target != wasm32-wasi) {
               stdenv = pkgsCross.stdenv;
@@ -284,73 +287,14 @@ with self.lib.rust;
             // extraArgs
             // targetBuildOverrides);
 
-        buildCrossPackage.aarch64-apple-darwin = extraArgs:
-          buildPackageFor "aarch64-apple-darwin" ({
-              CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
-            }
-            // extraArgs);
-
-        buildCrossPackage.aarch64-unknown-linux-musl = extraArgs:
-          buildPackageFor "aarch64-unknown-linux-musl" ({
-              CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
-            }
-            // extraArgs);
-
-        buildCrossPackage.armv7-unknown-linux-musleabihf = extraArgs:
-          buildPackageFor "armv7-unknown-linux-musleabihf" ({
-              CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
-            }
-            // extraArgs);
-
-        buildCrossPackage.wasm32-wasi = buildPackageFor wasm32-wasi;
-
-        buildCrossPackage.x86_64-apple-darwin = extraArgs:
-          buildPackageFor "x86_64-apple-darwin" ({
-              CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
-            }
-            // extraArgs);
-
-        buildCrossPackage.x86_64-pc-windows-gnu = extraArgs:
-          buildPackageFor "x86_64-pc-windows-gnu" ({
-              CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
-            }
-            // extraArgs);
-
-        buildCrossPackage.x86_64-unknown-linux-musl = extraArgs:
-          buildPackageFor "x86_64-unknown-linux-musl" ({
-              CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
-            }
-            // extraArgs);
-
-        aarch64LinuxMuslBin = buildCrossPackage.aarch64-unknown-linux-musl commonReleaseArgs;
-        aarch64LinuxMuslDebugBin = buildCrossPackage.aarch64-unknown-linux-musl commonDebugArgs;
-
-        aarch64DarwinBin = buildCrossPackage.aarch64-apple-darwin commonReleaseArgs;
-        aarch64DarwinDebugBin = buildCrossPackage.aarch64-apple-darwin commonDebugArgs;
-
-        armv7LinuxMuslBin = buildCrossPackage.armv7-unknown-linux-musleabihf commonReleaseArgs;
-        armv7LinuxMuslDebugBin = buildCrossPackage.armv7-unknown-linux-musleabihf commonDebugArgs;
-
-        wasm32WasiBin = buildCrossPackage.wasm32-wasi commonReleaseArgs;
-        wasm32WasiDebugBin = buildCrossPackage.wasm32-wasi commonDebugArgs;
-
-        x86_64LinuxMuslBin = buildCrossPackage.x86_64-unknown-linux-musl commonReleaseArgs;
-        x86_64LinuxMuslDebugBin = buildCrossPackage.x86_64-unknown-linux-musl commonDebugArgs;
-
-        x86_64WindowsGnuBin = buildCrossPackage.x86_64-pc-windows-gnu commonReleaseArgs;
-        x86_64WindowsGnuDebugBin = buildCrossPackage.x86_64-pc-windows-gnu commonDebugArgs;
-
-        x86_64DarwinBin = buildCrossPackage.x86_64-apple-darwin commonReleaseArgs;
-        x86_64DarwinDebugBin = buildCrossPackage.x86_64-apple-darwin commonDebugArgs;
-
         targets' = let
-          default.aarch64-apple-darwin = prev.hostPlatform.isDarwin;
-          default.aarch64-unknown-linux-musl = true;
-          default.armv7-unknown-linux-musleabihf = true;
-          default.wasm32-wasi = true;
-          default.x86_64-apple-darwin = prev.hostPlatform.system == x86_64-darwin;
-          default.x86_64-pc-windows-gnu = true;
-          default.x86_64-unknown-linux-musl = true;
+          default.${aarch64-apple-darwin} = prev.hostPlatform.isDarwin;
+          default.${aarch64-unknown-linux-musl} = true;
+          default.${armv7-unknown-linux-musleabihf} = true;
+          default.${wasm32-wasi} = true;
+          default.${x86_64-apple-darwin} = prev.hostPlatform.system == x86_64-darwin;
+          default.${x86_64-pc-windows-gnu} = true;
+          default.${x86_64-unknown-linux-musl} = true;
 
           all =
             default
@@ -362,35 +306,15 @@ with self.lib.rust;
               set `targets.${target} = false` to remove this warning'' (nameValuePair target enabled))
           all;
 
-        targetBins =
-          optionalAttrs targets'.aarch64-unknown-linux-musl {
-            "${pname'}-aarch64-unknown-linux-musl" = aarch64LinuxMuslBin;
-            "${pname'}-debug-aarch64-unknown-linux-musl" = aarch64LinuxMuslDebugBin;
-          }
-          // optionalAttrs targets'.aarch64-apple-darwin {
-            "${pname'}-aarch64-apple-darwin" = aarch64DarwinBin;
-            "${pname'}-debug-aarch64-apple-darwin" = aarch64DarwinDebugBin;
-          }
-          // optionalAttrs targets'.armv7-unknown-linux-musleabihf {
-            "${pname'}-armv7-unknown-linux-musleabihf" = armv7LinuxMuslBin;
-            "${pname'}-debug-armv7-unknown-linux-musleabihf" = armv7LinuxMuslDebugBin;
-          }
-          // optionalAttrs targets'.wasm32-wasi {
-            "${pname'}-wasm32-wasi" = wasm32WasiBin;
-            "${pname'}-debug-wasm32-wasi" = wasm32WasiDebugBin;
-          }
-          // optionalAttrs targets'.x86_64-apple-darwin {
-            "${pname'}-x86_64-apple-darwin" = x86_64DarwinBin;
-            "${pname'}-debug-x86_64-apple-darwin" = x86_64DarwinDebugBin;
-          }
-          // optionalAttrs targets'.x86_64-pc-windows-gnu {
-            "${pname'}-x86_64-pc-windows-gnu" = x86_64WindowsGnuBin;
-            "${pname'}-debug-x86_64-pc-windows-gnu" = x86_64WindowsGnuDebugBin;
-          }
-          // optionalAttrs targets'.x86_64-unknown-linux-musl {
-            "${pname'}-x86_64-unknown-linux-musl" = x86_64LinuxMuslBin;
-            "${pname'}-debug-x86_64-unknown-linux-musl" = x86_64LinuxMuslDebugBin;
-          };
+        targetBins = let
+          mkPackages = target:
+            optionalAttrs targets'.${target} {
+              "${pname'}-${target}" = buildPackageFor target commonReleaseArgs;
+              "${pname'}-debug-${target}" = buildPackageFor target commonDebugArgs;
+            };
+          packages = map mkPackages (attrValues rust.targets);
+        in
+          foldr mergeAttrs {} packages;
 
         bins' = genAttrs bins (_: {});
         targetImages = optionalAttrs (bins' ? ${pname'}) (mapAttrs' (target: bin:
