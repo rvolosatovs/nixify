@@ -9,7 +9,6 @@ with nixlib.lib;
 with self.lib; let
   assertRustOutputs = flake: name:
     assert name != "default";
-    assert name != "hello";
     assert name != "rust";
     assert name != "test-final";
     assert name != "test-prev";
@@ -25,7 +24,6 @@ with self.lib; let
         assert flake.checks.${system} ? fmt;
         assert flake.checks.${system} ? nextest;
         assert flake.devShells.${system} ? default;
-        assert flake.packages.${system} ? hello;
         assert flake.packages.${system} ? test-final;
         assert flake.packages.${system} ? test-prev;
           mapAttrs' (n: nameValuePair "${name}-check-${n}") flake.checks.${system}
@@ -50,18 +48,18 @@ with self.lib; let
     // {
       test-prev = pkgs.test-prev;
       test-final = pkgs.test-final;
-      hello = pkgs.hello;
     };
 
-  flakes.rust.bindeps = rust.mkFlake {
+  flakes.rust.complex = rust.mkFlake {
     inherit
       overlays
       withPackages
       ;
 
-    src = ../examples/rust-bindeps;
-  };
+    src = ../examples/rust-complex;
 
+    targets.wasm32-wasi = false; # https://github.com/briansmith/ring/issues/1043
+  };
 
   flakes.rust.hello = rust.mkFlake {
     inherit
@@ -91,28 +89,6 @@ with self.lib; let
     cargoLock = ../examples/rust-lib/Cargo.test.lock;
   };
 
-  flakes.rust.exclude-path = rust.mkFlake {
-    inherit
-      overlays
-      withPackages
-      ;
-
-    src = ../examples/rust-exclude-path;
-    excludePaths = [
-      "tests/exclude.rs"
-    ];
-  };
-
-  flakes.rust.unsupported-target = rust.mkFlake {
-    inherit
-      overlays
-      withPackages
-      ;
-
-    src = ../examples/rust-unsupported-target;
-    targets.x86_64-unknown-none = false;
-  };
-
   flakes.rust.workspace = rust.mkFlake {
     inherit
       overlays
@@ -131,74 +107,36 @@ in
   ]
   (system: let
     isDarwin = system == aarch64-darwin || system == x86_64-darwin;
+    assertRustPackages = attrs: name: x:
+      assert attrs.${system} ? "${name}-aarch64-apple-darwin" || !isDarwin;
+      assert attrs.${system} ? "${name}-aarch64-unknown-linux-musl";
+      assert attrs.${system} ? "${name}-armv7-unknown-linux-musleabihf";
+      assert attrs.${system} ? "${name}-x86_64-apple-darwin" || system != x86_64-darwin;
+      assert attrs.${system} ? "${name}-x86_64-pc-windows-gnu";
+      assert attrs.${system} ? "${name}-x86_64-unknown-linux-musl";
+      assert attrs.${system} ? ${name}; x;
+    assertRustOCIPackages = attrs: name: x:
+      assert attrs.${system} ? "${name}-aarch64-apple-darwin-oci" || !isDarwin;
+      assert attrs.${system} ? "${name}-aarch64-unknown-linux-musl-oci";
+      assert attrs.${system} ? "${name}-armv7-unknown-linux-musleabihf-oci";
+      assert attrs.${system} ? "${name}-x86_64-apple-darwin-oci" || system != x86_64-darwin;
+      assert attrs.${system} ? "${name}-x86_64-pc-windows-gnu-oci";
+      assert attrs.${system} ? "${name}-x86_64-unknown-linux-musl-oci"; x;
   in
-    # TODO: Support cross-compilation to Linux from Darwin
-    assert flakes.rust.hello.packages.${system} ? "default";
-    assert flakes.rust.hello.packages.${system} ? "rust-hello";
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-aarch64-apple-darwin" || !isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-aarch64-apple-darwin-oci" || !isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-aarch64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-aarch64-unknown-linux-musl-oci" || isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-wasm32-wasi";
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-wasm32-wasi-oci";
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-x86_64-apple-darwin-oci" || system != x86_64-darwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-x86_64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-x86_64-unknown-linux-musl-oci" || isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug";
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-aarch64-apple-darwin" || !isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-aarch64-apple-darwin-oci" || !isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-aarch64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-aarch64-unknown-linux-musl-oci" || isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-wasm32-wasi";
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-wasm32-wasi-oci";
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-x86_64-apple-darwin-oci" || system != x86_64-darwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-x86_64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.hello.packages.${system} ? "rust-hello-debug-x86_64-unknown-linux-musl-oci" || isDarwin;
-    assert flakes.rust.hello-multibin.packages.${system} ? "default";
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin";
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-aarch64-apple-darwin" || !isDarwin;
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-aarch64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-wasm32-wasi";
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-x86_64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug";
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-aarch64-apple-darwin" || !isDarwin;
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-aarch64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-wasm32-wasi";
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.hello-multibin.packages.${system} ? "rust-hello-multibin-debug-x86_64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib";
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-aarch64-apple-darwin" || !isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-aarch64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-wasm32-wasi";
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-x86_64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug";
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-aarch64-apple-darwin" || !isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-aarch64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-wasm32-wasi";
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.lib.checks.${system} ? "rust-lib-debug-x86_64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.unsupported-target.packages.${system} ? "default";
-    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target";
-    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-aarch64-apple-darwin" || system != aarch64-darwin;
-    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-debug";
-    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-debug-aarch64-apple-darwin" || system != aarch64-darwin;
-    assert flakes.rust.unsupported-target.packages.${system} ? "rust-unsupported-target-debug-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.workspace.packages.${system} ? "default";
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace";
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-aarch64-apple-darwin" || !isDarwin;
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-aarch64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-wasm32-wasi";
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-x86_64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-debug";
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-debug-aarch64-apple-darwin" || !isDarwin;
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-debug-aarch64-unknown-linux-musl" || isDarwin;
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-debug-wasm32-wasi";
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-debug-x86_64-apple-darwin" || system != x86_64-darwin;
-    assert flakes.rust.workspace.packages.${system} ? "rust-workspace-debug-x86_64-unknown-linux-musl" || isDarwin;
+    assert flakes.rust.complex.packages.${system} ? default;
+    assert flakes.rust.hello-multibin.packages.${system} ? default;
+    assert flakes.rust.hello-multibin.packages.${system} ? rust-hello-multibin-wasm32-wasi;
+    assert flakes.rust.hello.packages.${system} ? default;
+    assert flakes.rust.hello.packages.${system} ? rust-hello-wasm32-wasi-oci;
+    assert flakes.rust.hello.packages.${system} ? rust-hello-wasm32-wasi;
+    assert flakes.rust.lib.checks.${system} ? rust-lib-wasm32-wasi;
+    assert flakes.rust.workspace.packages.${system} ? default;
+    assert flakes.rust.workspace.packages.${system} ? rust-workspace-wasm32-wasi;
+      (assertRustPackages flakes.rust.complex.packages "rust-complex")
+      (assertRustPackages flakes.rust.hello-multibin.packages "rust-hello-multibin")
+      (assertRustPackages flakes.rust.hello.packages "rust-hello")
+      (assertRustPackages flakes.rust.lib.checks "rust-lib")
+      (assertRustPackages flakes.rust.workspace.packages "rust-workspace")
+      (assertRustOCIPackages flakes.rust.complex.packages "rust-complex")
+      (assertRustOCIPackages flakes.rust.hello.packages "rust-hello")
       foldl (checks: example: checks // (assertRustOutputs flakes.rust.${example} "rust-${example}" system)) {} (attrNames flakes.rust))

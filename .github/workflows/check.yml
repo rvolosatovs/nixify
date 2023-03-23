@@ -32,3 +32,8 @@ jobs:
 
     - run: nix flake check -L --show-trace --override-input 'nixify' '.' ./examples/rust-hello
     - run: nix run -L --show-trace --override-input 'nixify' '.' ./examples/rust-hello
+
+    - run: nix flake check -L --show-trace --override-input 'nixify' '.' ./examples/rust-hello-multibin
+
+    - run: nix flake check -L --show-trace --override-input 'nixify' '.' ./examples/rust-complex
+    - run: nix run -L --show-trace --override-input 'nixify' '.' ./examples/rust-complex

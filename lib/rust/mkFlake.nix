@@ -1,6 +1,7 @@
 {
   self,
   crane,
+  fenix,
   flake-utils,
   nixlib,
   nixpkgs,
@@ -98,6 +99,7 @@ with self.lib.rust;
         overlays
         ++ [
           rust-overlay.overlays.default
+          fenix.overlays.default
           overlay
         ];
 

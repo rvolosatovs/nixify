@@ -10,6 +10,8 @@
   inputs.nixlib.url = github:nix-community/nixpkgs.lib;
   inputs.nixpkgs.url = github:nixos/nixpkgs/nixpkgs-22.11-darwin;
   inputs.rust-overlay.inputs.flake-utils.follows = "flake-utils";
+  inputs.fenix.inputs.nixpkgs.follows = "nixpkgs";
+  inputs.fenix.url = github:nix-community/fenix;    
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
   inputs.rust-overlay.url = github:oxalica/rust-overlay;
 
