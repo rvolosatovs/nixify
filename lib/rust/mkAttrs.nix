@@ -252,7 +252,7 @@ with self.lib.rust;
             {
               CARGO_BUILD_TARGET = target;
             }
-            // optionalAttrs (final.stdenv.hostPlatform.config != target && target != wasm32-wasi) {
+            // optionalAttrs (final.hostPlatform.config != pkgsCross.hostPlatform.config && target != wasm32-wasi) {
               stdenv = pkgsCross.stdenv;
 
               depsBuildBuild = [
@@ -296,6 +296,12 @@ with self.lib.rust;
             }
             // extraArgs);
 
+        buildCrossPackage.armv7-unknown-linux-musleabihf = extraArgs:
+          buildPackageFor "armv7-unknown-linux-musleabihf" ({
+              CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+            }
+            // extraArgs);
+
         buildCrossPackage.wasm32-wasi = buildPackageFor wasm32-wasi;
 
         buildCrossPackage.x86_64-apple-darwin = extraArgs:
@@ -316,6 +322,9 @@ with self.lib.rust;
         aarch64DarwinBin = buildCrossPackage.aarch64-apple-darwin commonReleaseArgs;
         aarch64DarwinDebugBin = buildCrossPackage.aarch64-apple-darwin commonDebugArgs;
 
+        armv7LinuxMuslBin = buildCrossPackage.armv7-unknown-linux-musleabihf commonReleaseArgs;
+        armv7LinuxMuslDebugBin = buildCrossPackage.armv7-unknown-linux-musleabihf commonDebugArgs;
+
         wasm32WasiBin = buildCrossPackage.wasm32-wasi commonReleaseArgs;
         wasm32WasiDebugBin = buildCrossPackage.wasm32-wasi commonDebugArgs;
 
@@ -328,6 +337,7 @@ with self.lib.rust;
         targets' = let
           default.aarch64-apple-darwin = prev.hostPlatform.isDarwin;
           default.aarch64-unknown-linux-musl = true;
+          default.armv7-unknown-linux-musleabihf = true;
           default.wasm32-wasi = true;
           default.x86_64-apple-darwin = prev.hostPlatform.system == x86_64-darwin;
           default.x86_64-unknown-linux-musl = true;
@@ -350,6 +360,10 @@ with self.lib.rust;
           // optionalAttrs targets'.aarch64-apple-darwin {
             "${pname'}-aarch64-apple-darwin" = aarch64DarwinBin;
             "${pname'}-debug-aarch64-apple-darwin" = aarch64DarwinDebugBin;
+          }
+          // optionalAttrs targets'.armv7-unknown-linux-musleabihf {
+            "${pname'}-armv7-unknown-linux-musleabihf" = armv7LinuxMuslBin;
+            "${pname'}-debug-armv7-unknown-linux-musleabihf" = armv7LinuxMuslDebugBin;
           }
           // optionalAttrs targets'.wasm32-wasi {
             "${pname'}-wasm32-wasi" = wasm32WasiBin;

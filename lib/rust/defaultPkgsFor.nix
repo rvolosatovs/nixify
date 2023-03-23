@@ -8,6 +8,8 @@ with flake-utils.lib.system;
   pkgs: target:
     if pkgs.hostPlatform.config == target
     then pkgs
+    else if pkgs.hostPlatform.system == armv7l-linux && target == "armv7-unknown-linux-musleabihf"
+    then pkgs
     else if pkgs.hostPlatform.system == aarch64-linux && target == "aarch64-unknown-linux-musl"
     then pkgs
     else if pkgs.hostPlatform.system == x86_64-windows && target == "x86_64-pc-windows-gnu"
@@ -18,6 +20,8 @@ with flake-utils.lib.system;
     then pkgs.pkgsCross.aarch64-multiplatform
     else if target == "aarch64-apple-darwin"
     then pkgs.pkgsCross.aarch64-darwin
+    else if target == "armv7-unknown-linux-musleabihf"
+    then pkgs.pkgsCross.armv7l-hf-multiplatform
     else if target == "x86_64-apple-darwin"
     then pkgs.pkgsCross.x86_64-darwin
     else if target == "x86_64-pc-windows-gnu"
