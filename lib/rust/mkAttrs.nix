@@ -310,6 +310,12 @@ with self.lib.rust;
             }
             // extraArgs);
 
+        buildCrossPackage.x86_64-pc-windows-gnu = extraArgs:
+          buildPackageFor "x86_64-pc-windows-gnu" ({
+              CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+            }
+            // extraArgs);
+
         buildCrossPackage.x86_64-unknown-linux-musl = extraArgs:
           buildPackageFor "x86_64-unknown-linux-musl" ({
               CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
@@ -331,6 +337,9 @@ with self.lib.rust;
         x86_64LinuxMuslBin = buildCrossPackage.x86_64-unknown-linux-musl commonReleaseArgs;
         x86_64LinuxMuslDebugBin = buildCrossPackage.x86_64-unknown-linux-musl commonDebugArgs;
 
+        x86_64WindowsGnuBin = buildCrossPackage.x86_64-pc-windows-gnu commonReleaseArgs;
+        x86_64WindowsGnuDebugBin = buildCrossPackage.x86_64-pc-windows-gnu commonDebugArgs;
+
         x86_64DarwinBin = buildCrossPackage.x86_64-apple-darwin commonReleaseArgs;
         x86_64DarwinDebugBin = buildCrossPackage.x86_64-apple-darwin commonDebugArgs;
 
@@ -340,6 +349,7 @@ with self.lib.rust;
           default.armv7-unknown-linux-musleabihf = true;
           default.wasm32-wasi = true;
           default.x86_64-apple-darwin = prev.hostPlatform.system == x86_64-darwin;
+          default.x86_64-pc-windows-gnu = true;
           default.x86_64-unknown-linux-musl = true;
 
           all =
@@ -372,6 +382,10 @@ with self.lib.rust;
           // optionalAttrs targets'.x86_64-apple-darwin {
             "${pname'}-x86_64-apple-darwin" = x86_64DarwinBin;
             "${pname'}-debug-x86_64-apple-darwin" = x86_64DarwinDebugBin;
+          }
+          // optionalAttrs targets'.x86_64-pc-windows-gnu {
+            "${pname'}-x86_64-pc-windows-gnu" = x86_64WindowsGnuBin;
+            "${pname'}-debug-x86_64-pc-windows-gnu" = x86_64WindowsGnuDebugBin;
           }
           // optionalAttrs targets'.x86_64-unknown-linux-musl {
             "${pname'}-x86_64-unknown-linux-musl" = x86_64LinuxMuslBin;
