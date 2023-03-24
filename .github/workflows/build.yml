@@ -33,90 +33,90 @@ jobs:
       matrix:
         config:
         # Darwin
-        - os: macos-latest
+        - os: macos-12
           package: default
           test-bin: ./result/bin/rust-hello
 
-        - os: macos-latest
+        - os: macos-12
           package: rust-hello
           test-bin: ./result/bin/rust-hello
 
-        - os: macos-latest
+        - os: macos-12
           package: rust-hello-aarch64-apple-darwin
           test-bin: file ./result/bin/rust-hello
           test-oci: echo "OCI runtime missing, skip test"
 
-        - os: macos-latest
+        - os: macos-12
           package: rust-hello-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
           test-oci: echo "OCI runtime missing, skip test"
 
-        - os: macos-latest
+        - os: macos-12
           package: rust-hello-x86_64-apple-darwin
           test-bin: ./result/bin/rust-hello
           test-oci: echo "OCI runtime missing, skip test"
 
-        - os: macos-latest
+        - os: macos-12
           package: rust-hello-debug
           test-bin: ./result/bin/rust-hello
 
-        - os: macos-latest
+        - os: macos-12
           package: rust-hello-debug-aarch64-apple-darwin
           test-bin: file ./result/bin/rust-hello
           test-oci: echo "OCI runtime missing, skip test"
 
-        - os: macos-latest
+        - os: macos-12
           package: rust-hello-debug-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
           test-oci: echo "OCI runtime missing, skip test"
 
-        - os: macos-latest
+        - os: macos-12
           package: rust-hello-debug-x86_64-apple-darwin
           test-bin: ./result/bin/rust-hello
           test-oci: echo "OCI runtime missing, skip test"
 
 
         # Linux
-        - os: ubuntu-latest
+        - os: ubuntu-22.04
           package: default
           test-bin: ./result/bin/rust-hello
 
-        - os: ubuntu-latest
+        - os: ubuntu-22.04
           package: rust-hello
           test-bin: ./result/bin/rust-hello
 
-        - os: ubuntu-latest
+        - os: ubuntu-22.04
           package: rust-hello-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-latest
+        - os: ubuntu-22.04
           package: rust-hello-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-latest
+        - os: ubuntu-22.04
           package: rust-hello-x86_64-unknown-linux-musl
           test-bin: ./result/bin/rust-hello
           test-oci: |
             docker load < ./result
             docker run --rm rust-hello:$(nix eval --raw --override-input 'nixify' '.' ./examples/rust-hello#rust-hello-x86_64-unknown-linux-musl-oci.imageTag)
 
-        - os: ubuntu-latest
+        - os: ubuntu-22.04
           package: rust-hello-debug
           test-bin: ./result/bin/rust-hello
 
-        - os: ubuntu-latest
+        - os: ubuntu-22.04
           package: rust-hello-debug-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-latest
+        - os: ubuntu-22.04
           package: rust-hello-debug-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-latest
+        - os: ubuntu-22.04
           package: rust-hello-debug-x86_64-unknown-linux-musl
           test-bin: ./result/bin/rust-hello
           test-oci: |
