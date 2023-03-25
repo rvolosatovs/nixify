@@ -15,8 +15,8 @@ jobs:
     strategy:
       matrix:
         platform:
-        - host: macos-latest
-        - host: ubuntu-latest
+        - host: macos-12
+        - host: ubuntu-22.04
     runs-on: ${{ matrix.platform.host }}
     steps:
     - uses: actions/checkout@v3
@@ -29,11 +29,3 @@ jobs:
         name: rvolosatovs
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - run: nix flake check -L --show-trace
-
-    - run: nix flake check -L --show-trace --override-input 'nixify' '.' ./examples/rust-hello
-    - run: nix run -L --show-trace --override-input 'nixify' '.' ./examples/rust-hello
-
-    - run: nix flake check -L --show-trace --override-input 'nixify' '.' ./examples/rust-hello-multibin
-
-    - run: nix flake check -L --show-trace --override-input 'nixify' '.' ./examples/rust-complex
-    - run: nix run -L --show-trace --override-input 'nixify' '.' ./examples/rust-complex

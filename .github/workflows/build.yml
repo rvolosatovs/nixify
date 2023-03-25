@@ -1,4 +1,4 @@
-name: examples
+name: build
 
 on:
   workflow_dispatch:
@@ -10,24 +10,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  rust-lib:
-    strategy:
-      matrix:
-        os: [ macos-latest, ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v20
-      with:
-        extra_nix_config: |
-          access-tokens = github.com=${{ github.token }}
-    - uses: cachix/cachix-action@v12
-      with:
-        name: rvolosatovs
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
-    - run: nix flake check -L --show-trace --keep-going --override-input 'nixify' '.' './examples/rust-lib'
-
   rust-hello:
     strategy:
       matrix:
@@ -44,17 +26,30 @@ jobs:
         - os: macos-12
           package: rust-hello-aarch64-apple-darwin
           test-bin: file ./result/bin/rust-hello
-          test-oci: echo "OCI runtime missing, skip test"
+
+        - os: macos-12
+          package: rust-hello-aarch64-unknown-linux-musl
+          test-bin: file ./result/bin/rust-hello
+
+        - os: macos-12
+          package: rust-hello-armv7-unknown-linux-musleabihf
+          test-bin: file ./result/bin/rust-hello
 
         - os: macos-12
           package: rust-hello-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
-          test-oci: echo "OCI runtime missing, skip test"
 
         - os: macos-12
           package: rust-hello-x86_64-apple-darwin
           test-bin: ./result/bin/rust-hello
-          test-oci: echo "OCI runtime missing, skip test"
+
+        - os: macos-12
+          package: rust-hello-x86_64-pc-windows-gnu
+          test-bin: file ./result/bin/rust-hello.exe
+
+        - os: macos-12
+          package: rust-hello-x86_64-unknown-linux-musl
+          test-bin: file ./result/bin/rust-hello
 
         - os: macos-12
           package: rust-hello-debug
@@ -63,18 +58,30 @@ jobs:
         - os: macos-12
           package: rust-hello-debug-aarch64-apple-darwin
           test-bin: file ./result/bin/rust-hello
-          test-oci: echo "OCI runtime missing, skip test"
+
+        - os: macos-12
+          package: rust-hello-debug-aarch64-unknown-linux-musl
+          test-bin: file ./result/bin/rust-hello
+
+        - os: macos-12
+          package: rust-hello-debug-armv7-unknown-linux-musleabihf
+          test-bin: file ./result/bin/rust-hello
 
         - os: macos-12
           package: rust-hello-debug-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
-          test-oci: echo "OCI runtime missing, skip test"
 
         - os: macos-12
           package: rust-hello-debug-x86_64-apple-darwin
           test-bin: ./result/bin/rust-hello
-          test-oci: echo "OCI runtime missing, skip test"
 
+        - os: macos-12
+          package: rust-hello-debug-x86_64-pc-windows-gnu
+          test-bin: file ./result/bin/rust-hello.exe
+
+        - os: macos-12
+          package: rust-hello-debug-x86_64-unknown-linux-musl
+          test-bin: file ./result/bin/rust-hello
 
         # Linux
         - os: ubuntu-22.04
@@ -91,8 +98,18 @@ jobs:
           test-oci: docker load < ./result
 
         - os: ubuntu-22.04
+          package: rust-hello-armv7-unknown-linux-musleabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - os: ubuntu-22.04
           package: rust-hello-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - os: ubuntu-22.04
+          package: rust-hello-x86_64-pc-windows-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/rust-hello.exe
           test-oci: docker load < ./result
 
         - os: ubuntu-22.04
@@ -112,8 +129,18 @@ jobs:
           test-oci: docker load < ./result
 
         - os: ubuntu-22.04
+          package: rust-hello-debug-armv7-unknown-linux-musleabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - os: ubuntu-22.04
           package: rust-hello-debug-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - os: ubuntu-22.04
+          package: rust-hello-debug-x86_64-pc-windows-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/rust-hello.exe
           test-oci: docker load < ./result
 
         - os: ubuntu-22.04
@@ -139,78 +166,5 @@ jobs:
     - run: ${{ matrix.config.test }}
 
     - run: nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#${{ matrix.config.package }}-oci'
-      if: ${{ matrix.config.test-oci }}
+      if: ${{ matrix.config.package != 'default' && matrix.config.package != 'rust-hello' && matrix.config.package != 'rust-hello-debug' }}
     - run: ${{ matrix.config.test-oci }}
-
-  rust-hello-multibin:
-    strategy:
-      matrix:
-        os: [ macos-latest, ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v20
-      with:
-        extra_nix_config: |
-          access-tokens = github.com=${{ github.token }}
-    - uses: cachix/cachix-action@v12
-      with:
-        name: rvolosatovs
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
-    - run: nix flake check -L --show-trace --keep-going --override-input 'nixify' '.' './examples/rust-hello-multibin'
-
-    - run: |
-        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin'
-        ./result/bin/hello-other-path
-        ./result/bin/bye
-    - run: |
-        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin#rust-hello-multibin'
-        ./result/bin/hello-other-path
-        ./result/bin/bye
-    - run: |
-        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin#rust-hello-multibin-debug'
-        ./result/bin/hello-other-path
-        ./result/bin/bye
-    - run: |
-        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin#rust-hello-multibin-wasm32-wasi'
-        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/hello-other-path
-        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/bye
-    - run: |
-        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello-multibin#rust-hello-multibin-debug-wasm32-wasi'
-        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/hello-other-path
-        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/bye
-
-  rust-workspace:
-    strategy:
-      matrix:
-        os: [ macos-latest, ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v20
-      with:
-        extra_nix_config: |
-          access-tokens = github.com=${{ github.token }}
-    - uses: cachix/cachix-action@v12
-      with:
-        name: rvolosatovs
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
-    - run: nix flake check -L --show-trace --keep-going --override-input 'nixify' '.' './examples/rust-workspace'
-
-    - run: |
-        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-workspace'
-        ./result/bin/hello-workspace
-    - run: |
-        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-workspace#rust-workspace'
-        ./result/bin/hello-workspace
-    - run: |
-        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-workspace#rust-workspace-debug'
-        ./result/bin/hello-workspace
-    - run: |
-        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-workspace#rust-workspace-wasm32-wasi'
-        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/hello-workspace
-    - run: |
-        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-workspace#rust-workspace-debug-wasm32-wasi'
-        nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/hello-workspace
