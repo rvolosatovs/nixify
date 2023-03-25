@@ -10,8 +10,6 @@ with self.lib; let
   assertRustOutputs = flake: name:
     assert name != "default";
     assert name != "rust";
-    assert name != "test-final";
-    assert name != "test-prev";
     assert flake ? checks;
     assert flake ? devShells;
     assert flake ? overlays;
@@ -24,79 +22,28 @@ with self.lib; let
         assert flake.checks.${system} ? fmt;
         assert flake.checks.${system} ? nextest;
         assert flake.devShells.${system} ? default;
-        assert flake.packages.${system} ? test-final;
-        assert flake.packages.${system} ? test-prev;
           mapAttrs' (n: nameValuePair "${name}-check-${n}") flake.checks.${system}
           // mapAttrs' (n: nameValuePair "${name}-shell-${n}") flake.devShells.${system}
           // mapAttrs' (n: nameValuePair "${name}-package-${n}") flake.packages.${system};
 
-  overlays = [
-    (final: prev: {
-      test-prev = final.test-final;
-    })
-    (final: prev: {
-      test-final = final.writeText "test" "test";
-    })
-  ];
-
-  withPackages = {
-    pkgs,
-    packages,
-    ...
-  }:
-    packages
-    // {
-      test-prev = pkgs.test-prev;
-      test-final = pkgs.test-final;
-    };
-
-  flakes.rust.complex = rust.mkFlake {
-    inherit
-      overlays
-      withPackages
-      ;
-
-    src = ../examples/rust-complex;
-
-    targets.wasm32-wasi = false; # https://github.com/briansmith/ring/issues/1043
+  flakes.rust.complex = (import ../examples/rust-complex/flake.nix).outputs {
+    nixify = self;
   };
 
-  flakes.rust.hello = rust.mkFlake {
-    inherit
-      overlays
-      withPackages
-      ;
-
-    src = ../examples/rust-hello;
+  flakes.rust.hello = (import ../examples/rust-hello/flake.nix).outputs {
+    nixify = self;
   };
 
-  flakes.rust.hello-multibin = rust.mkFlake {
-    inherit
-      overlays
-      withPackages
-      ;
-
-    src = ../examples/rust-hello-multibin;
+  flakes.rust.hello-multibin = (import ../examples/rust-hello-multibin/flake.nix).outputs {
+    nixify = self;
   };
 
-  flakes.rust.lib = rust.mkFlake {
-    inherit
-      overlays
-      withPackages
-      ;
-
-    src = ../examples/rust-lib;
-    cargoLock = ../examples/rust-lib/Cargo.test.lock;
+  flakes.rust.lib = (import ../examples/rust-lib/flake.nix).outputs {
+    nixify = self;
   };
 
-  flakes.rust.workspace = rust.mkFlake {
-    inherit
-      overlays
-      withPackages
-      ;
-
-    src = ../examples/rust-workspace;
-    name = "rust-workspace";
+  flakes.rust.workspace = (import ../examples/rust-workspace/flake.nix).outputs {
+    nixify = self;
   };
 in
   genAttrs [
