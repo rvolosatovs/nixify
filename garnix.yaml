@@ -1,0 +1,11 @@
+builds:
+  include:
+  # TODO: Enable individual aarch64-darwin checks
+  #- 'checks.aarch64-darwin.*'
+  - 'checks.aarch64-linux.*'
+  - 'checks.x86_64-darwin.*'
+  - 'checks.x86_64-linux.*'
+  - devShells.aarch64-darwin
+  - devShells.aarch64-linux
+  - devShells.x86_64-darwin
+  - devShells.x86_64-linux
