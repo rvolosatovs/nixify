@@ -1,21 +1,6 @@
 {self, ...}:
 with self.lib.rust;
-  {
-    build ? defaultBuildConfig,
-    buildOverrides ? defaultBuildOverrides,
-    cargoLock ? null,
-    clippy ? defaultClippyConfig,
-    doc ? defaultDocConfig,
-    doCheck ? true,
-    pkgsFor ? defaultPkgsFor,
-    pname ? null,
-    rustupToolchain ? defaultRustupToolchain,
-    src,
-    targets ? null,
-    test ? defaultTestConfig,
-    version ? null,
-    withToolchain ? defaultWithToolchain,
-  } @ args: pkgs: let
+  args: pkgs: let
     attrs = mkAttrs args pkgs;
   in
     attrs.checks
