@@ -63,6 +63,8 @@ with self.lib.rust;
         buildOverrides
         cargoLock
         clippy
+        doc
+        doCheck
         pkgsFor
         pname
         targets
