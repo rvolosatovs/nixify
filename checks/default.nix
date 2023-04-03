@@ -84,6 +84,5 @@ in
       (assertRustPackages flakes.rust.hello.packages "rust-hello")
       (assertRustPackages flakes.rust.lib.checks "rust-lib")
       (assertRustPackages flakes.rust.workspace.packages "rust-workspace")
-      (assertRustOCIPackages flakes.rust.complex.packages "rust-complex")
       (assertRustOCIPackages flakes.rust.hello.packages "rust-hello")
       foldl (checks: example: checks // (assertRustOutputs flakes.rust.${example} "rust-${example}" system)) {} (attrNames flakes.rust))

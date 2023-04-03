@@ -3,11 +3,13 @@
   crane,
   flake-utils,
   nixlib,
+  nix-log,
   ...
 }:
 with flake-utils.lib.system;
 with nixlib.lib;
 with builtins;
+with nix-log.lib;
 with self.lib;
 with self.lib.rust;
 with self.lib.rust.targets;
