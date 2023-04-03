@@ -23,6 +23,7 @@ with self.lib.rust;
     excludePaths ? defaultExcludePaths,
     includePaths ? null,
     name ? null,
+    nixpkgsConfig ? defaultNixpkgsConfig,
     overlays ? [],
     pkgsFor ? defaultPkgsFor,
     rustupToolchain ? null,

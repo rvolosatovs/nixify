@@ -45,6 +45,8 @@ with builtins; let
       "flake.nix"
     ];
 
+    defaultNixpkgsConfig = {};
+
     defaultSystems = [
       aarch64-darwin
       aarch64-linux
