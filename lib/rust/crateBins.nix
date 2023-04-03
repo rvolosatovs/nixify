@@ -1,11 +1,13 @@
 {
   self,
   nixlib,
+  nix-log,
   ...
 }:
 with nixlib.lib;
 with nixlib.lib.path;
 with builtins;
+with nix-log.lib;
 with self.lib;
 with self.lib.rust;
   {
@@ -73,7 +75,19 @@ with self.lib.rust;
 
       workspace = unique (workspaceMembers' ++ pathDeps);
     in
-      optionals includeCrate (
+      trace' "crateBins" {
+        inherit
+          autobins
+          bin
+          cargoToml
+          includeCrate
+          isPackage
+          src
+          workspace
+          ;
+      }
+      optionals
+      includeCrate (
         # NOTE: `listToAttrs` seems to discard keys already present in the set
         attrValues (
           optionalAttrs (autobins && pathExists "${src}/src/main.rs") {

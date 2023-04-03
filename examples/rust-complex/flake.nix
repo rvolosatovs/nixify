@@ -9,6 +9,10 @@
         "rust-toolchain.toml"
       ];
 
+      build.workspace = true;
+      clippy.workspace = true;
+      test.workspace = true;
+
       targets.wasm32-wasi = false; # https://github.com/briansmith/ring/issues/1043
     };
 }
