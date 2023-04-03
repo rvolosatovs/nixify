@@ -22,6 +22,7 @@ with builtins;
   {
     excludePaths ? defaultExcludePaths,
     includePaths ? null,
+    nixpkgsConfig ? {},
     overlays ? [],
     pname ? null,
     src ? null,
@@ -63,6 +64,7 @@ with builtins;
             overlays
             system
             ;
+          config = nixpkgsConfig;
         };
 
         commonPkgsArgs =
