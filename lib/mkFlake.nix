@@ -19,10 +19,11 @@
 }:
 with nixlib.lib;
 with builtins;
+with self.lib;
   {
     excludePaths ? defaultExcludePaths,
     includePaths ? null,
-    nixpkgsConfig ? {},
+    nixpkgsConfig ? defaultNixpkgsConfig,
     overlays ? [],
     pname ? null,
     src ? null,
