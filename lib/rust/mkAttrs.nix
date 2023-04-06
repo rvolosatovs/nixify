@@ -193,9 +193,6 @@ with self.lib.rust.targets;
       # hostCraneLib is the crane library for the host native triple.
       hostCraneLib =
         trace' "hostCraneLib" {
-          inherit
-            hostRustToolchain
-            ;
           final.hostPlatform.config = final.hostPlatform.config;
         }
         mkCraneLib
