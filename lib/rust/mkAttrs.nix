@@ -100,18 +100,15 @@ with self.lib.rust.targets;
         // craneArgs;
 
       craneArgs' =
-        trace' "callCrane.buildOverrides" {
-          inherit
-            commonArgs
-            craneArgs
-            ;
-        }
-        (commonArgs // buildOverrides overrideArgs commonArgs);
+        commonArgs // buildOverrides overrideArgs commonArgs;
     in
       trace' "callCrane" {
         inherit
-          craneArgs
-          craneArgs'
+          buildArgs
+          checkArgs
+          clippyArgs
+          docArgs
+          testArgs
           ;
       }
       f
@@ -151,8 +148,10 @@ with self.lib.rust.targets;
       craneLib,
       overrideArgs,
     }:
-      trace' "callCraneWithDeps" {
-        inherit craneArgs;
+      trace' "buildPackage" {
+        inherit
+          craneArgs
+          ;
       }
       callCraneWithDeps {
         inherit
@@ -389,7 +388,6 @@ with self.lib.rust.targets;
               useRosetta
               useEmu
               ;
-
             final.hostPlatform.config = final.hostPlatform.config;
             pkgsCross.targetPlatform.config = pkgsCross.targetPlatform.config;
           }
