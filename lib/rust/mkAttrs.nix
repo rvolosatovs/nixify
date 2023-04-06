@@ -381,7 +381,6 @@ with self.lib.rust.targets;
             inherit
               craneArgs
               target
-              targetArgs
               useRosetta
               useEmu
               ;
