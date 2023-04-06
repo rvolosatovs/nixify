@@ -62,6 +62,12 @@ with self.lib.rust;
           attrs;
         deps = collect (dep: dep ? path && subpath.normalise dep.path != "./.") depAttrs;
       in
+        trace' "collectPathDeps" {
+          inherit
+            depAttrs
+            deps
+            ;
+        }
         map ({path, ...}:
           if hasPrefix "/" path
           then path
@@ -70,7 +76,7 @@ with self.lib.rust;
 
       pathDeps =
         collectPathDeps cargoToml
-        ++ optionals (cargoToml ? target) (flatten (mapAttrs (_: v: collectPathDeps v) cargoToml.target))
+        ++ optionals (cargoToml ? target) (flatten (attrValues (mapAttrs (_: v: collectPathDeps v) cargoToml.target)))
         ++ optionals (cargoToml ? workspace) (collectPathDeps cargoToml.workspace);
 
       workspace = unique (workspaceMembers' ++ pathDeps);
