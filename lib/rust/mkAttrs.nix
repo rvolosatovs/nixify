@@ -119,9 +119,7 @@ with self.lib.rust.targets;
       craneLib,
       overrideArgs,
     } @ args:
-      trace' "callCraneWithDeps" {
-        inherit craneArgs;
-      }
+      trace "callCraneWithDeps"
       callCrane {
         inherit
           craneLib
@@ -148,11 +146,7 @@ with self.lib.rust.targets;
       craneLib,
       overrideArgs,
     }:
-      trace' "buildPackage" {
-        inherit
-          craneArgs
-          ;
-      }
+      trace "buildPackage"
       callCraneWithDeps {
         inherit
           craneLib
