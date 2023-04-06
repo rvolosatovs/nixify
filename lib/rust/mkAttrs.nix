@@ -331,7 +331,7 @@ with self.lib.rust.targets;
               // optionalAttrs (!pkgsCross.hostPlatform.isWasi) {
                 "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
               }
-              // optionalAttrs (target == aarch64-apple-darwin) {
+              // optionalAttrs (doCheck && target == aarch64-apple-darwin) {
                 doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
               }
               // optionalAttrs (doCheck && useEmu) (
