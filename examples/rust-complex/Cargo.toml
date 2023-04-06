@@ -7,6 +7,9 @@ edition = "2021"
 foo = { workspace = true }
 ring = { workspace = true }
 
+[target.'cfg(windows)'.dependencies]
+foo = { workspace = true, features = ["windows"] }
+
 [dev-dependencies]
 rust-complex = { path = "." }
 
