@@ -48,7 +48,6 @@ with self.lib.rust.targets;
         src
         ;
     };
-    isLib = length bins == 0;
 
     callCrane = {
       craneArgs ? {},
@@ -130,10 +129,10 @@ with self.lib.rust.targets;
             cargoArtifacts =
               callCrane {
                 inherit
+                  craneArgs
                   craneLib
                   overrideArgs
                   ;
-                craneArgs = filterAttrs (name: _: name != "installPhaseCommand") craneArgs;
               }
               craneLib.buildDepsOnly;
           }
@@ -149,34 +148,10 @@ with self.lib.rust.targets;
       trace "buildPackage"
       callCraneWithDeps {
         inherit
+          craneArgs
           craneLib
           overrideArgs
           ;
-
-        craneArgs =
-          optionalAttrs (!isLib) {
-            installPhaseCommand = ''
-              if [ "''${CARGO_PROFILE}" == 'dev' ]; then
-                  profileDir=debug
-              else
-                  profileDir=''${CARGO_PROFILE:-debug}
-              fi
-              ${concatMapStringsSep "\n" (name: ''
-                  case ''${CARGO_BUILD_TARGET} in
-                      ${wasm32-wasi})
-                          install -D target/${wasm32-wasi}/''${profileDir}/${name}.wasm $out/bin/${name};;
-                      ${x86_64-pc-windows-gnu})
-                          install -D target/${x86_64-pc-windows-gnu}/''${profileDir}/${name}.exe $out/bin/${name}.exe;;
-                      "")
-                          install -D target/''${profileDir}/${name} $out/bin/${name};;
-                      *)
-                          install -D target/''${CARGO_BUILD_TARGET}/''${profileDir}/${name} $out/bin/${name};;
-                  esac
-                '')
-                bins}
-            '';
-          }
-          // craneArgs;
       }
       craneLib.buildPackage;
   in
@@ -447,25 +422,17 @@ with self.lib.rust.targets;
         // targetImages;
 
       packages = mkPackages final;
-    in
-      {
-        inherit
-          buildHostPackage
-          callCrane
-          callCraneWithDeps
-          callHostCrane
-          callHostCraneWithDeps
-          hostCraneLib
-          hostRustToolchain
-          ;
-      }
-      // optionalAttrs isLib {
-        checks = checks // packages;
-      }
-      // optionalAttrs (!isLib) {
-        inherit
-          checks
-          packages
-          ;
-        overlay = mkPackages;
-      }
+    in {
+      inherit
+        buildHostPackage
+        callCrane
+        callCraneWithDeps
+        callHostCrane
+        callHostCraneWithDeps
+        checks
+        hostCraneLib
+        hostRustToolchain
+        packages
+        ;
+      overlay = mkPackages;
+    }

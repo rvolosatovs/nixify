@@ -76,13 +76,13 @@ in
     assert flakes.rust.hello.packages.${system} ? default;
     assert flakes.rust.hello.packages.${system} ? rust-hello-wasm32-wasi-oci;
     assert flakes.rust.hello.packages.${system} ? rust-hello-wasm32-wasi;
-    assert flakes.rust.lib.checks.${system} ? rust-lib-wasm32-wasi;
+    assert flakes.rust.lib.packages.${system} ? rust-lib-wasm32-wasi;
     assert flakes.rust.workspace.packages.${system} ? default;
     assert flakes.rust.workspace.packages.${system} ? rust-workspace-wasm32-wasi;
       (assertRustPackages flakes.rust.complex.packages "rust-complex")
       (assertRustPackages flakes.rust.hello-multibin.packages "rust-hello-multibin")
       (assertRustPackages flakes.rust.hello.packages "rust-hello")
-      (assertRustPackages flakes.rust.lib.checks "rust-lib")
+      (assertRustPackages flakes.rust.lib.packages "rust-lib")
       (assertRustPackages flakes.rust.workspace.packages "rust-workspace")
       (assertRustOCIPackages flakes.rust.hello.packages "rust-hello")
       foldl (checks: example: checks // (assertRustOutputs flakes.rust.${example} "rust-${example}" system)) {} (attrNames flakes.rust))

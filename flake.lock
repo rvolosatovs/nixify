@@ -14,16 +14,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1679255352,
-        "narHash": "sha256-nkGwGuNkhNrnN33S4HIDV5NzkzMLU5mNStRn9sZwq8c=",
+        "lastModified": 1681318350,
+        "narHash": "sha256-fk3cQepKgpssocJ3NVeaNx/P7rNu10D1SWribaCxYiY=",
         "owner": "rvolosatovs",
         "repo": "crane",
-        "rev": "cec65880599a4ec6426186e24342e663464f5933",
+        "rev": "82b6dd747744a592896ae622603c2daef3ab8c32",
         "type": "github"
       },
       "original": {
         "owner": "rvolosatovs",
-        "ref": "feat/wit",
+        "ref": "feat/crate-types",
         "repo": "crane",
         "type": "github"
       }
