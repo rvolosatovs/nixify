@@ -163,7 +163,7 @@ jobs:
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
     - run: nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#${{ matrix.config.package }}'
-    - run: ${{ matrix.config.test }}
+    - run: ${{ matrix.config.test-bin }}
 
     - run: nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#${{ matrix.config.package }}-oci'
       if: ${{ matrix.config.package != 'default' && matrix.config.package != 'rust-hello' && matrix.config.package != 'rust-hello-debug' }}
