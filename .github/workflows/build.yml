@@ -37,7 +37,7 @@ jobs:
 
         - os: macos-12
           package: rust-hello-wasm32-wasi
-          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
 
         - os: macos-12
           package: rust-hello-x86_64-apple-darwin
@@ -69,7 +69,7 @@ jobs:
 
         - os: macos-12
           package: rust-hello-debug-wasm32-wasi
-          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
 
         - os: macos-12
           package: rust-hello-debug-x86_64-apple-darwin
@@ -104,7 +104,7 @@ jobs:
 
         - os: ubuntu-22.04
           package: rust-hello-wasm32-wasi
-          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
           test-oci: docker load < ./result
 
         - os: ubuntu-22.04
@@ -135,7 +135,7 @@ jobs:
 
         - os: ubuntu-22.04
           package: rust-hello-debug-wasm32-wasi
-          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
           test-oci: docker load < ./result
 
         - os: ubuntu-22.04
