@@ -269,8 +269,6 @@ with self.lib.rust.targets;
                 ;
 
               CARGO_BUILD_TARGET = target;
-
-              RUSTFLAGS = "-C target-feature=+crt-static";
             }
             // optionalAttrs (pkgsCross.buildPlatform.config != pkgsCross.hostPlatform.config) (
               {
