@@ -10,11 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: nixbuild/nix-quick-install-action@v22
+      - uses: DeterminateSystems/nix-installer-action@v2
         with:
-          nix_conf: |
-            experimental-features = nix-command flakes
-            access-tokens = github.com=${{ github.token }}
+          extra-conf: |
+            accept-flake-config = true
       - uses: jessestricker/nix-flake-update@v1
         id: nix-update
       - uses: peter-evans/create-pull-request@v5
