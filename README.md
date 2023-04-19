@@ -1,16 +1,61 @@
 # Description
 
-Simple, yet extensible nix flake bootstrapping library for real-world projects
+Simple, yet extensible, batteries-included Nix flake bootstrapping library for real-world projects with focus on building reproducible, portable binary artifacts for various targets efficiently and with little to no configuration.
+
+# Features
+
+- 0-config reproducible, portable binary artifacts
+    - Cross-compilation out-of-the-box
+    - Tiny OCI (Docker) images with statically-linked binaries out-of-the-box
+- Automatic per-system flake generation from a shared definition with consistent API
+- Source filtering
 
 # Usage
 
-See `examples` directory
+## Generic flakes
+
+`nixify.lib.mkFlake` provides the flake construction functionality that all other language specific subsystems rely upon. It can be used to build a plain Nix flake or a generic project in your language of choice.
+
+### Examples
+
+- https://github.com/rvolosatovs/nix-log/blob/main/flake.nix
+- https://github.com/rvolosatovs/nix-modulate/blob/main/flake.nix
+- https://github.com/rvolosatovs/nixify/blob/main/flake.nix
 
 ## Rust
 
-`nixify` relies on two files to build Rust projects:
-- `Cargo.toml` (required), where `pname` and `version` will be taken from.
-- `rust-toolchain.toml` (optional), where targets will be taken from. Only builds to specified targets and host native target will be exposed by `nixify` as an overlay and as package output set.
+`nixify` relies on two files to "Nixify" Rust projects:
+- `Cargo.toml` (required), where `pname` and `version` will be taken from. Note, that virtual manifests are supported as well.
+- `rust-toolchain.toml` (optional). If exists, `nixify` will set up the Rust toolchain using data contained in this file. For cross-compilation scenarios, `nixify` will automatically add missing targets to the toolchain.
+
+### Cross-compilation
+
+`aarch64-darwin` -> `aarch64-apple-darwin`
+`aarch64-darwin` -> `aarch64-linux-musl`
+`aarch64-darwin` -> `armv7-unknown-linux-musleabihf`
+`aarch64-darwin` -> `wasm32-wasi`
+`aarch64-darwin` -> `x86_64-linux-musl`
+`aarch64-darwin` -> `x86_64-pc-windows-gnu`
+
+`aarch64-linux` -> `aarch64-linux-musl`
+`aarch64-linux` -> `armv7-unknown-linux-musleabihf`
+`aarch64-linux` -> `wasm32-wasi`
+`aarch64-linux` -> `x86_64-linux-musl`
+`aarch64-linux` -> `x86_64-pc-windows-gnu`
+
+`x86_64-darwin` -> `aarch64-apple-darwin`
+`x86_64-darwin` -> `aarch64-linux-musl`
+`x86_64-darwin` -> `armv7-unknown-linux-musleabihf`
+`x86_64-darwin` -> `wasm32-wasi`
+`x86_64-darwin` -> `x86_64-apple-darwin`
+`x86_64-darwin` -> `x86_64-linux-musl`
+`x86_64-darwin` -> `x86_64-pc-windows-gnu`
+
+`x86_64-linux` -> `aarch64-linux-musl`
+`x86_64-linux` -> `armv7-unknown-linux-musleabihf`
+`x86_64-linux` -> `wasm32-wasi`
+`x86_64-linux` -> `x86_64-linux-musl`
+`x86_64-linux` -> `x86_64-pc-windows-gnu`
 
 ### Template
 
@@ -19,7 +64,12 @@ To nixify a Rust project:
 nix flake init --template 'github:rvolosatovs/nixify#rust'
 ```
 
-### Example
+### Examples
+
+- https://github.com/bytecodealliance/wit-deps/blob/main/flake.nix
+- https://github.com/wasmcloud/wasmcloud/blob/main/flake.nix
+- https://github.com/profianinc/drawbridge/blob/main/flake.nix
+- https://github.com/profianinc/steward/blob/main/flake.nix
 
 A flake definition at `examples/rust-hello/flake.nix`:
 ```nix
