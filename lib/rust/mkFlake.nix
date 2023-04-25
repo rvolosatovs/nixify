@@ -103,7 +103,6 @@ with self.lib.rust;
         ++ [
           rust-overlay.overlays.default
           fenix.overlays.default
-          overlay
         ];
 
       withApps = {
