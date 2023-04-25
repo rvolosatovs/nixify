@@ -76,16 +76,6 @@ with self.lib.rust;
       src = src';
       rustupToolchain = rustupToolchain';
     };
-
-    overlay = let
-      overlay' = final: let
-        attrs = mkAttrs' final;
-      in
-        if attrs ? overlay
-        then attrs.overlay
-        else const {};
-    in
-      final: prev: overlay' final prev;
   in
     self.lib.mkFlake {
       inherit
@@ -173,7 +163,9 @@ with self.lib.rust;
       withOverlays = {overlays, ...} @ cx:
         withOverlays (cx
           // {
-            overlays =
+            overlays = let
+              overlay = final: prev: (mkAttrs' final).overlay prev;
+            in
               overlays
               // {
                 ${pname} = overlay;
