@@ -162,7 +162,7 @@ with self.lib.rust.targets;
       # hostCraneLib is the crane library for the host native triple.
       hostCraneLib =
         trace' "hostCraneLib" {
-          final.hostPlatform.config = final.hostPlatform.config;
+          final.stdenv.hostPlatform.config = final.stdenv.hostPlatform.config;
         }
         mkCraneLib
         final
@@ -176,7 +176,7 @@ with self.lib.rust.targets;
           craneArgs =
             craneArgs
             // {
-              depsBuildBuild = depsBuildBuild ++ optional final.hostPlatform.isDarwin final.darwin.apple_sdk.frameworks.Security;
+              depsBuildBuild = depsBuildBuild ++ optional final.stdenv.hostPlatform.isDarwin final.darwin.apple_sdk.frameworks.Security;
             };
           craneLib = hostCraneLib;
 
@@ -225,11 +225,15 @@ with self.lib.rust.targets;
           (
             if any (eq target) rustupToolchainTargets
             then rustupToolchain'
-            else if target == aarch64-apple-darwin && prev.buildPlatform.system == aarch64-darwin
+            else if target == aarch64-apple-darwin && prev.stdenv.buildPlatform.system == aarch64-darwin
             then rustupToolchain'
-            else if target == x86_64-apple-darwin && prev.buildPlatform.system == x86_64-darwin
+            else if target == aarch64-unknown-linux-gnu && prev.stdenv.buildPlatform.system == aarch64-linux
             then rustupToolchain'
-            else if target == x86_64-pc-windows-gnu && prev.buildPlatform.system == x86_64-pc-windows-gnu
+            else if target == x86_64-apple-darwin && prev.stdenv.buildPlatform.system == x86_64-darwin
+            then rustupToolchain'
+            else if target == x86_64-pc-windows-gnu && prev.stdenv.buildPlatform.system == x86_64-windows
+            then rustupToolchain'
+            else if target == x86_64-unknown-linux-gnu && prev.stdenv.buildPlatform.system == x86_64-linux
             then rustupToolchain'
             else
               rustupToolchain'
@@ -257,10 +261,10 @@ with self.lib.rust.targets;
           craneLib = mkCraneLib final rustToolchain;
           pkgsCross = pkgsFor final target;
 
-          useRosetta = pkgsCross.buildPlatform.system == aarch64-darwin && pkgsCross.hostPlatform.system == x86_64-darwin;
-          useEmu = pkgsCross.buildPlatform.system != pkgsCross.hostPlatform.system && !useRosetta && pkgsCross.hostPlatform.system != aarch64-darwin;
+          useRosetta = final.stdenv.buildPlatform.isDarwin && final.stdenv.buildPlatform.isAarch64 && pkgsCross.stdenv.hostPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isx86_64;
+          useEmu = final.stdenv.buildPlatform.system != pkgsCross.stdenv.hostPlatform.system && !useRosetta && pkgsCross.stdenv.hostPlatform.system != aarch64-darwin;
 
-          depsBuildBuild = optional pkgsCross.hostPlatform.isDarwin pkgsCross.darwin.apple_sdk.frameworks.Security;
+          depsBuildBuild = optional pkgsCross.stdenv.hostPlatform.isDarwin pkgsCross.darwin.apple_sdk.frameworks.Security;
 
           targetArgs =
             {
@@ -270,7 +274,7 @@ with self.lib.rust.targets;
 
               CARGO_BUILD_TARGET = target;
             }
-            // optionalAttrs (pkgsCross.buildPlatform.config != pkgsCross.hostPlatform.config) (
+            // optionalAttrs (pkgsCross.stdenv.buildPlatform.config != pkgsCross.stdenv.hostPlatform.config) (
               {
                 strictDeps = true;
 
@@ -279,12 +283,12 @@ with self.lib.rust.targets;
                   ++ [
                     pkgsCross.stdenv.cc
                   ]
-                  ++ optional pkgsCross.hostPlatform.isWindows pkgsCross.windows.pthreads;
+                  ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
 
                 checkInputs = optional useEmu (
-                  if pkgsCross.hostPlatform.isWasm
+                  if pkgsCross.stdenv.hostPlatform.isWasm
                   then final.wasmtime
-                  else if pkgsCross.hostPlatform.isWindows
+                  else if pkgsCross.stdenv.hostPlatform.isWindows
                   then final.wine64
                   else final.qemu
                 );
@@ -295,7 +299,7 @@ with self.lib.rust.targets;
                 "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
                 "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
               }
-              // optionalAttrs (!pkgsCross.hostPlatform.isWasi) {
+              // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasi) {
                 "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
               }
               // optionalAttrs (doCheck && target == aarch64-apple-darwin) {
@@ -306,6 +310,14 @@ with self.lib.rust.targets;
                 then
                   {
                     CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
+                  }
+                  // optionalAttrs pkgsCross.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == aarch64-unknown-linux-gnu
+                then
+                  {
+                    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-aarch64";
                   }
                   // optionalAttrs pkgsCross.buildPlatform.isDarwin {
                     doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
@@ -322,6 +334,14 @@ with self.lib.rust.targets;
                 then {
                   CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
                 }
+                else if target == x86_64-unknown-linux-gnu
+                then
+                  {
+                    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-x86_64";
+                  }
+                  // optionalAttrs pkgsCross.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
                 else if target == x86_64-unknown-linux-musl
                 then
                   {
@@ -351,8 +371,8 @@ with self.lib.rust.targets;
               useRosetta
               useEmu
               ;
-            pkgsCross.buildPlatform.config = pkgsCross.buildPlatform.config;
-            pkgsCross.hostPlatform.config = pkgsCross.hostPlatform.config;
+            pkgsCross.stdenv.buildPlatform.config = pkgsCross.stdenv.buildPlatform.config;
+            pkgsCross.stdenv.hostPlatform.config = pkgsCross.stdenv.hostPlatform.config;
           }
           buildPackage {
             inherit
@@ -370,12 +390,14 @@ with self.lib.rust.targets;
           };
 
         targets' = let
-          default.${aarch64-apple-darwin} = prev.hostPlatform.isDarwin;
+          default.${aarch64-apple-darwin} = prev.stdenv.buildPlatform.isDarwin;
+          default.${aarch64-unknown-linux-gnu} = true;
           default.${aarch64-unknown-linux-musl} = true;
           default.${armv7-unknown-linux-musleabihf} = true;
           default.${wasm32-wasi} = true;
-          default.${x86_64-apple-darwin} = prev.hostPlatform.system == x86_64-darwin;
+          default.${x86_64-apple-darwin} = prev.stdenv.buildPlatform.isDarwin && prev.stdenv.buildPlatform.isx86_64;
           default.${x86_64-pc-windows-gnu} = true;
+          default.${x86_64-unknown-linux-gnu} = true;
           default.${x86_64-unknown-linux-musl} = true;
 
           all =
