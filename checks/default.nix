@@ -16,7 +16,8 @@ with self.lib; let
     assert flake ? packages;
     assert flake.overlays ? "${name}";
     assert flake.overlays ? default;
-    assert flake.overlays ? rust;
+    assert flake.overlays ? fenix;
+    assert flake.overlays ? rust-overlay;
       system:
         assert flake.checks.${system} ? clippy;
         assert flake.checks.${system} ? fmt;
