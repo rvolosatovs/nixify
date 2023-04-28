@@ -170,7 +170,8 @@ with self.lib.rust;
               // {
                 ${pname} = overlay;
                 default = overlay;
-                rust = rust-overlay.overlays.default;
+                fenix = fenix.overlays.default;
+                rust-overlay = rust-overlay.overlays.default;
               };
           });
 
