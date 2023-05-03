@@ -7,20 +7,28 @@
 }:
 with flake-utils.lib.system;
 with self.lib.rust.targets;
-  pkgs: target:
-    if pkgs.stdenv.hostPlatform.config == target
+  pkgs: target: let
+    hostPlatform = pkgs.stdenv.hostPlatform;
+  in
+    if hostPlatform.config == target
     then pkgs
-    else if pkgs.stdenv.hostPlatform.system == armv7l-linux && target == armv7-unknown-linux-musleabihf
+    else if hostPlatform.isAarch32 && hostPlatform.isLinux && hostPlatform.isMusl && target == armv7-unknown-linux-musleabihf
     then pkgs
-    else if pkgs.stdenv.hostPlatform.system == aarch64-linux && target == aarch64-unknown-linux-gnu
+    else if hostPlatform.isAarch64 && hostPlatform.isLinux && hostPlatform.isGnu && target == aarch64-unknown-linux-gnu
     then pkgs
-    else if pkgs.stdenv.hostPlatform.system == aarch64-linux && target == aarch64-unknown-linux-musl
+    else if hostPlatform.isAarch64 && hostPlatform.isLinux && target == aarch64-unknown-linux-musl
+    then
+      if hostPlatform.isMusl
+      then pkgs
+      else pkgs.pkgsMusl
+    else if hostPlatform.isx86_64 && hostPlatform.isLinux && hostPlatform.isGnu && target == x86_64-unknown-linux-gnu
     then pkgs
-    else if pkgs.stdenv.hostPlatform.system == x86_64-windows && target == x86_64-pc-windows-gnu
-    then pkgs
-    else if pkgs.stdenv.hostPlatform.system == x86_64-linux && target == x86_64-unknown-linux-gnu
-    then pkgs
-    else if pkgs.stdenv.hostPlatform.system == x86_64-linux && target == x86_64-unknown-linux-musl
+    else if hostPlatform.isx86_64 && hostPlatform.isLinux && target == x86_64-unknown-linux-musl
+    then
+      if hostPlatform.isMusl
+      then pkgs
+      else pkgs.pkgsMusl
+    else if hostPlatform.isx86_64 && hostPlatform.isWindows && target == x86_64-pc-windows-gnu
     then pkgs
     else if target == aarch64-unknown-linux-gnu
     then pkgs.pkgsCross.aarch64-multiplatform
@@ -43,5 +51,5 @@ with self.lib.rust.targets;
     else
       import nixpkgs {
         crossSystem = target;
-        localSystem = pkgs.hostPlatform.system;
+        localSystem = hostPlatform.system;
       }
