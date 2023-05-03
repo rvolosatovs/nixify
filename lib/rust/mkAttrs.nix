@@ -274,7 +274,7 @@ with self.lib.rust.targets;
 
               CARGO_BUILD_TARGET = target;
             }
-            // optionalAttrs (pkgsCross.stdenv.buildPlatform.config != pkgsCross.stdenv.hostPlatform.config) (
+            // optionalAttrs (final.stdenv.buildPlatform.config != pkgsCross.stdenv.hostPlatform.config) (
               {
                 strictDeps = true;
 
@@ -311,7 +311,7 @@ with self.lib.rust.targets;
                   {
                     CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
                   }
-                  // optionalAttrs pkgsCross.stdenv.buildPlatform.isDarwin {
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
                     doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                   }
                 else if target == aarch64-unknown-linux-gnu
@@ -319,7 +319,7 @@ with self.lib.rust.targets;
                   {
                     CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-aarch64";
                   }
-                  // optionalAttrs pkgsCross.buildPlatform.isDarwin {
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
                     doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                   }
                 else if target == aarch64-unknown-linux-musl
@@ -327,7 +327,7 @@ with self.lib.rust.targets;
                   {
                     CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-aarch64";
                   }
-                  // optionalAttrs pkgsCross.buildPlatform.isDarwin {
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
                     doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                   }
                 else if target == wasm32-wasi
@@ -339,7 +339,7 @@ with self.lib.rust.targets;
                   {
                     CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-x86_64";
                   }
-                  // optionalAttrs pkgsCross.buildPlatform.isDarwin {
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
                     doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                   }
                 else if target == x86_64-unknown-linux-musl
@@ -347,7 +347,7 @@ with self.lib.rust.targets;
                   {
                     CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-x86_64";
                   }
-                  // optionalAttrs pkgsCross.buildPlatform.isDarwin {
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
                     doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                   }
                 else if target == x86_64-pc-windows-gnu
@@ -371,7 +371,7 @@ with self.lib.rust.targets;
               useRosetta
               useEmu
               ;
-            pkgsCross.stdenv.buildPlatform.config = pkgsCross.stdenv.buildPlatform.config;
+            final.stdenv.buildPlatform.config = final.stdenv.buildPlatform.config;
             pkgsCross.stdenv.hostPlatform.config = pkgsCross.stdenv.hostPlatform.config;
           }
           buildPackage {
