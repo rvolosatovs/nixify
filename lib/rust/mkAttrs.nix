@@ -38,7 +38,10 @@ with self.lib.rust.targets;
     version' =
       if version != null
       then version
-      else cargoToml.package.version or defaultVersion;
+      else
+        versionFromCargoToml {
+          inherit cargoToml;
+        };
 
     rustupToolchain' = rustupToolchain.toolchain or {};
 

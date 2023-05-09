@@ -44,7 +44,9 @@ with self.lib.rust;
       if name != null
       then name
       else pnameFromCargoToml cargoToml;
-    version = cargoToml.package.version or defaultVersion;
+    version = versionFromCargoToml {
+      inherit cargoToml;
+    };
 
     rustupToolchain' =
       if rustupToolchain == null

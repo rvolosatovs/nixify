@@ -40,6 +40,17 @@ with self.lib; let
     cargoToml.package.name
     or (throw "`name` must either be specified in `Cargo.toml` `[package]` section or passed as an argument");
 
+  # version used when not specified in Cargo.toml
+  defaultVersion = "0.0.0-unspecified";
+
+  versionFromCargoToml = {
+    cargoToml,
+    workspace ? {},
+  }:
+    if cargoToml.package.version.workspace or false
+    then cargoToml.workspace.package.version or workspace.package.version or defaultVersion
+    else cargoToml.package.version or defaultVersion;
+
   withRustOverlayToolchain = pkgs: pkgs.rust-bin.fromRustupToolchain;
   withFenixToolchain = pkgs: {
     channel ? defaultRustupToolchain.toolchain.channel,
@@ -67,6 +78,7 @@ in {
   inherit
     crateBins
     defaultRustupToolchain
+    defaultVersion
     mkAttrs
     mkCargoFlags
     mkChecks
@@ -75,6 +87,7 @@ in {
     mkOverlay
     mkPackages
     pnameFromCargoToml
+    versionFromCargoToml
     withFenixToolchain
     withRustOverlayToolchain
     ;
@@ -84,9 +97,6 @@ in {
 
   # commonReleaseArgs is a set of common arguments to release builds
   commonReleaseArgs = {};
-
-  # version used when not specified in Cargo.toml
-  defaultVersion = "0.0.0-unspecified";
 
   defaultPkgsFor = import ./defaultPkgsFor.nix inputs;
   defaultWithToolchain = withFenixToolchain;
