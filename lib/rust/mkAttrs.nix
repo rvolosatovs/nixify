@@ -38,6 +38,8 @@ with self.lib.rust.targets;
     version' =
       if version != null
       then version
+      else if cargoToml.package.version.workspace or false
+      then cargoToml.package.workspace.version or defaultVersion
       else cargoToml.package.version or defaultVersion;
 
     rustupToolchain' = rustupToolchain.toolchain or {};
