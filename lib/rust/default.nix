@@ -62,7 +62,7 @@ with self.lib; let
     in
       if channels ? ${channel}
       then toolchain
-      else warn "only one of ${toJSON (attrNames channels)} `channel` specifications are supported for `fenix`, falling back to rust-overlay (which may break some cross-compilation scenarios)" withRustOverlayToolchain args;
+      else warn "only one of ${toJSON (attrNames channels)} `channel` specifications are supported for `fenix`, falling back to rust-overlay (which may break some cross-compilation scenarios)" withRustOverlayToolchain pkgs args;
 in {
   inherit
     crateBins
