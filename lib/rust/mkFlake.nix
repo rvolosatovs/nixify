@@ -188,8 +188,12 @@ with self.lib.rust;
       in
         withPackages (cx
           // {
+            inherit
+              (attrs)
+              hostRustToolchain
+              ;
+
             buildLib = attrs.lib;
-            hostRustToolchain = attrs.toolchain;
             packages =
               packages
               // attrPkgs
