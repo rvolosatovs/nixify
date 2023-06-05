@@ -1,5 +1,6 @@
 {
   self,
+  advisory-db,
   crane,
   nixlib,
   ...
@@ -90,6 +91,8 @@ in {
 
   defaultPkgsFor = import ./defaultPkgsFor.nix inputs;
   defaultWithToolchain = withFenixToolchain;
+
+  defaultAuditConfig.database = advisory-db;
 
   defaultBuildConfig.allFeatures = false;
   defaultBuildConfig.allTargets = false;
