@@ -14,6 +14,7 @@ with self.lib;
 with self.lib.rust;
 with self.lib.rust.targets;
   {
+    audit ? defaultAuditConfig,
     build ? defaultBuildConfig,
     buildOverrides ? defaultBuildOverrides,
     cargoLock ? null,
@@ -197,14 +198,25 @@ with self.lib.rust.targets;
         }
         callCraneWithDeps (mkHostArgs craneArgs);
 
-      checks.clippy = callHostCraneWithDeps {} hostCraneLib.cargoClippy;
-      checks.doc = callHostCraneWithDeps {} hostCraneLib.cargoDoc;
-      checks.fmt = callHostCrane {} hostCraneLib.cargoFmt;
-      checks.nextest =
-        callHostCraneWithDeps {
-          doCheck = true; # without performing the actual testing, this check is useless
+      checks =
+        {
+          clippy = callHostCraneWithDeps {} hostCraneLib.cargoClippy;
+          doc = callHostCraneWithDeps {} hostCraneLib.cargoDoc;
+          fmt = callHostCrane {} hostCraneLib.cargoFmt;
+          nextest =
+            callHostCraneWithDeps {
+              doCheck = true; # without performing the actual testing, this check is useless
+            }
+            hostCraneLib.cargoNextest;
         }
-        hostCraneLib.cargoNextest;
+        // (optionalAttrs (pathExists "${src}/Cargo.lock") {
+          # TODO: Use `cargoLock` if `Cargo.lock` missing
+          audit =
+            callHostCrane {
+              advisory-db = audit.database;
+            }
+            hostCraneLib.cargoAudit;
+        });
 
       buildHostPackage = craneArgs:
         trace' "buildHostPackage" {

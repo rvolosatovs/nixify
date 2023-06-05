@@ -14,6 +14,7 @@ with builtins;
 with self.lib;
 with self.lib.rust;
   {
+    audit ? defaultAuditConfig,
     build ? defaultBuildConfig,
     buildOverrides ? defaultBuildOverrides,
     cargoLock ? null,

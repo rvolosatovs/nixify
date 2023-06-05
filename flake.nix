@@ -1,6 +1,8 @@
 {
   description = "Simple, yet extensible nix flake bootstrapping library for real-world projects";
 
+  inputs.advisory-db.flake = false;
+  inputs.advisory-db.url = github:rustsec/advisory-db;
   inputs.crane.inputs.flake-utils.follows = "flake-utils";
   inputs.crane.inputs.nixpkgs.follows = "nixpkgs";
   inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
