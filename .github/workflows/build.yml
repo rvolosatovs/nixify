@@ -153,7 +153,7 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     steps:
     - uses: actions/checkout@v3
-    - uses: DeterminateSystems/nix-installer-action@v3
+    - uses: DeterminateSystems/nix-installer-action@v4
       with:
         extra-conf: |
           accept-flake-config = true
