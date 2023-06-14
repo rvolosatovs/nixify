@@ -5,7 +5,7 @@
   ...
 }:
 with nixlib.lib;
-with nixlib.lib.path;
+with nixlib.lib.path.subpath;
 with builtins;
 with nix-log.lib;
 with self.lib;
@@ -60,7 +60,7 @@ with self.lib.rust;
         depAttrs =
           filterAttrs (k: _: k == "build-dependencies" || k == "dependencies" || k == "dev-dependencies")
           attrs;
-        deps = collect (dep: dep ? path && subpath.normalise dep.path != "./.") depAttrs;
+        deps = collect (dep: dep ? path && normalise dep.path != "./.") depAttrs;
       in
         trace' "collectPathDeps" {
           inherit

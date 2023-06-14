@@ -299,7 +299,7 @@ with self.lib.rust.targets;
                   ]
                   ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
 
-                checkInputs = optional useEmu (
+                nativeCheckInputs = optional useEmu (
                   if pkgsCross.stdenv.hostPlatform.isWasm
                   then final.wasmtime
                   else if pkgsCross.stdenv.hostPlatform.isWindows
