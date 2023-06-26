@@ -15,7 +15,7 @@
   inputs.crane.inputs.flake-utils.follows = "flake-utils";
   inputs.crane.inputs.nixpkgs.follows = "nixpkgs";
   inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
-  inputs.crane.url = github:rvolosatovs/crane/feat/crate-types;
+  inputs.crane.url = github:ipetkov/crane;
   inputs.fenix.inputs.nixpkgs.follows = "nixpkgs";
   inputs.fenix.url = github:nix-community/fenix;    
   inputs.flake-utils.url = github:numtide/flake-utils;
