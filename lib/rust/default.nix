@@ -46,6 +46,7 @@ with self.lib; let
     channel ? defaultRustupToolchain.toolchain.channel,
     components ? defaultRustupToolchain.toolchain.components,
     targets ? [],
+    ...
   } @ args:
     with pkgs; let
       channels.stable = "stable";
