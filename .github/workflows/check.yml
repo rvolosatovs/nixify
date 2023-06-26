@@ -28,4 +28,8 @@ jobs:
       with:
         name: rvolosatovs
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@v1.0
+      with:
+        swap-size-gb: 10
     - run: nix flake check -L --show-trace
