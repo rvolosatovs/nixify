@@ -120,7 +120,17 @@ with self.lib.rust.targets;
       craneArgs ? {},
       craneLib,
       overrideArgs,
-    } @ args:
+    } @ args: let
+      cargoArtifacts =
+        callCrane {
+          inherit
+            craneArgs
+            craneLib
+            overrideArgs
+            ;
+        }
+        craneLib.buildDepsOnly;
+    in
       trace "callCraneWithDeps"
       callCrane {
         inherit
@@ -129,15 +139,13 @@ with self.lib.rust.targets;
           ;
         craneArgs =
           {
-            cargoArtifacts =
-              callCrane {
-                inherit
-                  craneArgs
-                  craneLib
-                  overrideArgs
-                  ;
+            inherit cargoArtifacts;
+
+            passthru =
+              {
+                inherit cargoArtifacts;
               }
-              craneLib.buildDepsOnly;
+              // (craneArgs.passthru or {});
           }
           // craneArgs;
       };
@@ -425,12 +433,17 @@ with self.lib.rust.targets;
           all;
 
         targetBins = let
-          mkPackages = target:
+          mkOutputs = target: let
+            release = buildPackageFor target commonReleaseArgs;
+            debug = buildPackageFor target commonDebugArgs;
+          in
             optionalAttrs targets'.${target} {
-              "${pname'}-${target}" = buildPackageFor target commonReleaseArgs;
-              "${pname'}-debug-${target}" = buildPackageFor target commonDebugArgs;
+              "${pname'}-${target}" = release;
+              "${pname'}-${target}-deps" = release.cargoArtifacts;
+              "${pname'}-debug-${target}" = debug;
+              "${pname'}-debug-${target}-deps" = debug.cargoArtifacts;
             };
-          packages = map mkPackages (attrValues rust.targets);
+          packages = map mkOutputs (attrValues rust.targets);
         in
           foldr mergeAttrs {} packages;
 
