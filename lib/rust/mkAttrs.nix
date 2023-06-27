@@ -422,7 +422,7 @@ with self.lib.rust.targets;
           default.${x86_64-unknown-linux-gnu} = true;
           default.${x86_64-unknown-linux-musl} = true;
 
-          all =
+          selected =
             default
             // optionalAttrs (targets != null) targets;
         in
@@ -430,7 +430,7 @@ with self.lib.rust.targets;
             warnIf (enabled && !(default ? ${target})) ''
               target `${target}` is not supported
               set `targets.${target} = false` to remove this warning'' (nameValuePair target enabled))
-          all;
+          selected;
 
         targetBins = let
           mkOutputs = target: let
