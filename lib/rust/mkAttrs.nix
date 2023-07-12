@@ -313,7 +313,7 @@ with self.lib.rust.targets;
                 "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
                 "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
               }
-              // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasi) {
+              // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasi && !pkgsCross.stdenv.hostPlatform.isDarwin) {
                 "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
               }
               // optionalAttrs (doCheck && target == aarch64-apple-darwin) {
