@@ -18,5 +18,5 @@ foo = { workspace = true, features = ["windows"] }
 rust-complex = { path = "." }
 
 [workspace.dependencies]
-foo = { path = "./foo", target = "wasm32-unknown-unknown", artifact = ["cdylib", "bin", "staticlib"] }
+foo = { path = "./foo" }
 ring = { version = "0.16.20", features = ["wasm32_c"] }
