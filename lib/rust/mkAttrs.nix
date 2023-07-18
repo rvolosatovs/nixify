@@ -344,6 +344,10 @@ with self.lib.rust.targets;
                   // optionalAttrs final.stdenv.buildPlatform.isDarwin {
                     doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                   }
+                else if target == wasm32-unknown-unknown
+                then {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
+                }
                 else if target == wasm32-wasi
                 then {
                   CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
@@ -408,6 +412,7 @@ with self.lib.rust.targets;
           default.${aarch64-unknown-linux-gnu} = true;
           default.${aarch64-unknown-linux-musl} = true;
           default.${armv7-unknown-linux-musleabihf} = true;
+          default.${wasm32-unknown-unknown} = true;
           default.${wasm32-wasi} = true;
           default.${x86_64-apple-darwin} = prev.stdenv.buildPlatform.isDarwin && prev.stdenv.buildPlatform.isx86_64;
           default.${x86_64-pc-windows-gnu} = true;
