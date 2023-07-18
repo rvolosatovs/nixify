@@ -36,6 +36,10 @@ jobs:
           test-bin: file ./result/bin/rust-hello
 
         - os: macos-12
+          package: rust-hello-wasm32-unknown-unknown
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
+
+        - os: macos-12
           package: rust-hello-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
 
@@ -101,6 +105,10 @@ jobs:
           package: rust-hello-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
           test-oci: docker load < ./result
+
+        - os: ubuntu-22.04
+          package: rust-hello-wasm32-unknown-unknown
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
 
         - os: ubuntu-22.04
           package: rust-hello-wasm32-wasi
