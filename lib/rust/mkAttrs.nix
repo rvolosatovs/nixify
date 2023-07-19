@@ -296,6 +296,13 @@ with self.lib.rust.targets;
 
               CARGO_BUILD_TARGET = target;
             }
+            // optionalAttrs pkgsCross.stdenv.hostPlatform.isLinux {
+              nativeBuildInputs = [
+                final.mold
+              ];
+
+              RUSTFLAGS = "-Clink-arg=-fuse-ld=mold";
+            }
             // optionalAttrs (final.stdenv.buildPlatform.config != pkgsCross.stdenv.hostPlatform.config) (
               {
                 strictDeps = true;
