@@ -165,6 +165,7 @@ jobs:
       with:
         extra-conf: |
           accept-flake-config = true
+    - uses: DeterminateSystems/magic-nix-cache-action@v2
     - uses: cachix/cachix-action@v12
       with:
         name: rvolosatovs
