@@ -14,7 +14,7 @@
   inputs.advisory-db.url = github:rustsec/advisory-db;
   inputs.crane.inputs.flake-utils.follows = "flake-utils";
   inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
-  inputs.crane.url = github:ipetkov/crane;
+  inputs.crane.url = github:ipetkov/crane/v0.13.1;
   inputs.fenix.inputs.nixpkgs.follows = "nixpkgs";
   inputs.fenix.url = github:nix-community/fenix;
   inputs.flake-utils.url = github:numtide/flake-utils;
