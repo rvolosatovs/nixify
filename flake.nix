@@ -18,6 +18,8 @@
   inputs.fenix.inputs.nixpkgs.follows = "nixpkgs";
   inputs.fenix.url = github:nix-community/fenix;
   inputs.flake-utils.url = github:numtide/flake-utils;
+  inputs.macos-sdk.url = github:hexops-graveyard/sdk-macos-12.0;
+  inputs.macos-sdk.flake = false;
   inputs.nix-filter.url = github:numtide/nix-filter;
   inputs.nix-log.url = github:rvolosatovs/nix-log;
   inputs.nixlib.url = github:nix-community/nixpkgs.lib;
@@ -39,6 +41,7 @@
           extendDerivations {
             buildInputs = with pkgs; [
               wasmtime
+              zig
             ];
           }
           devShells;

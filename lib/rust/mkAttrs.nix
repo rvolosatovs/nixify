@@ -2,8 +2,9 @@
   self,
   crane,
   flake-utils,
-  nixlib,
+  macos-sdk,
   nix-log,
+  nixlib,
   ...
 }:
 with flake-utils.lib.system;
@@ -286,14 +287,8 @@ with self.lib.rust.targets;
           useRosetta = final.stdenv.buildPlatform.isDarwin && final.stdenv.buildPlatform.isAarch64 && pkgsCross.stdenv.hostPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isx86_64;
           useEmu = final.stdenv.buildPlatform.system != pkgsCross.stdenv.hostPlatform.system && !useRosetta && pkgsCross.stdenv.hostPlatform.system != aarch64-darwin;
 
-          depsBuildBuild = optional pkgsCross.stdenv.hostPlatform.isDarwin pkgsCross.darwin.apple_sdk.frameworks.Security;
-
           targetArgs =
             {
-              inherit
-                depsBuildBuild
-                ;
-
               CARGO_BUILD_TARGET = target;
             }
             // optionalAttrs pkgsCross.stdenv.hostPlatform.isLinux {
@@ -307,12 +302,32 @@ with self.lib.rust.targets;
               {
                 strictDeps = true;
 
-                depsBuildBuild =
-                  depsBuildBuild
-                  ++ [
-                    pkgsCross.stdenv.cc
-                  ]
+                depsBuildBuild = let
+                  crossZigCC = let
+                    target' =
+                      if target == aarch64-apple-darwin
+                      then "aarch64-macos-none"
+                      else if target == x86_64-apple-darwin
+                      then "x86_64-macos-none"
+                      else throw "unsupported target ${target}";
+                  in
+                    # NOTE: Prior art:
+                    # https://actually.fyi/posts/zig-makes-rust-cross-compilation-just-work
+                    # https://github.com/rust-cross/cargo-zigbuild
+                    final.writeShellScriptBin "${target}-zigcc" ''
+                      ${final.zig}/bin/zig cc -target ${target'} ${optionalString pkgsCross.stdenv.buildPlatform.isDarwin ''--sysroot="$SDKROOT" -I"$SDKROOT/usr/include" -L"$SDKROOT/usr/lib" -F"$SDKROOT/System/Library/Frameworks"''} $@
+                    '';
+
+                  cc =
+                    if pkgsCross.stdenv.hostPlatform.isDarwin
+                    then crossZigCC
+                    else pkgsCross.stdenv.cc;
+                in
+                  [cc]
                   ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
+
+                HOST_AR = "${final.stdenv.cc.targetPrefix}ar";
+                HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
 
                 nativeCheckInputs = optional useEmu (
                   if pkgsCross.stdenv.hostPlatform.isWasm
@@ -321,18 +336,32 @@ with self.lib.rust.targets;
                   then final.wine64
                   else final.qemu
                 );
-
-                HOST_AR = "${final.stdenv.cc.targetPrefix}ar";
-                HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
-
+              }
+              // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isDarwin) {
                 "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
                 "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
               }
               // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasi) {
                 "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
               }
+              // optionalAttrs pkgsCross.stdenv.hostPlatform.isDarwin {
+                "CC_${target}" = "${target}-zigcc";
+
+                preBuild = ''
+                  export HOME=$(mktemp -d)
+                  export SDKROOT="${macos-sdk}/root"
+                '';
+
+                "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "rust-lld";
+              }
+              // optionalAttrs (pkgsCross.stdenv.hostPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isAarch64) {
+                doNotRemoveReferencesToVendorDir = true;
+              }
               // optionalAttrs (doCheck && target == aarch64-apple-darwin) {
                 doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
+              }
+              // optionalAttrs (doCheck && pkgsCross.stdenv.hostPlatform.isDarwin && !final.stdenv.hostPlatform.isDarwin) {
+                doCheck = warn "testing not currently supported when cross-compiling for `${target}` from non-Darwin platform" false;
               }
               // optionalAttrs (doCheck && useEmu) (
                 if target == armv7-unknown-linux-musleabihf
@@ -423,13 +452,13 @@ with self.lib.rust.targets;
           };
 
         targets' = let
-          default.${aarch64-apple-darwin} = prev.stdenv.buildPlatform.isDarwin;
+          default.${aarch64-apple-darwin} = true;
           default.${aarch64-unknown-linux-gnu} = true;
           default.${aarch64-unknown-linux-musl} = true;
           default.${armv7-unknown-linux-musleabihf} = true;
           default.${wasm32-unknown-unknown} = true;
           default.${wasm32-wasi} = true;
-          default.${x86_64-apple-darwin} = prev.stdenv.buildPlatform.isDarwin && prev.stdenv.buildPlatform.isx86_64;
+          default.${x86_64-apple-darwin} = true;
           default.${x86_64-pc-windows-gnu} = true;
           default.${x86_64-unknown-linux-gnu} = true;
           default.${x86_64-unknown-linux-musl} = true;
