@@ -295,6 +295,8 @@ with self.lib.rust.targets;
                 ;
 
               CARGO_BUILD_TARGET = target;
+
+              RUSTC_LOG = "rustc_codegen_ssa::back::link=info";
             }
             // optionalAttrs pkgsCross.stdenv.hostPlatform.isLinux {
               nativeBuildInputs = [
