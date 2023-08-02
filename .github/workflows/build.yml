@@ -97,6 +97,11 @@ jobs:
           test-bin: ./result/bin/rust-hello
 
         - os: ubuntu-22.04
+          package: rust-hello-aarch64-apple-darwin
+          test-bin: file ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - os: ubuntu-22.04
           package: rust-hello-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
@@ -116,6 +121,11 @@ jobs:
           test-oci: docker load < ./result
 
         - os: ubuntu-22.04
+          package: rust-hello-x86_64-apple-darwin
+          test-bin: file ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - os: ubuntu-22.04
           package: rust-hello-x86_64-pc-windows-gnu
           test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/rust-hello.exe
           test-oci: docker load < ./result
@@ -132,6 +142,11 @@ jobs:
           test-bin: ./result/bin/rust-hello
 
         - os: ubuntu-22.04
+          package: rust-hello-debug-aarch64-apple-darwin
+          test-bin: file ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - os: ubuntu-22.04
           package: rust-hello-debug-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
@@ -144,6 +159,11 @@ jobs:
         - os: ubuntu-22.04
           package: rust-hello-debug-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
+          test-oci: docker load < ./result
+
+        - os: ubuntu-22.04
+          package: rust-hello-debug-x86_64-apple-darwin
+          test-bin: file ./result/bin/rust-hello
           test-oci: docker load < ./result
 
         - os: ubuntu-22.04
@@ -177,3 +197,192 @@ jobs:
     - run: nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#${{ matrix.config.package }}-oci'
       if: ${{ matrix.config.package != 'default' && matrix.config.package != 'rust-hello' && matrix.config.package != 'rust-hello-debug' }}
     - run: ${{ matrix.config.test-oci }}
+
+  rust-complex:
+    strategy:
+      matrix:
+        config:
+        # Darwin
+        - os: macos-12
+          package: default
+          test-bin: ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex
+          test-bin: ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-aarch64-apple-darwin
+          test-bin: file ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-aarch64-unknown-linux-musl
+          test-bin: file ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-armv7-unknown-linux-musleabihf
+          test-bin: file ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-x86_64-apple-darwin
+          test-bin: ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-x86_64-pc-windows-gnu
+          test-bin: file ./result/bin/foo.exe
+          suffix: .exe
+
+        - os: macos-12
+          package: rust-complex-x86_64-unknown-linux-musl
+          test-bin: file ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-debug
+          test-bin: ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-debug-aarch64-apple-darwin
+          test-bin: file ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-debug-aarch64-unknown-linux-musl
+          test-bin: file ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-debug-armv7-unknown-linux-musleabihf
+          test-bin: file ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-debug-x86_64-apple-darwin
+          test-bin: ./result/bin/foo
+
+        - os: macos-12
+          package: rust-complex-debug-x86_64-pc-windows-gnu
+          test-bin: file ./result/bin/foo.exe
+          suffix: .exe
+
+        - os: macos-12
+          package: rust-complex-debug-x86_64-unknown-linux-musl
+          test-bin: file ./result/bin/foo
+
+        # Linux
+        - os: ubuntu-22.04
+          package: default
+          test-bin: ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex
+          test-bin: ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-aarch64-apple-darwin
+          test-bin: file ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-aarch64-unknown-linux-musl
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-armv7-unknown-linux-musleabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-x86_64-apple-darwin
+          test-bin: file ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-x86_64-pc-windows-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/foo.exe
+          suffix: .exe
+
+        - os: ubuntu-22.04
+          package: rust-complex-x86_64-unknown-linux-musl
+          test-bin: ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-debug
+          test-bin: ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-debug-aarch64-apple-darwin
+          test-bin: file ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-debug-aarch64-unknown-linux-musl
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-debug-armv7-unknown-linux-musleabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-debug-x86_64-apple-darwin
+          test-bin: file ./result/bin/foo
+
+        - os: ubuntu-22.04
+          package: rust-complex-debug-x86_64-pc-windows-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/foo.exe
+          suffix: .exe
+
+        - os: ubuntu-22.04
+          package: rust-complex-debug-x86_64-unknown-linux-musl
+          test-bin: ./result/bin/foo
+
+    runs-on: ${{ matrix.config.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: DeterminateSystems/nix-installer-action@v4
+      with:
+        extra-conf: |
+          accept-flake-config = true
+    - uses: DeterminateSystems/magic-nix-cache-action@v2
+    - uses: cachix/cachix-action@v12
+      with:
+        name: rvolosatovs
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+    - uses: ./.github/actions/build-nix
+      with:
+        package: ${{ matrix.config.package }}
+        flake: ./examples/rust-complex
+        install-path: /bin/foo${{ matrix.config.suffix }}
+    - run: ${{ matrix.config.test-bin }}
+
+  test-linux:
+    needs: rust-complex
+    runs-on: macos-12
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        name: rust-complex-x86_64-unknown-linux-musl
+    - run: chmod +x ./rust-complex-x86_64-unknown-linux-musl
+    - run: ./rust-complex-x86_64-unknown-linux-musl
+
+  test-macos:
+    needs: rust-complex
+    runs-on: macos-12
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        name: rust-complex-aarch64-apple-darwin
+    - uses: actions/download-artifact@v3
+      with:
+        name: rust-complex-x86_64-apple-darwin
+    - run: chmod +x ./rust-complex-x86_64-apple-darwin
+    - run: ./rust-complex-x86_64-apple-darwin
+    - run: lipo -create ./rust-complex-aarch64-apple-darwin ./rust-complex-x86_64-apple-darwin -output ./rust-complex-universal-darwin
+    - run: chmod +x ./rust-complex-universal-darwin
+    - run: ./rust-complex-universal-darwin
+    - uses: actions/upload-artifact@v3
+      with:
+        name: rust-complex-universal-darwin
+        path: rust-complex-universal-darwin
+
+  test-windows:
+    needs: rust-complex
+    runs-on: windows-2022
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        name: rust-complex-x86_64-pc-windows-gnu
+    - run: .\rust-complex-x86_64-pc-windows-gnu
