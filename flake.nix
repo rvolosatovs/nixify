@@ -16,7 +16,7 @@
   inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
   inputs.crane.url = github:ipetkov/crane;
   inputs.fenix.inputs.nixpkgs.follows = "nixpkgs";
-  inputs.fenix.url = github:nix-community/fenix;    
+  inputs.fenix.url = github:nix-community/fenix;
   inputs.flake-utils.url = github:numtide/flake-utils;
   inputs.nix-filter.url = github:numtide/nix-filter;
   inputs.nix-log.url = github:rvolosatovs/nix-log;
