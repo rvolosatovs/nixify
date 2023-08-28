@@ -187,6 +187,7 @@ jobs:
           accept-flake-config = true
     - uses: DeterminateSystems/magic-nix-cache-action@v2
     - uses: cachix/cachix-action@v12
+      continue-on-error: true
       with:
         name: rvolosatovs
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
@@ -337,6 +338,7 @@ jobs:
           accept-flake-config = true
     - uses: DeterminateSystems/magic-nix-cache-action@v2
     - uses: cachix/cachix-action@v12
+      continue-on-error: true
       with:
         name: rvolosatovs
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
