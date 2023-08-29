@@ -34,12 +34,15 @@ Simple, yet extensible, batteries-included Nix flake bootstrapping library for r
 - `aarch64-darwin` -> `aarch64-linux-musl`
 - `aarch64-darwin` -> `armv7-unknown-linux-musleabihf`
 - `aarch64-darwin` -> `wasm32-wasi`
+- `aarch64-darwin` -> `x86_64-apple-darwin`
 - `aarch64-darwin` -> `x86_64-linux-musl`
 - `aarch64-darwin` -> `x86_64-pc-windows-gnu`
 
+- `aarch64-linux` -> `aarch64-apple-darwin`
 - `aarch64-linux` -> `aarch64-linux-musl`
 - `aarch64-linux` -> `armv7-unknown-linux-musleabihf`
 - `aarch64-linux` -> `wasm32-wasi`
+- `aarch64-linux` -> `x86_64-apple-darwin`
 - `aarch64-linux` -> `x86_64-linux-musl`
 - `aarch64-linux` -> `x86_64-pc-windows-gnu`
 
@@ -51,9 +54,11 @@ Simple, yet extensible, batteries-included Nix flake bootstrapping library for r
 - `x86_64-darwin` -> `x86_64-linux-musl`
 - `x86_64-darwin` -> `x86_64-pc-windows-gnu`
 
+- `x86_64-linux` -> `aarch64-apple-darwin`
 - `x86_64-linux` -> `aarch64-linux-musl`
 - `x86_64-linux` -> `armv7-unknown-linux-musleabihf`
 - `x86_64-linux` -> `wasm32-wasi`
+- `x86_64-linux` -> `x86_64-apple-darwin`
 - `x86_64-linux` -> `x86_64-linux-musl`
 - `x86_64-linux` -> `x86_64-pc-windows-gnu`
 
