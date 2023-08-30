@@ -249,6 +249,8 @@ jobs:
 
   oci-linux:
     runs-on: ubuntu-22.04
+    permissions:
+      packages: write
     needs:
     - rust-hello-linux
     steps:
