@@ -10,284 +10,236 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  rust-hello:
+  rust-hello-linux:
     strategy:
       matrix:
         config:
-        # Darwin
-        # NOTE: Only build Wasm targets on Darwin here, since Mac machines are extremely slow on GitHub
-        - os: macos-12
-          package: rust-hello-wasm32-unknown-unknown
-          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
-
-        - os: macos-12
-          package: rust-hello-wasm32-wasi
-          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
-
-        - os: macos-12
-          package: rust-hello-debug-wasm32-unknown-unknown
-          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
-
-        - os: macos-12
-          package: rust-hello-debug-wasm32-wasi
-          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
-
-        # Linux
-        - os: ubuntu-22.04
-          package: default
+        - package: default
           test-bin: ./result/bin/rust-hello
 
-        - os: ubuntu-22.04
-          package: rust-hello
+        - package: rust-hello
           test-bin: ./result/bin/rust-hello
 
-        - os: ubuntu-22.04
-          package: rust-hello-aarch64-apple-darwin
+        - package: rust-hello-aarch64-apple-darwin
           test-bin: file ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-aarch64-unknown-linux-musl
+        - package: rust-hello-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-armv7-unknown-linux-musleabihf
+        - package: rust-hello-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-wasm32-unknown-unknown
+        - package: rust-hello-wasm32-unknown-unknown
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
 
-        - os: ubuntu-22.04
-          package: rust-hello-wasm32-wasi
+        - package: rust-hello-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-x86_64-apple-darwin
+        - package: rust-hello-x86_64-apple-darwin
           test-bin: file ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-x86_64-pc-windows-gnu
+        - package: rust-hello-x86_64-pc-windows-gnu
           test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/rust-hello.exe
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-x86_64-unknown-linux-musl
+        - package: rust-hello-x86_64-unknown-linux-musl
           test-bin: ./result/bin/rust-hello
           test-oci: |
             docker load < ./result
             docker run --rm rust-hello:$(nix eval --raw --override-input 'nixify' '.' ./examples/rust-hello#rust-hello-x86_64-unknown-linux-musl-oci.imageTag)
 
-        - os: ubuntu-22.04
-          package: rust-hello-debug
+        - package: rust-hello-debug
           test-bin: ./result/bin/rust-hello
 
-        - os: ubuntu-22.04
-          package: rust-hello-debug-aarch64-apple-darwin
+        - package: rust-hello-debug-aarch64-apple-darwin
           test-bin: file ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-debug-aarch64-unknown-linux-musl
+        - package: rust-hello-debug-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-debug-armv7-unknown-linux-musleabihf
+        - package: rust-hello-debug-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-debug-wasm32-wasi
+        - package: rust-hello-debug-wasm32-wasi
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-debug-x86_64-apple-darwin
+        - package: rust-hello-debug-x86_64-apple-darwin
           test-bin: file ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-debug-x86_64-pc-windows-gnu
+        - package: rust-hello-debug-x86_64-pc-windows-gnu
           test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/rust-hello.exe
           test-oci: docker load < ./result
 
-        - os: ubuntu-22.04
-          package: rust-hello-debug-x86_64-unknown-linux-musl
+        - package: rust-hello-debug-x86_64-unknown-linux-musl
           test-bin: ./result/bin/rust-hello
           test-oci: |
             docker load < ./result
             docker run --rm rust-hello:$(nix eval --raw --override-input 'nixify' '.' ./examples/rust-hello#rust-hello-x86_64-unknown-linux-musl-oci.imageTag)
 
-    runs-on: ${{ matrix.config.os }}
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
-    - uses: DeterminateSystems/nix-installer-action@v4
+    - uses: ./.github/actions/install-nix
       with:
-        extra-conf: |
-          accept-flake-config = true
-    - uses: DeterminateSystems/magic-nix-cache-action@v2
-    - uses: cachix/cachix-action@v12
-      continue-on-error: true
-      with:
-        name: rvolosatovs
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
     - run: nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#${{ matrix.config.package }}'
     - run: ${{ matrix.config.test-bin }}
-
     - run: nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#${{ matrix.config.package }}-oci'
       if: ${{ matrix.config.package != 'default' && matrix.config.package != 'rust-hello' && matrix.config.package != 'rust-hello-debug' }}
     - run: ${{ matrix.config.test-oci }}
 
-  rust-complex:
+
+  rust-hello-macos:
+    strategy:
+      matrix:
+        # NOTE: Only build Wasm targets on Darwin here, since Mac machines are extremely slow on GitHub. Other targets are built as part of `rust-complex-macos`
+        config:
+        - package: rust-hello-wasm32-unknown-unknown
+        - package: rust-hello-wasm32-wasi
+        - package: rust-hello-debug-wasm32-unknown-unknown
+        - package: rust-hello-debug-wasm32-wasi
+
+    runs-on: macos-12
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/install-nix
+      with:
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - run: nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#${{ matrix.config.package }}'
+    - run: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
+
+
+  rust-complex-linux:
     strategy:
       matrix:
         config:
-        # Darwin
-        - os: macos-12
-          package: default
+        - package: default
           test-bin: ./result/bin/foo
 
-        - os: macos-12
-          package: rust-complex
+        - package: rust-complex
           test-bin: ./result/bin/foo
 
-        - os: macos-12
-          package: rust-complex-aarch64-apple-darwin
+        - package: rust-complex-aarch64-apple-darwin
           test-bin: file ./result/bin/foo
 
-        - os: macos-12
-          package: rust-complex-aarch64-unknown-linux-musl
-          test-bin: file ./result/bin/foo
-
-        - os: macos-12
-          package: rust-complex-armv7-unknown-linux-musleabihf
-          test-bin: file ./result/bin/foo
-
-        - os: macos-12
-          package: rust-complex-x86_64-apple-darwin
-          test-bin: ./result/bin/foo
-
-        - os: macos-12
-          package: rust-complex-x86_64-pc-windows-gnu
-          test-bin: file ./result/bin/foo.exe
-          suffix: .exe
-
-        - os: macos-12
-          package: rust-complex-x86_64-unknown-linux-musl
-          test-bin: file ./result/bin/foo
-
-        - os: macos-12
-          package: rust-complex-debug
-          test-bin: ./result/bin/foo
-
-        - os: macos-12
-          package: rust-complex-debug-aarch64-apple-darwin
-          test-bin: file ./result/bin/foo
-
-        - os: macos-12
-          package: rust-complex-debug-aarch64-unknown-linux-musl
-          test-bin: file ./result/bin/foo
-
-        - os: macos-12
-          package: rust-complex-debug-armv7-unknown-linux-musleabihf
-          test-bin: file ./result/bin/foo
-
-        - os: macos-12
-          package: rust-complex-debug-x86_64-apple-darwin
-          test-bin: ./result/bin/foo
-
-        - os: macos-12
-          package: rust-complex-debug-x86_64-pc-windows-gnu
-          test-bin: file ./result/bin/foo.exe
-          suffix: .exe
-
-        - os: macos-12
-          package: rust-complex-debug-x86_64-unknown-linux-musl
-          test-bin: file ./result/bin/foo
-
-        # Linux
-        - os: ubuntu-22.04
-          package: default
-          test-bin: ./result/bin/foo
-
-        - os: ubuntu-22.04
-          package: rust-complex
-          test-bin: ./result/bin/foo
-
-        - os: ubuntu-22.04
-          package: rust-complex-aarch64-apple-darwin
-          test-bin: file ./result/bin/foo
-
-        - os: ubuntu-22.04
-          package: rust-complex-aarch64-unknown-linux-musl
+        - package: rust-complex-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
 
-        - os: ubuntu-22.04
-          package: rust-complex-armv7-unknown-linux-musleabihf
+        - package: rust-complex-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
 
-        - os: ubuntu-22.04
-          package: rust-complex-x86_64-apple-darwin
+        - package: rust-complex-x86_64-apple-darwin
           test-bin: file ./result/bin/foo
 
-        - os: ubuntu-22.04
-          package: rust-complex-x86_64-pc-windows-gnu
+        - package: rust-complex-x86_64-pc-windows-gnu
           test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/foo.exe
           suffix: .exe
 
-        - os: ubuntu-22.04
-          package: rust-complex-x86_64-unknown-linux-musl
+        - package: rust-complex-x86_64-unknown-linux-musl
           test-bin: ./result/bin/foo
 
-        - os: ubuntu-22.04
-          package: rust-complex-debug
+        - package: rust-complex-debug
           test-bin: ./result/bin/foo
 
-        - os: ubuntu-22.04
-          package: rust-complex-debug-aarch64-apple-darwin
+        - package: rust-complex-debug-aarch64-apple-darwin
           test-bin: file ./result/bin/foo
 
-        - os: ubuntu-22.04
-          package: rust-complex-debug-aarch64-unknown-linux-musl
+        - package: rust-complex-debug-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
 
-        - os: ubuntu-22.04
-          package: rust-complex-debug-armv7-unknown-linux-musleabihf
+        - package: rust-complex-debug-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
 
-        - os: ubuntu-22.04
-          package: rust-complex-debug-x86_64-apple-darwin
+        - package: rust-complex-debug-x86_64-apple-darwin
           test-bin: file ./result/bin/foo
 
-        - os: ubuntu-22.04
-          package: rust-complex-debug-x86_64-pc-windows-gnu
+        - package: rust-complex-debug-x86_64-pc-windows-gnu
           test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/foo.exe
           suffix: .exe
 
-        - os: ubuntu-22.04
-          package: rust-complex-debug-x86_64-unknown-linux-musl
+        - package: rust-complex-debug-x86_64-unknown-linux-musl
           test-bin: ./result/bin/foo
 
-    runs-on: ${{ matrix.config.os }}
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
-    - uses: DeterminateSystems/nix-installer-action@v4
+    - uses: ./.github/actions/install-nix
       with:
-        extra-conf: |
-          accept-flake-config = true
-    - uses: DeterminateSystems/magic-nix-cache-action@v2
-    - uses: cachix/cachix-action@v12
-      continue-on-error: true
-      with:
-        name: rvolosatovs
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - uses: ./.github/actions/build-nix
+      with:
+        package: ${{ matrix.config.package }}
+        flake: ./examples/rust-complex
+        install-path: /bin/foo${{ matrix.config.suffix }}
+    - run: ${{ matrix.config.test-bin }}
 
+  rust-complex-macos:
+    strategy:
+      matrix:
+        config:
+        - package: default
+          test-bin: ./result/bin/foo
+
+        - package: rust-complex
+          test-bin: ./result/bin/foo
+
+        - package: rust-complex-aarch64-apple-darwin
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-aarch64-unknown-linux-musl
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-armv7-unknown-linux-musleabihf
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-x86_64-apple-darwin
+          test-bin: ./result/bin/foo
+
+        - package: rust-complex-x86_64-pc-windows-gnu
+          test-bin: file ./result/bin/foo.exe
+          suffix: .exe
+
+        - package: rust-complex-x86_64-unknown-linux-musl
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug
+          test-bin: ./result/bin/foo
+
+        - package: rust-complex-debug-aarch64-apple-darwin
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-aarch64-unknown-linux-musl
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-armv7-unknown-linux-musleabihf
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-x86_64-apple-darwin
+          test-bin: ./result/bin/foo
+
+        - package: rust-complex-debug-x86_64-pc-windows-gnu
+          test-bin: file ./result/bin/foo.exe
+          suffix: .exe
+
+        - package: rust-complex-debug-x86_64-unknown-linux-musl
+          test-bin: file ./result/bin/foo
+
+    runs-on: macos-12
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/install-nix
+      with:
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - uses: ./.github/actions/build-nix
       with:
         package: ${{ matrix.config.package }}
@@ -296,8 +248,8 @@ jobs:
     - run: ${{ matrix.config.test-bin }}
 
   test-linux:
-    runs-on: macos-12
-    needs: rust-complex
+    runs-on: ubuntu-22.04
+    needs: rust-complex-linux
     steps:
     - uses: actions/download-artifact@v3
       with:
@@ -307,7 +259,7 @@ jobs:
 
   test-macos:
     runs-on: macos-12
-    needs: rust-complex
+    needs: rust-complex-linux
     steps:
     - uses: actions/download-artifact@v3
       with:
@@ -327,20 +279,34 @@ jobs:
 
   test-windows:
     runs-on: windows-2022
-    needs: rust-complex
+    needs: rust-complex-linux
     steps:
     - uses: actions/download-artifact@v3
       with:
         name: rust-complex-x86_64-pc-windows-gnu
     - run: '& .\rust-complex-x86_64-pc-windows-gnu'
 
+  test-oci:
+    runs-on: ubuntu-22.04
+    needs:
+    - rust-hello-linux
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/install-nix
+      with:
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - run: nix run -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#build-rust-hello-oci'
+
   test-artifacts:
     runs-on: ubuntu-22.04
     needs:
-    - rust-complex
-    - rust-hello
+    - rust-complex-linux
+    - rust-complex-macos
+    - rust-hello-linux
+    - rust-hello-macos
     - test-linux
     - test-macos
+    - test-oci
     - test-windows
     steps:
     - run: echo "binary artifacts are valid"

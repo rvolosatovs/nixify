@@ -1,0 +1,21 @@
+name: install Nix
+
+inputs:
+  cachixAuthToken:
+    description: auth token for https://app.cachix.org/cache/rvolosatovs
+
+runs:
+  using: composite
+  steps:
+  - uses: DeterminateSystems/nix-installer-action@v4
+    with:
+      extra-conf: |
+        accept-flake-config = true
+
+  - uses: DeterminateSystems/magic-nix-cache-action@v2
+
+  - uses: cachix/cachix-action@v12
+    continue-on-error: true
+    with:
+      name: rvolosatovs
+      authToken: '${{ inputs.cachixAuthToken }}'
