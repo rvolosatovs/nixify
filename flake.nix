@@ -33,6 +33,15 @@
   in
     with lib;
       mkFlake {
+        excludePaths = [
+          ".github"
+          ".gitignore"
+          "flake.lock"
+          "flake.nix"
+          "LICENSE"
+          "README.md"
+        ];
+
         withDevShells = {
           pkgs,
           devShells,
