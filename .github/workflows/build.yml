@@ -387,4 +387,4 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: rust-complex-x86_64-pc-windows-gnu
-    - run: .\rust-complex-x86_64-pc-windows-gnu
+    - run: '& .\rust-complex-x86_64-pc-windows-gnu'
