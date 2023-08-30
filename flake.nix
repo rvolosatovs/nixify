@@ -49,6 +49,7 @@
         }:
           extendDerivations {
             buildInputs = with pkgs; [
+              buildah
               wasmtime
               zig
             ];

@@ -278,11 +278,13 @@ with self.lib.rust.targets;
         # buildPackageFor builds for `target`.
         # `extraArgs` are passed through to `buildPackage` verbatim.
         # NOTE: Upstream only provides binary caches for a subset of supported systems.
-        buildPackageFor = target: craneArgs: let
+        buildPackageFor = {
+          craneArgs,
+          craneLib,
+          pkgsCross,
+          target,
+        }: let
           kebab2snake = replaceStrings ["-"] ["_"];
-          rustToolchain = rustToolchainFor target;
-          craneLib = mkCraneLib final rustToolchain;
-          pkgsCross = pkgsFor final target;
 
           useRosetta = final.stdenv.buildPlatform.isDarwin && final.stdenv.buildPlatform.isAarch64 && pkgsCross.stdenv.hostPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isx86_64;
           useEmu = final.stdenv.buildPlatform.system != pkgsCross.stdenv.hostPlatform.system && !useRosetta && pkgsCross.stdenv.hostPlatform.system != aarch64-darwin;
@@ -498,39 +500,133 @@ with self.lib.rust.targets;
 
         targetBins = let
           mkOutputs = target: let
-            release = buildPackageFor target commonReleaseArgs;
-            debug = buildPackageFor target commonDebugArgs;
+            pkgsCross = pkgsFor final target;
+            rustToolchain = rustToolchainFor target;
+            craneLib = mkCraneLib final rustToolchain;
+
+            withPassthru = craneArgs: {passthru ? {}, ...} @ pkg:
+              pkg
+              // {
+                passthru =
+                  passthru
+                  // {
+                    inherit
+                      pkgsCross
+                      rustToolchain
+                      target
+                      ;
+                  }
+                  // optionalAttrs (craneArgs ? CARGO_PROFILE) {
+                    inherit
+                      (craneArgs)
+                      CARGO_PROFILE
+                      ;
+                  };
+              };
+
+            buildPackageFor' = craneArgs: let
+              pkg = buildPackageFor {
+                inherit
+                  craneArgs
+                  craneLib
+                  pkgsCross
+                  target
+                  ;
+              };
+            in
+              withPassthru craneArgs pkg;
           in
             optionalAttrs targets'.${target} {
-              "${pname'}-${target}" = release;
-              "${pname'}-${target}-deps" = release.cargoArtifacts;
-              "${pname'}-debug-${target}" = debug;
-              "${pname'}-debug-${target}-deps" = debug.cargoArtifacts;
+              "${pname'}-${target}" = buildPackageFor' commonReleaseArgs;
+              "${pname'}-debug-${target}" = buildPackageFor' commonDebugArgs;
             };
           packages = map mkOutputs (attrValues rust.targets);
         in
           foldr mergeAttrs {} packages;
 
+        targetDeps = mapAttrs' (name: bin: nameValuePair "${name}-deps" bin.cargoArtifacts) targetBins;
+
+        # https://github.com/docker-library/official-images#architectures-other-than-amd64
+        # https://go.dev/doc/install/source#environment
+        # https://github.com/docker-library/bashbrew/blob/7e160dca3123caecf32c33ba31821dd2aa3716cd/architecture/oci-platform.go#L14-L27
+        ociArchitecture.${aarch64-apple-darwin} = "darwin-arm64v8";
+        ociArchitecture.${aarch64-unknown-linux-gnu} = "arm64v8";
+        ociArchitecture.${aarch64-unknown-linux-musl} = "arm64v8";
+        ociArchitecture.${armv7-unknown-linux-musleabihf} = "arm32v7";
+        ociArchitecture.${wasm32-unknown-unknown} = "wasm";
+        ociArchitecture.${wasm32-wasi} = "wasm";
+        ociArchitecture.${x86_64-apple-darwin} = "darwin-amd64";
+        ociArchitecture.${x86_64-pc-windows-gnu} = "windows-amd64";
+        ociArchitecture.${x86_64-unknown-linux-gnu} = "amd64";
+        ociArchitecture.${x86_64-unknown-linux-musl} = "amd64";
+
         bins' = genAttrs bins (_: {});
-        targetImages = optionalAttrs (bins' ? ${pname'}) (mapAttrs' (target: bin:
-          nameValuePair "${target}-oci" (final.dockerTools.buildImage {
-            name = pname';
-            tag = version';
-            copyToRoot = final.buildEnv {
-              name = pname';
-              paths = [bin];
-            };
-            config.Cmd = [pname'];
-            config.Env = ["PATH=${bin}/bin"];
-          }))
-        targetBins);
+        targetImages = optionalAttrs (bins' ? ${pname'}) (
+          mapAttrs' (
+            target: bin: let
+              img = final.dockerTools.buildImage ({
+                  name = pname';
+                  tag = version';
+                  copyToRoot = final.buildEnv {
+                    name = pname';
+                    paths = [bin];
+                  };
+                  config.Cmd = [pname'];
+                  config.Env = ["PATH=${bin}/bin"];
+                }
+                // optionalAttrs (ociArchitecture ? ${bin.passthru.target}) {
+                  architecture = ociArchitecture.${bin.passthru.target};
+                });
+            in
+              nameValuePair "${target}-oci" (img
+                // {
+                  passthru = bin.passthru // img.passthru;
+                })
+          )
+          targetBins
+        );
+
+        multiArchTargets = [
+          aarch64-unknown-linux-musl
+          armv7-unknown-linux-musleabihf
+          x86_64-pc-windows-gnu
+          x86_64-unknown-linux-musl
+        ];
       in
         {
           "${pname'}" = hostBin;
           "${pname'}-debug" = hostDebugBin;
         }
+        // targetDeps
         // targetBins
-        // targetImages;
+        // targetImages
+        // optionalAttrs (any (target: targetImages ? "${pname'}-${target}-oci") multiArchTargets)
+        {
+          "build-${pname'}-oci" = let
+            build = final.writeShellScriptBin "build-${pname'}-oci" ''
+              set -xe
+
+              build() {
+                ${final.buildah}/bin/buildah manifest create "localhost/''${1}"
+                ${concatMapStringsSep "\n" (
+                  target: let
+                    name = "${pname'}-${target}-oci";
+                  in
+                    optionalString (targetImages ? ${name}) ''
+                      ${final.buildah}/bin/buildah manifest add "''${1}" docker-archive:${targetImages."${name}"}
+                    ''
+                )
+                multiArchTargets}
+              }
+              build "''${1:-${pname'}:${version'}}"
+            '';
+          in (build
+            // {
+              inherit
+                version
+                ;
+            });
+        };
 
       packages = mkPackages final;
     in {
