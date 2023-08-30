@@ -355,6 +355,10 @@ with self.lib.rust.targets;
 
                     RUSTFLAGS = "-Clink-arg=-fuse-ld=mold";
                   }
+                  # Always build static binaries for Windows targets
+                  // optionalAttrs pkgsCross.stdenv.hostPlatform.isWindows {
+                    RUSTFLAGS = "-Ctarget-feature=+crt-static";
+                  }
                   # Use default linker for Wasm targets
                   // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasm) {
                     "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
