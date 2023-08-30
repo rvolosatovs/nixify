@@ -359,6 +359,8 @@ with self.lib.rust.targets;
                   }
                   # Always build static binaries for Windows targets
                   // optionalAttrs pkgsCross.stdenv.hostPlatform.isWindows {
+                    dontStrip = final.stdenv.buildPlatform.isDarwin; # by some reason stripping Windows binaries fails on Darwin
+
                     RUSTFLAGS = "-Ctarget-feature=+crt-static";
                   }
                   # Use default linker for Wasm targets
