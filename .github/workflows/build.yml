@@ -351,8 +351,8 @@ jobs:
     - run: ${{ matrix.config.test-bin }}
 
   test-linux:
-    needs: rust-complex
     runs-on: macos-12
+    needs: rust-complex
     steps:
     - uses: actions/download-artifact@v3
       with:
@@ -361,8 +361,8 @@ jobs:
     - run: ./rust-complex-x86_64-unknown-linux-musl
 
   test-macos:
-    needs: rust-complex
     runs-on: macos-12
+    needs: rust-complex
     steps:
     - uses: actions/download-artifact@v3
       with:
@@ -381,10 +381,21 @@ jobs:
         path: rust-complex-universal-darwin
 
   test-windows:
-    needs: rust-complex
     runs-on: windows-2022
+    needs: rust-complex
     steps:
     - uses: actions/download-artifact@v3
       with:
         name: rust-complex-x86_64-pc-windows-gnu
     - run: '& .\rust-complex-x86_64-pc-windows-gnu'
+
+  test-artifacts:
+    runs-on: ubuntu-22.04
+    needs:
+    - rust-complex
+    - rust-hello
+    - test-linux
+    - test-macos
+    - test-windows
+    steps:
+    - run: echo "binary artifacts are valid"
