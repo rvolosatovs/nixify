@@ -287,8 +287,14 @@ with self.lib.rust.targets;
           useRosetta = final.stdenv.buildPlatform.isDarwin && final.stdenv.buildPlatform.isAarch64 && pkgsCross.stdenv.hostPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isx86_64;
           useEmu = final.stdenv.buildPlatform.system != pkgsCross.stdenv.hostPlatform.system && !useRosetta && pkgsCross.stdenv.hostPlatform.system != aarch64-darwin;
 
+          buildInputs = optional final.stdenv.buildPlatform.isDarwin final.darwin.apple_sdk.frameworks.Security;
+
           targetArgs =
             {
+              inherit
+                buildInputs
+                ;
+
               CARGO_BUILD_TARGET = target;
             }
             // optionalAttrs pkgsCross.stdenv.hostPlatform.isLinux {
@@ -360,7 +366,7 @@ with self.lib.rust.targets;
               // optionalAttrs (doCheck && target == aarch64-apple-darwin) {
                 doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
               }
-              // optionalAttrs (doCheck && pkgsCross.stdenv.hostPlatform.isDarwin && !final.stdenv.hostPlatform.isDarwin) {
+              // optionalAttrs (doCheck && pkgsCross.stdenv.hostPlatform.isDarwin && !final.stdenv.buildPlatform.isDarwin) {
                 doCheck = warn "testing not currently supported when cross-compiling for `${target}` from non-Darwin platform" false;
               }
               // optionalAttrs (doCheck && useEmu) (
