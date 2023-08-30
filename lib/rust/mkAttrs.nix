@@ -549,14 +549,21 @@ with self.lib.rust.targets;
         # https://github.com/docker-library/official-images#architectures-other-than-amd64
         # https://go.dev/doc/install/source#environment
         # https://github.com/docker-library/bashbrew/blob/7e160dca3123caecf32c33ba31821dd2aa3716cd/architecture/oci-platform.go#L14-L27
-        ociArchitecture.${aarch64-apple-darwin} = "darwin-arm64v8";
-        ociArchitecture.${aarch64-unknown-linux-gnu} = "arm64v8";
-        ociArchitecture.${aarch64-unknown-linux-musl} = "arm64v8";
-        ociArchitecture.${armv7-unknown-linux-musleabihf} = "arm32v7";
+        # TODO: Update `buildImage` to support setting a platform struct
+        #ociArchitecture.${aarch64-apple-darwin} = "darwin-arm64v8";
+        #ociArchitecture.${aarch64-unknown-linux-gnu} = "arm64v8";
+        #ociArchitecture.${aarch64-unknown-linux-musl} = "arm64v8";
+        #ociArchitecture.${armv7-unknown-linux-musleabihf} = "arm32v7";
+        #ociArchitecture.${x86_64-apple-darwin} = "darwin-amd64";
+        #ociArchitecture.${x86_64-pc-windows-gnu} = "windows-amd64";
+        ociArchitecture.${aarch64-apple-darwin} = "arm64";
+        ociArchitecture.${aarch64-unknown-linux-gnu} = "arm64";
+        ociArchitecture.${aarch64-unknown-linux-musl} = "arm64";
+        ociArchitecture.${armv7-unknown-linux-musleabihf} = "arm";
         ociArchitecture.${wasm32-unknown-unknown} = "wasm";
         ociArchitecture.${wasm32-wasi} = "wasm";
-        ociArchitecture.${x86_64-apple-darwin} = "darwin-amd64";
-        ociArchitecture.${x86_64-pc-windows-gnu} = "windows-amd64";
+        ociArchitecture.${x86_64-apple-darwin} = "amd64";
+        ociArchitecture.${x86_64-pc-windows-gnu} = "amd64";
         ociArchitecture.${x86_64-unknown-linux-gnu} = "amd64";
         ociArchitecture.${x86_64-unknown-linux-musl} = "amd64";
 
@@ -566,7 +573,7 @@ with self.lib.rust.targets;
             target: bin: let
               img = final.dockerTools.buildImage ({
                   name = pname';
-                  tag = version';
+                  tag = "${version'}-${bin.passthru.target}";
                   copyToRoot = final.buildEnv {
                     name = pname';
                     paths = [bin];
@@ -589,7 +596,7 @@ with self.lib.rust.targets;
         multiArchTargets = [
           aarch64-unknown-linux-musl
           armv7-unknown-linux-musleabihf
-          x86_64-pc-windows-gnu
+          #x86_64-pc-windows-gnu # TODO: Re-enable once we can set OS
           x86_64-unknown-linux-musl
         ];
       in
@@ -607,13 +614,14 @@ with self.lib.rust.targets;
               set -xe
 
               build() {
-                ${final.buildah}/bin/buildah manifest create "localhost/''${1}"
+                ${final.buildah}/bin/buildah manifest create "''${1}"
                 ${concatMapStringsSep "\n" (
                   target: let
                     name = "${pname'}-${target}-oci";
                   in
                     optionalString (targetImages ? ${name}) ''
                       ${final.buildah}/bin/buildah manifest add "''${1}" docker-archive:${targetImages."${name}"}
+                      ${final.buildah}/bin/buildah pull docker-archive:${targetImages."${name}"}
                     ''
                 )
                 multiArchTargets}
