@@ -289,51 +289,81 @@ with self.lib.rust.targets;
 
           buildInputs = optional final.stdenv.buildPlatform.isDarwin final.darwin.apple_sdk.frameworks.Security;
 
+          crossZigCC = let
+            target' =
+              if target == aarch64-apple-darwin
+              then "aarch64-macos"
+              else if target == x86_64-apple-darwin
+              then "x86_64-macos"
+              else throw "unsupported target ${target}";
+          in
+            # NOTE: Prior art:
+            # https://actually.fyi/posts/zig-makes-rust-cross-compilation-just-work
+            # https://github.com/rust-cross/cargo-zigbuild
+            final.writeShellScriptBin "${target}-zigcc" ''
+              ${final.zig}/bin/zig cc -target ${target'} ${optionalString pkgsCross.stdenv.buildPlatform.isDarwin ''--sysroot="$SDKROOT" -I"$SDKROOT/usr/include" -L"$SDKROOT/usr/lib" -F"$SDKROOT/System/Library/Frameworks"''} $@
+            '';
+
           targetArgs =
             {
               inherit
                 buildInputs
                 ;
 
+              HOST_AR = "${final.stdenv.cc.targetPrefix}ar";
+              HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
+
               CARGO_BUILD_TARGET = target;
             }
-            // optionalAttrs pkgsCross.stdenv.hostPlatform.isLinux {
-              nativeBuildInputs = [
-                final.mold
-              ];
+            # Use `rust-lld` linker and Zig C compiler for Darwin targets
+            // (
+              if pkgsCross.stdenv.hostPlatform.isDarwin
+              then {
+                depsBuildBuild = [
+                  crossZigCC
+                ];
 
-              RUSTFLAGS = "-Clink-arg=-fuse-ld=mold";
-            }
+                preBuild =
+                  ''
+                    export HOME=$(mktemp -d)
+                  ''
+                  + optionalString pkgsCross.stdenv.hostPlatform.isDarwin ''
+                    export SDKROOT="${macos-sdk}/root"
+                  '';
+
+                "CC_${target}" = "${target}-zigcc";
+
+                "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "rust-lld";
+              }
+              else
+                (
+                  {
+                    depsBuildBuild =
+                      [
+                        pkgsCross.stdenv.cc
+                      ]
+                      ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
+
+                    "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
+                    "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
+                  }
+                  # Use `mold` linker for Linux targets
+                  // optionalAttrs pkgsCross.stdenv.hostPlatform.isLinux {
+                    nativeBuildInputs = [
+                      final.mold
+                    ];
+
+                    RUSTFLAGS = "-Clink-arg=-fuse-ld=mold";
+                  }
+                  # Use default linker for Wasm targets
+                  // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasm) {
+                    "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
+                  }
+                )
+            )
             // optionalAttrs (final.stdenv.buildPlatform.config != pkgsCross.stdenv.hostPlatform.config) (
               {
                 strictDeps = true;
-
-                depsBuildBuild = let
-                  crossZigCC = let
-                    target' =
-                      if target == aarch64-apple-darwin
-                      then "aarch64-macos-none"
-                      else if target == x86_64-apple-darwin
-                      then "x86_64-macos-none"
-                      else throw "unsupported target ${target}";
-                  in
-                    # NOTE: Prior art:
-                    # https://actually.fyi/posts/zig-makes-rust-cross-compilation-just-work
-                    # https://github.com/rust-cross/cargo-zigbuild
-                    final.writeShellScriptBin "${target}-zigcc" ''
-                      ${final.zig}/bin/zig cc -target ${target'} ${optionalString pkgsCross.stdenv.buildPlatform.isDarwin ''--sysroot="$SDKROOT" -I"$SDKROOT/usr/include" -L"$SDKROOT/usr/lib" -F"$SDKROOT/System/Library/Frameworks"''} $@
-                    '';
-
-                  cc =
-                    if pkgsCross.stdenv.hostPlatform.isDarwin
-                    then crossZigCC
-                    else pkgsCross.stdenv.cc;
-                in
-                  [cc]
-                  ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
-
-                HOST_AR = "${final.stdenv.cc.targetPrefix}ar";
-                HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
 
                 nativeCheckInputs = optional useEmu (
                   if pkgsCross.stdenv.hostPlatform.isWasm
@@ -342,23 +372,6 @@ with self.lib.rust.targets;
                   then final.wine64
                   else final.qemu
                 );
-              }
-              // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isDarwin) {
-                "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
-                "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
-              }
-              // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasi) {
-                "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
-              }
-              // optionalAttrs pkgsCross.stdenv.hostPlatform.isDarwin {
-                "CC_${target}" = "${target}-zigcc";
-
-                preBuild = ''
-                  export HOME=$(mktemp -d)
-                  export SDKROOT="${macos-sdk}/root"
-                '';
-
-                "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "rust-lld";
               }
               // optionalAttrs (pkgsCross.stdenv.hostPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isAarch64) {
                 doNotRemoveReferencesToVendorDir = true;
