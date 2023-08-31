@@ -325,6 +325,10 @@ with self.lib.rust.targets;
                   crossZigCC
                 ];
 
+                disallowedReferences = [
+                  crossZigCC
+                ];
+
                 preBuild =
                   ''
                     export HOME=$(mktemp -d)
@@ -345,6 +349,10 @@ with self.lib.rust.targets;
                         pkgsCross.stdenv.cc
                       ]
                       ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
+
+                    disallowedReferences = [
+                      pkgsCross.stdenv.cc
+                    ];
 
                     "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
                     "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
