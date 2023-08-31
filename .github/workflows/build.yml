@@ -249,6 +249,7 @@ jobs:
 
   oci-linux:
     runs-on: ubuntu-22.04
+    if: ${{ github.event_name != 'pull_request' }}
     permissions:
       packages: write
     needs:
@@ -259,18 +260,15 @@ jobs:
       with:
         cachixAuthToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - uses: docker/login-action@v2
-      if: ${{ github.event_name != 'pull_request' }}
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - run: nix run -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#build-rust-hello-oci' rust-hello
-    - run: nix profile install --inputs-from . 'nixpkgs#buildah'
-      if: ${{ github.event_name != 'pull_request' }}
-    - run: buildah push --all --format 'v2s2' rust-hello docker://ghcr.io/${{ github.repository_owner }}/nixify:rust-hello-${{ github.sha }}
-      if: ${{ github.event_name != 'pull_request' }}
-    - run: docker run ghcr.io/${{ github.repository_owner }}/nixify:rust-hello-${{ github.sha }}
-      if: ${{ github.event_name != 'pull_request' }}
+    - run: |
+        nix run -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#build-rust-hello-oci' rust-hello
+        nix profile install --inputs-from . 'nixpkgs#buildah'
+        buildah manifest push --all --format 'v2s2' rust-hello docker://ghcr.io/${{ github.repository_owner }}/nixify:rust-hello-${{ github.sha }}
+        docker run ghcr.io/${{ github.repository_owner }}/nixify:rust-hello-${{ github.sha }}
 
   test-linux:
     runs-on: ubuntu-22.04
