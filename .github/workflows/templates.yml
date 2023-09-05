@@ -18,7 +18,7 @@ jobs:
         - host: ubuntu-latest
     runs-on: ${{ matrix.platform.host }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: ./.github/actions/install-nix
       with:
         cachixAuthToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
