@@ -16,6 +16,8 @@ with self.lib.rust.targets;
     then pkgs
     else if hostPlatform.isAarch64 && hostPlatform.isLinux && hostPlatform.isGnu && target == aarch64-unknown-linux-gnu
     then pkgs
+    else if hostPlatform.isAarch64 && hostPlatform.isLinux && hostPlatform.isAndroid && target == aarch64-linux-android
+    then pkgs
     else if hostPlatform.isAarch64 && hostPlatform.isLinux && target == aarch64-unknown-linux-musl
     then
       if hostPlatform.isMusl
@@ -30,12 +32,14 @@ with self.lib.rust.targets;
       else pkgs.pkgsCross.musl64
     else if hostPlatform.isx86_64 && hostPlatform.isWindows && target == x86_64-pc-windows-gnu
     then pkgs
+    else if target == aarch64-apple-darwin
+    then pkgs.pkgsCross.aarch64-darwin
+    else if target == aarch64-linux-android
+    then pkgs.pkgsCross.aarch64-android-prebuilt
     else if target == aarch64-unknown-linux-gnu
     then pkgs.pkgsCross.aarch64-multiplatform
     else if target == aarch64-unknown-linux-musl
     then pkgs.pkgsCross.aarch64-multiplatform-musl
-    else if target == aarch64-apple-darwin
-    then pkgs.pkgsCross.aarch64-darwin
     else if target == armv7-unknown-linux-musleabihf
     then pkgs.pkgsCross.armv7l-hf-multiplatform
     else if target == x86_64-apple-darwin

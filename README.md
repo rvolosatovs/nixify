@@ -39,6 +39,7 @@ Simple, yet extensible, batteries-included Nix flake bootstrapping library for r
 - `aarch64-darwin` -> `x86_64-pc-windows-gnu`
 
 - `aarch64-linux` -> `aarch64-apple-darwin`
+- `aarch64-linux` -> `aarch64-linux-android`
 - `aarch64-linux` -> `aarch64-linux-musl`
 - `aarch64-linux` -> `armv7-unknown-linux-musleabihf`
 - `aarch64-linux` -> `wasm32-wasi`
@@ -55,6 +56,7 @@ Simple, yet extensible, batteries-included Nix flake bootstrapping library for r
 - `x86_64-darwin` -> `x86_64-pc-windows-gnu`
 
 - `x86_64-linux` -> `aarch64-apple-darwin`
+- `x86_64-linux` -> `aarch64-linux-android`
 - `x86_64-linux` -> `aarch64-linux-musl`
 - `x86_64-linux` -> `armv7-unknown-linux-musleabihf`
 - `x86_64-linux` -> `wasm32-wasi`
