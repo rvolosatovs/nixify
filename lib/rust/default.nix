@@ -138,6 +138,7 @@ in {
     ];
 
   targets.aarch64-apple-darwin = "aarch64-apple-darwin";
+  targets.aarch64-linux-android = "aarch64-linux-android";
   targets.aarch64-unknown-linux-gnu = "aarch64-unknown-linux-gnu";
   targets.aarch64-unknown-linux-musl = "aarch64-unknown-linux-musl";
   targets.armv7-unknown-linux-musleabihf = "armv7-unknown-linux-musleabihf";

@@ -24,6 +24,10 @@ jobs:
           test-bin: file ./result/bin/rust-hello
           test-oci: docker load < ./result
 
+        - package: rust-hello-aarch64-linux-android
+          test-bin: file ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
         - package: rust-hello-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
@@ -62,6 +66,10 @@ jobs:
 
         - package: rust-hello-debug-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-debug-aarch64-linux-android
+          test-bin: file ./result/bin/rust-hello
           test-oci: docker load < ./result
 
         - package: rust-hello-debug-armv7-unknown-linux-musleabihf
@@ -132,6 +140,9 @@ jobs:
         - package: rust-complex-aarch64-apple-darwin
           test-bin: file ./result/bin/foo
 
+        - package: rust-complex-aarch64-linux-android
+          test-bin: file ./result/bin/foo
+
         - package: rust-complex-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
 
@@ -152,6 +163,9 @@ jobs:
           test-bin: ./result/bin/foo
 
         - package: rust-complex-debug-aarch64-apple-darwin
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-aarch64-linux-android
           test-bin: file ./result/bin/foo
 
         - package: rust-complex-debug-aarch64-unknown-linux-musl

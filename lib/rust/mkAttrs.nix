@@ -407,6 +407,10 @@ with self.lib.rust.targets;
                   // optionalAttrs final.stdenv.buildPlatform.isDarwin {
                     doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                   }
+                else if target == aarch64-linux-android
+                then {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
+                }
                 else if target == aarch64-unknown-linux-gnu
                 then
                   {
@@ -488,6 +492,7 @@ with self.lib.rust.targets;
 
         targets' = let
           default.${aarch64-apple-darwin} = true;
+          default.${aarch64-linux-android} = prev.stdenv.hostPlatform.isLinux;
           default.${aarch64-unknown-linux-gnu} = true;
           default.${aarch64-unknown-linux-musl} = true;
           default.${armv7-unknown-linux-musleabihf} = true;
@@ -567,6 +572,7 @@ with self.lib.rust.targets;
         #ociArchitecture.${x86_64-apple-darwin} = "darwin-amd64";
         #ociArchitecture.${x86_64-pc-windows-gnu} = "windows-amd64";
         ociArchitecture.${aarch64-apple-darwin} = "arm64";
+        ociArchitecture.${aarch64-linux-android} = "arm64";
         ociArchitecture.${aarch64-unknown-linux-gnu} = "arm64";
         ociArchitecture.${aarch64-unknown-linux-musl} = "arm64";
         ociArchitecture.${armv7-unknown-linux-musleabihf} = "arm";
