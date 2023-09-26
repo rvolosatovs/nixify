@@ -334,7 +334,7 @@ with self.lib.rust.targets;
                     export HOME=$(mktemp -d)
                   ''
                   + optionalString pkgsCross.stdenv.hostPlatform.isDarwin ''
-                    export SDKROOT="${macos-sdk}/root"
+                    export SDKROOT="${macos-sdk}"
                   '';
 
                 "CC_${target}" = "${target}-zigcc";
