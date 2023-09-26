@@ -188,17 +188,13 @@
     "macos-sdk": {
       "flake": false,
       "locked": {
-        "lastModified": 1656095854,
-        "narHash": "sha256-Bksziu35r3/t7qNl6P/LXc/UZDF1zbXCMMvEarPFGUs=",
-        "owner": "hexops-graveyard",
-        "repo": "sdk-macos-12.0",
-        "rev": "14613b4917c7059dad8f3789f55bb13a2548f83d",
-        "type": "github"
+        "narHash": "sha256-TEvVJy+NMPyzgWSk/6S29ZMQR+ICFxSdS3tw247uhFc=",
+        "type": "tarball",
+        "url": "https://github.com/roblabla/MacOSX-SDKs/releases/download/macosx14.0/MacOSX14.0.sdk.tar.xz"
       },
       "original": {
-        "owner": "hexops-graveyard",
-        "repo": "sdk-macos-12.0",
-        "type": "github"
+        "type": "tarball",
+        "url": "https://github.com/roblabla/MacOSX-SDKs/releases/download/macosx14.0/MacOSX14.0.sdk.tar.xz"
       }
     },
     "nix-filter": {
