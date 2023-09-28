@@ -30,39 +30,19 @@ Simple, yet extensible, batteries-included Nix flake bootstrapping library for r
 
 ### Cross-compilation
 
-- `aarch64-darwin` -> `aarch64-apple-darwin`
-- `aarch64-darwin` -> `aarch64-linux-musl`
-- `aarch64-darwin` -> `armv7-unknown-linux-musleabihf`
-- `aarch64-darwin` -> `wasm32-wasi`
-- `aarch64-darwin` -> `x86_64-apple-darwin`
-- `aarch64-darwin` -> `x86_64-linux-musl`
-- `aarch64-darwin` -> `x86_64-pc-windows-gnu`
-
-- `aarch64-linux` -> `aarch64-apple-darwin`
-- `aarch64-linux` -> `aarch64-linux-android`
-- `aarch64-linux` -> `aarch64-linux-musl`
-- `aarch64-linux` -> `armv7-unknown-linux-musleabihf`
-- `aarch64-linux` -> `wasm32-wasi`
-- `aarch64-linux` -> `x86_64-apple-darwin`
-- `aarch64-linux` -> `x86_64-linux-musl`
-- `aarch64-linux` -> `x86_64-pc-windows-gnu`
-
-- `x86_64-darwin` -> `aarch64-apple-darwin`
-- `x86_64-darwin` -> `aarch64-linux-musl`
-- `x86_64-darwin` -> `armv7-unknown-linux-musleabihf`
-- `x86_64-darwin` -> `wasm32-wasi`
-- `x86_64-darwin` -> `x86_64-apple-darwin`
-- `x86_64-darwin` -> `x86_64-linux-musl`
-- `x86_64-darwin` -> `x86_64-pc-windows-gnu`
-
-- `x86_64-linux` -> `aarch64-apple-darwin`
-- `x86_64-linux` -> `aarch64-linux-android`
-- `x86_64-linux` -> `aarch64-linux-musl`
-- `x86_64-linux` -> `armv7-unknown-linux-musleabihf`
-- `x86_64-linux` -> `wasm32-wasi`
-- `x86_64-linux` -> `x86_64-apple-darwin`
-- `x86_64-linux` -> `x86_64-linux-musl`
-- `x86_64-linux` -> `x86_64-pc-windows-gnu`
+|                                      | `aarch64-darwin` | `aarch64-linux` | `x86_64-darwin` | `x86_64-linux` |
+|:------------------------------------:|:----------------:|:---------------:|:---------------:|:--------------:|
+|      **`aarch64-apple-darwin`**      |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|    **`aarch64-unknown-linux-gnu`**   |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|   **`aarch64-unknown-linux-musl`**   |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|      **`aarch64-linux-android`**     |         ❌        |        ✔️        |        ❌        |        ✔️       |
+| **`armv7-unknown-linux-musleabihf`** |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|     **`wasm32-unknown-unknown`**     |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|           **`wasm32-wasi`**          |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|       **`x86_64-apple-darwin`**      |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|      **`x86_64-pc-windows-gnu`**     |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|    **`x86_64-unknown-linux-gnu`**    |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|    **`x86_64-unknown-linux-musl`**   |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 
 ### Template
 
@@ -430,3 +410,7 @@ $ nix flake show --no-write-lock-file 'github:rvolosatovs/nixify?dir=examples/ru
         ├───rust-hello-x86_64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
         └───rust-hello-x86_64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
 ```
+
+# Motivation
+
+For a brief overview of motivation of this project to exist, see this talk at FOSDEM'23: https://archive.fosdem.org/2023/schedule/event/nix_and_nixos_a_success_story/
