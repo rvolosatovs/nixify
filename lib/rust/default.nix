@@ -143,14 +143,37 @@ in {
       "rust-toolchain.toml"
     ];
 
+  # From https://doc.rust-lang.org/nightly/rustc/platform-support.html
   targets.aarch64-apple-darwin = "aarch64-apple-darwin";
+  targets.aarch64-apple-ios = "aarch64-apple-ios";
   targets.aarch64-linux-android = "aarch64-linux-android";
   targets.aarch64-unknown-linux-gnu = "aarch64-unknown-linux-gnu";
   targets.aarch64-unknown-linux-musl = "aarch64-unknown-linux-musl";
+  targets.arm-unknown-linux-musleabi = "arm-unknown-linux-musleabi";
+  targets.arm-unknown-linux-musleabihf = "arm-unknown-linux-musleabihf";
+  targets.armv7-unknown-linux-musleabi = "armv7-unknown-linux-musleabi";
   targets.armv7-unknown-linux-musleabihf = "armv7-unknown-linux-musleabihf";
+  targets.armv7s-apple-ios = "armv7s-apple-ios";
+  targets.mips-unknown-linux-gnu = "mips-unknown-linux-gnu";
+  targets.mips-unknown-linux-musl = "mips-unknown-linux-musl";
+  targets.mips64-unknown-linux-gnuabi64 = "mips64-unknown-linux-gnuabi64";
+  targets.mips64-unknown-linux-muslabi64 = "mips64-unknown-linux-muslabi64";
+  targets.mips64el-unknown-linux-gnuabi64 = "mips64el-unknown-linux-gnuabi64";
+  targets.mips64el-unknown-linux-muslabi64 = "mips64el-unknown-linux-muslabi64";
+  targets.mipsel-unknown-linux-gnu = "mipsel-unknown-linux-gnu";
+  targets.mipsel-unknown-linux-musl = "mipsel-unknown-linux-musl";
+  targets.powerpc-unknown-linux-gnu = "powerpc-unknown-linux-gnu";
+  targets.powerpc-unknown-linux-musl = "powerpc-unknown-linux-musl";
+  targets.powerpc64-unknown-linux-gnu = "powerpc64-unknown-linux-gnu";
+  targets.powerpc64-unknown-linux-musl = "powerpc64-unknown-linux-musl";
+  targets.powerpc64le-unknown-linux-gnu = "powerpc64le-unknown-linux-gnu";
+  targets.powerpc64le-unknown-linux-musl = "powerpc64le-unknown-linux-musl";
+  targets.riscv64gc-unknown-linux-gnu = "riscv64gc-unknown-linux-gnu";
+  targets.riscv64gc-unknown-linux-musl = "riscv64gc-unknown-linux-musl";
   targets.wasm32-unknown-unknown = "wasm32-unknown-unknown";
   targets.wasm32-wasi = "wasm32-wasi";
   targets.x86_64-apple-darwin = "x86_64-apple-darwin";
+  targets.x86_64-apple-ios = "x86_64-apple-ios";
   targets.x86_64-pc-windows-gnu = "x86_64-pc-windows-gnu";
   targets.x86_64-unknown-linux-gnu = "x86_64-unknown-linux-gnu";
   targets.x86_64-unknown-linux-musl = "x86_64-unknown-linux-musl";

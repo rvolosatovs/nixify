@@ -34,16 +34,40 @@ with self.lib.rust.targets;
     then pkgs
     else if target == aarch64-apple-darwin
     then pkgs.pkgsCross.aarch64-darwin
+    else if target == aarch64-apple-ios
+    then pkgs.pkgsCross.iphone64
     else if target == aarch64-linux-android
     then pkgs.pkgsCross.aarch64-android-prebuilt
     else if target == aarch64-unknown-linux-gnu
     then pkgs.pkgsCross.aarch64-multiplatform
     else if target == aarch64-unknown-linux-musl
     then pkgs.pkgsCross.aarch64-multiplatform-musl
+    else if target == armv7s-apple-ios
+    then pkgs.pkgsCross.iphone32
     else if target == armv7-unknown-linux-musleabihf
     then pkgs.pkgsCross.armv7l-hf-multiplatform
+    else if target == mips-unknown-linux-gnu
+    then pkgs.pkgsCross.mips-linux-gnu
+    else if target == mipsel-unknown-linux-gnu
+    then pkgs.pkgsCross.mipsel-linux-gnu
+    else if target == mips64-unknown-linux-gnuabi64
+    then pkgs.pkgsCross.mips64-linux-gnuabi64
+    else if target == mips64el-unknown-linux-gnuabi64
+    then pkgs.pkgsCross.mips64el-linux-gnuabi64
+    else if target == powerpc64-unknown-linux-gnu
+    then pkgs.pkgsCross.ppc64
+    else if target == powerpc64-unknown-linux-musl
+    then pkgs.pkgsCross.ppc64-musl
+    else if target == powerpc64le-unknown-linux-gnu
+    then pkgs.pkgsCross.powernv
+    else if target == powerpc64le-unknown-linux-musl
+    then pkgs.pkgsCross.musl-power
+    else if target == riscv64gc-unknown-linux-gnu
+    then pkgs.pkgsCross.riscv64
     else if target == x86_64-apple-darwin
     then pkgs.pkgsCross.x86_64-darwin
+    else if target == x86_64-apple-ios
+    then pkgs.pkgsCross.iphone64-simulator
     else if target == x86_64-pc-windows-gnu
     then pkgs.pkgsCross.mingwW64
     else if target == x86_64-unknown-linux-gnu
@@ -54,6 +78,9 @@ with self.lib.rust.targets;
     then pkgs.pkgsCross.wasi32
     else
       import nixpkgs {
-        crossSystem = target;
+        crossSystem.config =
+          if target == riscv64gc-unknown-linux-musl
+          then "riscv64-unknown-linux-musl"
+          else target;
         localSystem = hostPlatform.system;
       }

@@ -1,7 +1,6 @@
 {
   flake-utils,
   nixlib,
-  nixpkgs,
   nix-filter,
   ...
 } @ inputs:
