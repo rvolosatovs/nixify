@@ -15,6 +15,23 @@
       clippy.workspace = true;
       test.workspace = true;
 
-      targets.wasm32-wasi = false; # https://github.com/briansmith/ring/issues/1043
+      buildOverrides = {
+        pkgs,
+        pkgsCross ? pkgs,
+        ...
+      }: {
+        buildInputs ? [],
+        depsBuildBuild ? [],
+        ...
+      }:
+        with pkgs.lib; {
+          buildInputs =
+            buildInputs
+            ++ optional pkgs.stdenv.hostPlatform.isDarwin pkgs.libiconv;
+
+          depsBuildBuild =
+            depsBuildBuild
+            ++ optional pkgsCross.stdenv.hostPlatform.isDarwin pkgsCross.xcbuild.xcrun;
+        };
     };
 }

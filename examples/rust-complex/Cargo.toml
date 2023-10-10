@@ -19,4 +19,4 @@ rust-complex = { path = "." }
 
 [workspace.dependencies]
 foo = { path = "./foo" }
-ring = { version = "0.16.20", features = ["wasm32_c"] }
+ring = { version = "0.17", features = ["wasm32_unknown_unknown_js"] }

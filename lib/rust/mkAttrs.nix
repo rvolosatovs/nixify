@@ -287,7 +287,7 @@ with self.lib.rust.targets;
           kebab2snake = replaceStrings ["-"] ["_"];
 
           useRosetta = final.stdenv.buildPlatform.isDarwin && final.stdenv.buildPlatform.isAarch64 && pkgsCross.stdenv.hostPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isx86_64;
-          useEmu = final.stdenv.buildPlatform.system != pkgsCross.stdenv.hostPlatform.system && !useRosetta && pkgsCross.stdenv.hostPlatform.system != aarch64-darwin;
+          useEmu = final.stdenv.buildPlatform.system != pkgsCross.stdenv.hostPlatform.system && !useRosetta && !pkgsCross.stdenv.hostPlatform.isDarwin;
 
           buildInputs = optional final.stdenv.buildPlatform.isDarwin final.darwin.apple_sdk.frameworks.Security;
 
@@ -295,6 +295,8 @@ with self.lib.rust.targets;
             target' =
               if target == aarch64-apple-darwin
               then "aarch64-macos"
+              else if target == aarch64-apple-ios
+              then "aarch64-ios"
               else if target == x86_64-apple-darwin
               then "x86_64-macos"
               else throw "unsupported target ${target}";
@@ -427,6 +429,78 @@ with self.lib.rust.targets;
                   // optionalAttrs final.stdenv.buildPlatform.isDarwin {
                     doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                   }
+                else if target == mips-unknown-linux-gnu
+                then
+                  {
+                    CARGO_TARGET_MIPS_UNKNOWN_LINUX_GNU_RUNNER = "qemu-mips";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == mips64-unknown-linux-gnuabi64
+                then
+                  {
+                    CARGO_TARGET_MIPS64_UNKNOWN_LINUX_GNUABI64_RUNNER = "qemu-mips64";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == mips64el-unknown-linux-gnuabi64
+                then
+                  {
+                    CARGO_TARGET_MIPS64EL_UNKNOWN_LINUX_GNUABI64_RUNNER = "qemu-mips64el";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == mipsel-unknown-linux-gnu
+                then
+                  {
+                    CARGO_TARGET_MIPSEL_UNKNOWN_LINUX_GNU_RUNNER = "qemu-mipsel";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == powerpc64-unknown-linux-gnu
+                then
+                  {
+                    CARGO_TARGET_POWERPC64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-ppc64";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == powerpc64-unknown-linux-musl
+                then
+                  {
+                    CARGO_TARGET_POWERPC64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-ppc64";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == powerpc64le-unknown-linux-gnu
+                then
+                  {
+                    CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_GNU_RUNNER = "qemu-ppc64le";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == powerpc64le-unknown-linux-musl
+                then
+                  {
+                    CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-ppc64le";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == riscv64gc-unknown-linux-gnu
+                then
+                  {
+                    CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_RUNNER = "qemu-riscv64";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
                 else if target == wasm32-unknown-unknown
                 then {
                   doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
@@ -492,13 +566,35 @@ with self.lib.rust.targets;
 
         targets' = let
           default.${aarch64-apple-darwin} = true;
-          default.${aarch64-linux-android} = prev.stdenv.hostPlatform.isLinux;
+          default.${aarch64-apple-ios} = false;
+          default.${aarch64-linux-android} = prev.stdenv.hostPlatform.isLinux && prev.stdenv.hostPlatform.isx86_64;
           default.${aarch64-unknown-linux-gnu} = true;
           default.${aarch64-unknown-linux-musl} = true;
+          default.${arm-unknown-linux-musleabihf} = false;
+          default.${arm-unknown-linux-musleabi} = false;
           default.${armv7-unknown-linux-musleabihf} = true;
+          default.${armv7-unknown-linux-musleabi} = false;
+          default.${armv7s-apple-ios} = false;
+          default.${mips-unknown-linux-gnu} = false;
+          default.${mips-unknown-linux-musl} = false;
+          default.${mips64-unknown-linux-gnuabi64} = false;
+          default.${mips64-unknown-linux-muslabi64} = false;
+          default.${mips64el-unknown-linux-gnuabi64} = false;
+          default.${mips64el-unknown-linux-muslabi64} = false;
+          default.${mipsel-unknown-linux-gnu} = false;
+          default.${mipsel-unknown-linux-musl} = false;
+          default.${powerpc-unknown-linux-gnu} = false;
+          default.${powerpc-unknown-linux-musl} = false;
+          default.${powerpc64-unknown-linux-gnu} = false;
+          default.${powerpc64-unknown-linux-musl} = false;
+          default.${powerpc64le-unknown-linux-gnu} = true;
+          default.${powerpc64le-unknown-linux-musl} = false;
+          default.${riscv64gc-unknown-linux-gnu} = true;
+          default.${riscv64gc-unknown-linux-musl} = false;
           default.${wasm32-unknown-unknown} = true;
           default.${wasm32-wasi} = true;
           default.${x86_64-apple-darwin} = true;
+          default.${x86_64-apple-ios} = false;
           default.${x86_64-pc-windows-gnu} = true;
           default.${x86_64-unknown-linux-gnu} = true;
           default.${x86_64-unknown-linux-musl} = true;
@@ -551,7 +647,7 @@ with self.lib.rust.targets;
             in
               withPassthru craneArgs pkg;
           in
-            optionalAttrs targets'.${target} {
+            optionalAttrs (targets' ? ${target} && targets'.${target}) {
               "${pname'}-${target}" = buildPackageFor' commonReleaseArgs;
               "${pname'}-debug-${target}" = buildPackageFor' commonDebugArgs;
             };

@@ -24,8 +24,17 @@ jobs:
           test-bin: file ./result/bin/rust-hello
           test-oci: docker load < ./result
 
+        # TODO: Enable
+        #- package: rust-hello-aarch64-apple-ios
+        #  test-bin: file ./result/bin/rust-hello
+        #  test-oci: docker load < ./result
+
         - package: rust-hello-aarch64-linux-android
           test-bin: file ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-aarch64-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
 
         - package: rust-hello-aarch64-unknown-linux-musl
@@ -34,6 +43,19 @@ jobs:
 
         - package: rust-hello-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        # TODO: Enable
+        #- package: rust-hello-powerpc64-unknown-linux-gnu
+        #  test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-ppc64 ./result/bin/rust-hello
+        #  test-oci: docker load < ./result
+
+        - package: rust-hello-powerpc64le-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-ppc64le ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-riscv64gc-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-riscv64 ./result/bin/rust-hello
           test-oci: docker load < ./result
 
         - package: rust-hello-wasm32-unknown-unknown
@@ -51,6 +73,12 @@ jobs:
           test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/rust-hello.exe
           test-oci: docker load < ./result
 
+        - package: rust-hello-x86_64-unknown-linux-gnu
+          test-bin: ./result/bin/rust-hello
+          test-oci: |
+            docker load < ./result
+            docker run --rm rust-hello:$(nix eval --raw --override-input 'nixify' '.' ./examples/rust-hello#rust-hello-x86_64-unknown-linux-gnu-oci.imageTag)
+
         - package: rust-hello-x86_64-unknown-linux-musl
           test-bin: ./result/bin/rust-hello
           test-oci: |
@@ -64,16 +92,38 @@ jobs:
           test-bin: file ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - package: rust-hello-debug-aarch64-unknown-linux-musl
-          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
-          test-oci: docker load < ./result
+        # TODO: Enable
+        #- package: rust-hello-debug-aarch64-apple-ios
+        #  test-bin: file ./result/bin/rust-hello
+        #  test-oci: docker load < ./result
 
         - package: rust-hello-debug-aarch64-linux-android
           test-bin: file ./result/bin/rust-hello
           test-oci: docker load < ./result
 
+        - package: rust-hello-debug-aarch64-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-debug-aarch64-unknown-linux-musl
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
         - package: rust-hello-debug-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        # TODO: Enable
+        #- package: rust-hello-debug-powerpc64-unknown-linux-gnu
+        #  test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-ppc64 ./result/bin/rust-hello
+        #  test-oci: docker load < ./result
+
+        - package: rust-hello-debug-powerpc64le-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-ppc64le ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-debug-riscv64gc-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-riscv64 ./result/bin/rust-hello
           test-oci: docker load < ./result
 
         - package: rust-hello-debug-wasm32-wasi
@@ -87,6 +137,12 @@ jobs:
         - package: rust-hello-debug-x86_64-pc-windows-gnu
           test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/rust-hello.exe
           test-oci: docker load < ./result
+
+        - package: rust-hello-debug-x86_64-unknown-linux-gnu
+          test-bin: ./result/bin/rust-hello
+          test-oci: |
+            docker load < ./result
+            docker run --rm rust-hello:$(nix eval --raw --override-input 'nixify' '.' ./examples/rust-hello#rust-hello-x86_64-unknown-linux-gnu-oci.imageTag)
 
         - package: rust-hello-debug-x86_64-unknown-linux-musl
           test-bin: ./result/bin/rust-hello
@@ -107,26 +163,6 @@ jobs:
     - run: ${{ matrix.config.test-oci }}
 
 
-  rust-hello-macos:
-    strategy:
-      matrix:
-        # NOTE: Only build Wasm targets on Darwin here, since Mac machines are extremely slow on GitHub. Other targets are built as part of `rust-complex-macos`
-        config:
-        - package: rust-hello-wasm32-unknown-unknown
-        - package: rust-hello-wasm32-wasi
-        - package: rust-hello-debug-wasm32-unknown-unknown
-        - package: rust-hello-debug-wasm32-wasi
-
-    runs-on: macos-12
-    steps:
-    - uses: actions/checkout@v4
-    - uses: ./.github/actions/install-nix
-      with:
-        cachixAuthToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-    - run: nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#${{ matrix.config.package }}'
-    - run: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
-
-
   rust-complex-linux:
     strategy:
       matrix:
@@ -140,14 +176,31 @@ jobs:
         - package: rust-complex-aarch64-apple-darwin
           test-bin: file ./result/bin/foo
 
+        # TODO: Enable
+        #- package: rust-complex-aarch64-apple-ios
+        #  test-bin: file ./result/bin/foo
+
         - package: rust-complex-aarch64-linux-android
           test-bin: file ./result/bin/foo
+
+        - package: rust-complex-aarch64-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
 
         - package: rust-complex-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
 
         - package: rust-complex-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
+
+        # TODO: Enable
+        #- package: rust-complex-powerpc64-unknown-linux-gnu
+        #  test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-ppc64 ./result/bin/foo
+
+        - package: rust-complex-powerpc64le-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-ppc64le ./result/bin/foo
+
+        - package: rust-complex-riscv64gc-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-riscv64 ./result/bin/foo
 
         - package: rust-complex-x86_64-apple-darwin
           test-bin: file ./result/bin/foo
@@ -156,8 +209,19 @@ jobs:
           test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/foo.exe
           suffix: .exe
 
+        - package: rust-complex-x86_64-unknown-linux-gnu
+          test-bin: ./result/bin/foo
+
         - package: rust-complex-x86_64-unknown-linux-musl
           test-bin: ./result/bin/foo
+
+        - package: rust-complex-wasm32-unknown-unknown
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
+          suffix: .wasm
+
+        - package: rust-complex-wasm32-wasi
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
+          suffix: .wasm
 
         - package: rust-complex-debug
           test-bin: ./result/bin/foo
@@ -165,14 +229,31 @@ jobs:
         - package: rust-complex-debug-aarch64-apple-darwin
           test-bin: file ./result/bin/foo
 
+        # TODO: Enable
+        #- package: rust-complex-debug-aarch64-apple-ios
+        #  test-bin: file ./result/bin/foo
+
         - package: rust-complex-debug-aarch64-linux-android
           test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-aarch64-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
 
         - package: rust-complex-debug-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
 
         - package: rust-complex-debug-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
+
+        # TODO: Enable
+        #- package: rust-complex-debug-powerpc64-unknown-linux-gnu
+        #  test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-ppc64 ./result/bin/foo
+
+        - package: rust-complex-debug-powerpc64le-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-ppc64le ./result/bin/foo
+
+        - package: rust-complex-debug-riscv64gc-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-riscv64 ./result/bin/foo
 
         - package: rust-complex-debug-x86_64-apple-darwin
           test-bin: file ./result/bin/foo
@@ -181,8 +262,19 @@ jobs:
           test-bin: nix shell --inputs-from . 'nixpkgs#wine64' -c wine64 ./result/bin/foo.exe
           suffix: .exe
 
+        - package: rust-complex-debug-x86_64-unknown-linux-gnu
+          test-bin: ./result/bin/foo
+
         - package: rust-complex-debug-x86_64-unknown-linux-musl
           test-bin: ./result/bin/foo
+
+        - package: rust-complex-debug-wasm32-unknown-unknown
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
+          suffix: .wasm
+
+        - package: rust-complex-debug-wasm32-wasi
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
+          suffix: .wasm
 
     runs-on: ubuntu-22.04
     steps:
@@ -226,6 +318,14 @@ jobs:
         - package: rust-complex-x86_64-unknown-linux-musl
           test-bin: file ./result/bin/foo
 
+        - package: rust-complex-wasm32-unknown-unknown
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
+          suffix: .wasm
+
+        - package: rust-complex-wasm32-wasi
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
+          suffix: .wasm
+
         - package: rust-complex-debug
           test-bin: ./result/bin/foo
 
@@ -247,6 +347,14 @@ jobs:
 
         - package: rust-complex-debug-x86_64-unknown-linux-musl
           test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-wasm32-unknown-unknown
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
+          suffix: .wasm
+
+        - package: rust-complex-debug-wasm32-wasi
+          test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
+          suffix: .wasm
 
     runs-on: macos-12
     steps:
@@ -331,7 +439,6 @@ jobs:
     - rust-complex-linux
     - rust-complex-macos
     - rust-hello-linux
-    - rust-hello-macos
     - test-linux
     - test-macos
     - test-windows
