@@ -102,13 +102,21 @@ with self.lib.rust;
           // listToAttrs (optionals (autobins && pathExists "${src}/src/bin") (map (name:
             nameValuePair "src/bin/${name}" (removeSuffix ".rs" name))
           (attrNames (filterAttrs (name: type: type == "regular" && hasSuffix ".rs" name || type == "directory") (readDir "${src}/src/bin")))))
-          // listToAttrs (map ({
-            name,
-            path,
-            ...
-          }:
-            nameValuePair path name)
-          bin)
+          // listToAttrs (map (
+              {
+                name,
+                path ? null,
+                ...
+              }:
+                if path != null
+                then nameValuePair path name
+                else if autobins && pathExists "${src}/src/main.rs" && name == cargoToml.package.name
+                then nameValuePair "src/main.rs" name
+                else if autobins && pathExists "${src}/src/bin/${name}.rs"
+                then nameValuePair "src/bin/${name}.rs" name
+                else throw "failed to determine `${name}` binary path, please file a bug report and explicitly set `path` in `Cargo.toml` to temporarily work around this issue"
+            )
+            bin)
         )
       )
       ++ optionals (build'.workspace || !isPackage || packagesSelected) (flatten (map f workspace));
