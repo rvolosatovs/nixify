@@ -56,11 +56,33 @@ with self.lib.rust;
       workspaceMembers = cargoToml.workspace.members or [];
       workspaceMembers' = flatten (map unglob workspaceMembers);
 
+      # normalise with `..` support, unlike the nixpkgs one
+      normalise' = p:
+        if hasPrefix "/" p
+        then throw "absolute paths not supported"
+        else let
+          merged = concatStringsSep "/" (
+            # Reverse the source components and fold from the right to simplify merge
+            reverseList (
+              foldr (
+                c: p:
+                  if c == ".."
+                  then tail p
+                  else if c == "." || c == ""
+                  then p
+                  else [c] ++ p
+              )
+              (reverseList (splitString "/" src)) (splitString "/" p)
+            )
+          );
+        in
+          removePrefix "." (normalise (removePrefix "/" merged));
+
       collectPathDeps = attrs: let
         depAttrs =
           filterAttrs (k: _: k == "build-dependencies" || k == "dependencies" || k == "dev-dependencies")
           attrs;
-        deps = collect (dep: dep ? path && normalise dep.path != "./.") depAttrs;
+        deps = collect (dep: dep ? path && normalise' dep.path != src) depAttrs;
       in
         trace' "collectPathDeps" {
           inherit
