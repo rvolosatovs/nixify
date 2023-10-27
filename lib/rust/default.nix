@@ -20,6 +20,7 @@ with self.lib; let
       concatStrings (
         optionals (config ? targets) (map (target: "--target ${target} ") config.targets)
         ++ optionals (config ? packages) (map (package: "--package ${package} ") config.packages)
+        ++ optionals (config ? excludes) (map (exclude: "--exclude ${exclude} ") config.excludes)
         ++ optional (config ? features && length config.features > 0) "--features ${concatStringsSep "," config.features} "
         ++ optional (config ? allFeatures && config.allFeatures) "--all-features "
         ++ optional (config ? allTargets && config.allTargets) "--all-targets "
@@ -97,6 +98,7 @@ in {
 
   defaultBuildConfig.allFeatures = false;
   defaultBuildConfig.allTargets = false;
+  defaultBuildConfig.excludes = [];
   defaultBuildConfig.features = [];
   defaultBuildConfig.noDefaultFeatures = false;
   defaultBuildConfig.packages = [];
@@ -116,6 +118,7 @@ in {
 
   defaultDocConfig.allFeatures = false;
   defaultDocConfig.allTargets = false;
+  defaultDocConfig.excludes = [];
   defaultDocConfig.features = [];
   defaultDocConfig.noDefaultFeatures = false;
   defaultDocConfig.packages = [];
@@ -123,6 +126,7 @@ in {
 
   defaultTestConfig.allFeatures = false;
   defaultTestConfig.allTargets = false;
+  defaultTestConfig.excludes = [];
   defaultTestConfig.features = [];
   defaultTestConfig.noDefaultFeatures = false;
   defaultTestConfig.packages = [];
