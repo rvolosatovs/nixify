@@ -586,24 +586,24 @@ with self.lib.rust.targets;
         bins' = genAttrs bins (_: {});
         targetImages = optionalAttrs (bins' ? ${pname'}) (
           mapAttrs' (
-            target: bin: let
+            target: pkg: let
               img = final.dockerTools.buildImage ({
                   name = pname';
-                  tag = "${version'}-${bin.passthru.target}";
+                  tag = "${version'}-${pkg.passthru.target}";
                   copyToRoot = final.buildEnv {
                     name = pname';
-                    paths = [bin];
+                    paths = [pkg];
                   };
                   config.Cmd = [pname'];
-                  config.Env = ["PATH=${bin}/bin"];
+                  config.Env = ["PATH=${pkg}/bin"];
                 }
-                // optionalAttrs (ociArchitecture ? ${bin.passthru.target}) {
-                  architecture = ociArchitecture.${bin.passthru.target};
+                // optionalAttrs (ociArchitecture ? ${pkg.passthru.target}) {
+                  architecture = ociArchitecture.${pkg.passthru.target};
                 });
             in
               nameValuePair "${target}-oci" (img
                 // {
-                  passthru = bin.passthru // img.passthru;
+                  passthru = pkg.passthru // img.passthru;
                 })
           )
           targetBins

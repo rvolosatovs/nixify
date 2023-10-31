@@ -21,6 +21,7 @@ with self.lib; let
         optionals (config ? targets) (map (target: "--target ${target} ") config.targets)
         ++ optionals (config ? packages) (map (package: "--package ${package} ") config.packages)
         ++ optionals (config ? excludes) (map (exclude: "--exclude ${exclude} ") config.excludes)
+        ++ optionals (config ? bins) (map (bin: "--bin ${bin} ") config.bins)
         ++ optional (config ? features && length config.features > 0) "--features ${concatStringsSep "," config.features} "
         ++ optional (config ? allFeatures && config.allFeatures) "--all-features "
         ++ optional (config ? allTargets && config.allTargets) "--all-targets "
@@ -98,6 +99,7 @@ in {
 
   defaultBuildConfig.allFeatures = false;
   defaultBuildConfig.allTargets = false;
+  defaultBuildConfig.bins = [];
   defaultBuildConfig.excludes = [];
   defaultBuildConfig.features = [];
   defaultBuildConfig.noDefaultFeatures = false;

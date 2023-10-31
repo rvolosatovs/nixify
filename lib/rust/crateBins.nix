@@ -143,4 +143,6 @@ with self.lib.rust;
       )
       ++ optionals (build'.workspace || !isPackage || packagesSelected) (flatten (map f workspace));
   in
-    unique (f src)
+    if build ? bins && length build.bins > 0
+    then build.bins
+    else unique (f src)
