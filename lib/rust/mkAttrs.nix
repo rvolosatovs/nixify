@@ -584,7 +584,7 @@ with self.lib.rust.targets;
         ociArchitecture.${x86_64-unknown-linux-musl} = "amd64";
 
         bins' = genAttrs bins (_: {});
-        targetImages = optionalAttrs (bins' ? ${pname'}) (
+        targetImages = (
           mapAttrs' (
             target: pkg: let
               img = final.dockerTools.buildImage ({
@@ -594,8 +594,13 @@ with self.lib.rust.targets;
                     name = pname';
                     paths = [pkg];
                   };
-                  config.Cmd = [pname'];
                   config.Env = ["PATH=${pkg}/bin"];
+                }
+                // optionalAttrs (bins' ? ${pname'}) {
+                  config.Cmd = [pname'];
+                }
+                // optionalAttrs (length bins == 1) {
+                  config.Cmd = bins;
                 }
                 // optionalAttrs (ociArchitecture ? ${pkg.passthru.target}) {
                   architecture = ociArchitecture.${pkg.passthru.target};

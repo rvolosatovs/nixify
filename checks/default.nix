@@ -57,23 +57,22 @@ in
     isDarwin = system == aarch64-darwin || system == x86_64-darwin;
     assertRustPackages = attrs: name: x:
       assert attrs.${system} ? "${name}-aarch64-apple-darwin" || !isDarwin;
-      assert attrs.${system} ? "${name}-aarch64-unknown-linux-gnu";
-      assert attrs.${system} ? "${name}-aarch64-unknown-linux-musl";
-      assert attrs.${system} ? "${name}-armv7-unknown-linux-musleabihf";
-      assert attrs.${system} ? "${name}-x86_64-apple-darwin" || system != x86_64-darwin;
-      assert attrs.${system} ? "${name}-x86_64-pc-windows-gnu";
-      assert attrs.${system} ? "${name}-x86_64-unknown-linux-gnu";
-      assert attrs.${system} ? "${name}-x86_64-unknown-linux-musl";
-      assert attrs.${system} ? ${name}; x;
-    assertRustOCIPackages = attrs: name: x:
       assert attrs.${system} ? "${name}-aarch64-apple-darwin-oci" || !isDarwin;
+      assert attrs.${system} ? "${name}-aarch64-unknown-linux-gnu";
       assert attrs.${system} ? "${name}-aarch64-unknown-linux-gnu-oci";
+      assert attrs.${system} ? "${name}-aarch64-unknown-linux-musl";
       assert attrs.${system} ? "${name}-aarch64-unknown-linux-musl-oci";
+      assert attrs.${system} ? "${name}-armv7-unknown-linux-musleabihf";
       assert attrs.${system} ? "${name}-armv7-unknown-linux-musleabihf-oci";
+      assert attrs.${system} ? "${name}-x86_64-apple-darwin" || system != x86_64-darwin;
       assert attrs.${system} ? "${name}-x86_64-apple-darwin-oci" || system != x86_64-darwin;
+      assert attrs.${system} ? "${name}-x86_64-pc-windows-gnu";
       assert attrs.${system} ? "${name}-x86_64-pc-windows-gnu-oci";
+      assert attrs.${system} ? "${name}-x86_64-unknown-linux-gnu";
       assert attrs.${system} ? "${name}-x86_64-unknown-linux-gnu-oci";
-      assert attrs.${system} ? "${name}-x86_64-unknown-linux-musl-oci"; x;
+      assert attrs.${system} ? "${name}-x86_64-unknown-linux-musl";
+      assert attrs.${system} ? "${name}-x86_64-unknown-linux-musl-oci";
+      assert attrs.${system} ? ${name}; x;
   in
     assert flakes.rust.complex.packages.${system} ? default;
     assert flakes.rust.hello-multibin.packages.${system} ? default;
@@ -89,5 +88,4 @@ in
       (assertRustPackages flakes.rust.hello.packages "rust-hello")
       (assertRustPackages flakes.rust.lib.packages "rust-lib")
       (assertRustPackages flakes.rust.workspace.packages "rust-workspace")
-      (assertRustOCIPackages flakes.rust.hello.packages "rust-hello")
       foldl (checks: example: checks // (assertRustOutputs flakes.rust.${example} "rust-${example}" system)) {} (attrNames flakes.rust))
