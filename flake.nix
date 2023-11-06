@@ -12,9 +12,7 @@
 
   inputs.advisory-db.flake = false;
   inputs.advisory-db.url = github:rustsec/advisory-db;
-  inputs.crane.inputs.flake-utils.follows = "flake-utils";
-  inputs.crane.inputs.rust-overlay.follows = "rust-overlay";
-  inputs.crane.url = github:ipetkov/crane/v0.13.1;
+  inputs.crane.url = github:ipetkov/crane/v0.15.0;
   inputs.fenix.inputs.nixpkgs.follows = "nixpkgs";
   inputs.fenix.url = github:nix-community/fenix;
   inputs.flake-utils.url = github:numtide/flake-utils;
@@ -23,7 +21,7 @@
   inputs.nix-filter.url = github:numtide/nix-filter;
   inputs.nix-log.url = github:rvolosatovs/nix-log;
   inputs.nixlib.url = github:nix-community/nixpkgs.lib;
-  inputs.nixpkgs.url = github:nixos/nixpkgs/nixpkgs-23.05-darwin;
+  inputs.nixpkgs.url = github:nixos/nixpkgs/nixos-23.05;
   inputs.rust-overlay.inputs.flake-utils.follows = "flake-utils";
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
   inputs.rust-overlay.url = github:oxalica/rust-overlay;
