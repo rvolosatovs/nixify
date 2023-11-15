@@ -380,6 +380,10 @@ with self.lib.rust.targets;
                   // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasm) {
                     "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
                   }
+                  // optionalAttrs (final.buildPlatform.isDarwin && final.buildPlatform.isx86_64 && target == wasm32-unknown-unknown) {
+                    # TODO: Figure out what's wrong https://github.com/ipetkov/crane/issues/453
+                    dontStrip = true; # By some reason stripping now fails on x86_64-darwin for wasm32-unknown-unknown
+                  }
                 )
             )
             // optionalAttrs (final.stdenv.buildPlatform.config != pkgsCross.stdenv.hostPlatform.config) (
