@@ -421,7 +421,7 @@ jobs:
         - package: rust-complex-debug-armv7-unknown-linux-musleabihf
           test-bin: file ./result/bin/foo
 
-        - package: rust-complex-debug-powerpc64-unknown-linux-gnu
+        - package: rust-complex-debug-powerpc64le-unknown-linux-gnu
           test-bin: file ./result/bin/foo
 
         - package: rust-complex-debug-riscv64gc-unknown-linux-gnu
