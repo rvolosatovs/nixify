@@ -408,7 +408,31 @@ with self.lib.rust.targets;
                 doCheck = warn "testing not currently supported when cross-compiling for `${target}` from non-Darwin platform" false;
               }
               // optionalAttrs (doCheck && useEmu) (
-                if target == armv7-unknown-linux-musleabihf
+                if target == arm-unknown-linux-gnueabihf
+                then
+                  {
+                    CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_RUNNER = "qemu-arm";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == arm-unknown-linux-musleabihf
+                then
+                  {
+                    CARGO_TARGET_ARM_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == armv7-unknown-linux-gnueabihf
+                then
+                  {
+                    CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_RUNNER = "qemu-arm";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
+                else if target == armv7-unknown-linux-musleabihf
                 then
                   {
                     CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
@@ -508,6 +532,14 @@ with self.lib.rust.targets;
                   // optionalAttrs final.stdenv.buildPlatform.isDarwin {
                     doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                   }
+                else if target == s390x-unknown-linux-gnu
+                then
+                  {
+                    CARGO_TARGET_S390X_UNKNOWN_LINUX_GNU_RUNNER = "qemu-s390x";
+                  }
+                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                  }
                 else if target == wasm32-unknown-unknown
                 then {
                   doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
@@ -577,10 +609,14 @@ with self.lib.rust.targets;
           default.${aarch64-linux-android} = prev.stdenv.hostPlatform.isLinux && prev.stdenv.hostPlatform.isx86_64;
           default.${aarch64-unknown-linux-gnu} = true;
           default.${aarch64-unknown-linux-musl} = true;
-          default.${arm-unknown-linux-musleabihf} = false;
+          default.${arm-unknown-linux-gnueabi} = false;
+          default.${arm-unknown-linux-gnueabihf} = true;
           default.${arm-unknown-linux-musleabi} = false;
-          default.${armv7-unknown-linux-musleabihf} = true;
+          default.${arm-unknown-linux-musleabihf} = true;
+          default.${armv7-unknown-linux-gnueabi} = false;
+          default.${armv7-unknown-linux-gnueabihf} = true;
           default.${armv7-unknown-linux-musleabi} = false;
+          default.${armv7-unknown-linux-musleabihf} = true;
           default.${armv7s-apple-ios} = false;
           default.${mips-unknown-linux-gnu} = false;
           default.${mips-unknown-linux-musl} = false;
@@ -598,6 +634,8 @@ with self.lib.rust.targets;
           default.${powerpc64le-unknown-linux-musl} = false;
           default.${riscv64gc-unknown-linux-gnu} = true;
           default.${riscv64gc-unknown-linux-musl} = false;
+          default.${s390x-unknown-linux-gnu} = true;
+          default.${s390x-unknown-linux-musl} = false;
           default.${wasm32-unknown-unknown} = true;
           default.${wasm32-wasi} = true;
           default.${x86_64-apple-darwin} = true;

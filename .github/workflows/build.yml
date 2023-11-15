@@ -41,6 +41,18 @@ jobs:
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
 
+        - package: rust-hello-arm-unknown-linux-gnueabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-arm-unknown-linux-musleabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-armv7-unknown-linux-gnueabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
         - package: rust-hello-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
           test-oci: docker load < ./result
@@ -56,6 +68,10 @@ jobs:
 
         - package: rust-hello-riscv64gc-unknown-linux-gnu
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-riscv64 ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-s390x-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-s390x ./result/bin/rust-hello
           test-oci: docker load < ./result
 
         - package: rust-hello-wasm32-unknown-unknown
@@ -109,6 +125,18 @@ jobs:
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/rust-hello
           test-oci: docker load < ./result
 
+        - package: rust-hello-debug-arm-unknown-linux-gnueabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-debug-arm-unknown-linux-musleabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-debug-armv7-unknown-linux-gnueabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
         - package: rust-hello-debug-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/rust-hello
           test-oci: docker load < ./result
@@ -124,6 +152,10 @@ jobs:
 
         - package: rust-hello-debug-riscv64gc-unknown-linux-gnu
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-riscv64 ./result/bin/rust-hello
+          test-oci: docker load < ./result
+
+        - package: rust-hello-debug-s390x-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-s390x ./result/bin/rust-hello
           test-oci: docker load < ./result
 
         - package: rust-hello-debug-wasm32-wasi
@@ -189,6 +221,15 @@ jobs:
         - package: rust-complex-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
 
+        - package: rust-complex-arm-unknown-linux-gnueabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
+
+        - package: rust-complex-arm-unknown-linux-musleabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
+
+        - package: rust-complex-armv7-unknown-linux-gnueabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
+
         - package: rust-complex-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
 
@@ -201,6 +242,9 @@ jobs:
 
         - package: rust-complex-riscv64gc-unknown-linux-gnu
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-riscv64 ./result/bin/foo
+
+        - package: rust-complex-s390x-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-s390x ./result/bin/foo
 
         - package: rust-complex-x86_64-apple-darwin
           test-bin: file ./result/bin/foo
@@ -242,6 +286,15 @@ jobs:
         - package: rust-complex-debug-aarch64-unknown-linux-musl
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-aarch64 ./result/bin/foo
 
+        - package: rust-complex-debug-arm-unknown-linux-gnueabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
+
+        - package: rust-complex-debug-arm-unknown-linux-musleabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
+
+        - package: rust-complex-debug-armv7-unknown-linux-gnueabihf
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
+
         - package: rust-complex-debug-armv7-unknown-linux-musleabihf
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-arm ./result/bin/foo
 
@@ -254,6 +307,9 @@ jobs:
 
         - package: rust-complex-debug-riscv64gc-unknown-linux-gnu
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-riscv64 ./result/bin/foo
+
+        - package: rust-complex-debug-s390x-unknown-linux-gnu
+          test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-s390x ./result/bin/foo
 
         - package: rust-complex-debug-x86_64-apple-darwin
           test-bin: file ./result/bin/foo
@@ -305,7 +361,25 @@ jobs:
         - package: rust-complex-aarch64-unknown-linux-musl
           test-bin: file ./result/bin/foo
 
+        - package: rust-complex-arm-unknown-linux-gnueabihf
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-arm-unknown-linux-musleabihf
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-armv7-unknown-linux-gnueabihf
+          test-bin: file ./result/bin/foo
+
         - package: rust-complex-armv7-unknown-linux-musleabihf
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-powerpc64le-unknown-linux-gnu
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-riscv64gc-unknown-linux-gnu
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-s390x-unknown-linux-gnu
           test-bin: file ./result/bin/foo
 
         - package: rust-complex-x86_64-apple-darwin
@@ -335,7 +409,25 @@ jobs:
         - package: rust-complex-debug-aarch64-unknown-linux-musl
           test-bin: file ./result/bin/foo
 
+        - package: rust-complex-debug-arm-unknown-linux-gnueabihf
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-arm-unknown-linux-musleabihf
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-armv7-unknown-linux-gnueabihf
+          test-bin: file ./result/bin/foo
+
         - package: rust-complex-debug-armv7-unknown-linux-musleabihf
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-powerpc64-unknown-linux-gnu
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-riscv64gc-unknown-linux-gnu
+          test-bin: file ./result/bin/foo
+
+        - package: rust-complex-debug-s390x-unknown-linux-gnu
           test-bin: file ./result/bin/foo
 
         - package: rust-complex-debug-x86_64-apple-darwin
