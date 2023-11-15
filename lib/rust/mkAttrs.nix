@@ -398,9 +398,6 @@ with self.lib.rust.targets;
                   else final.qemu
                 );
               }
-              // optionalAttrs (pkgsCross.stdenv.hostPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isAarch64) {
-                doNotRemoveReferencesToVendorDir = true;
-              }
               // optionalAttrs (doCheck && target == aarch64-apple-darwin) {
                 doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
               }
