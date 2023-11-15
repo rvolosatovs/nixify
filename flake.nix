@@ -1,9 +1,11 @@
 {
   nixConfig.extra-substituters = [
+    "https://crane.cachix.org"
     "https://nix-community.cachix.org"
     "https://cache.garnix.io"
   ];
   nixConfig.extra-trusted-public-keys = [
+    "crane.cachix.org-1:8Scfpmn9w+hGdXH/Q9tTLiYAE/2dnJYRJP7kl80GuRk="
     "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
   ];
