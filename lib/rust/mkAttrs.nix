@@ -93,6 +93,9 @@ with self.lib.rust.targets;
           installCargoArtifactsMode = "use-zstd";
         }
         // optionalAttrs (cargoLock != null) {
+          inherit
+            cargoLock
+            ;
           cargoVendorDir = craneLib.vendorCargoDeps {
             inherit
               cargoLock
