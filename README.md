@@ -35,8 +35,14 @@ Simple, yet extensible, batteries-included Nix flake bootstrapping library for r
 |      **`aarch64-apple-darwin`**      |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 |    **`aarch64-unknown-linux-gnu`**   |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 |   **`aarch64-unknown-linux-musl`**   |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
-|      **`aarch64-linux-android`**     |         ❌        |        ✔️        |        ❌        |        ✔️       |
+|      **`aarch64-linux-android`**     |         ❌        |        ❌        |        ❌        |        ✔️       |
+| **`arm-unknown-linux-gnueabihf`**    |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+| **`arm-unknown-linux-musleabihf`**   |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+| **`armv7-unknown-linux-gnueabihf`**  |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 | **`armv7-unknown-linux-musleabihf`** |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+| **`powerpc64le-unknown-linux-gnu`**  |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+| **`riscv64gc-unknown-linux-gnu`**    |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+| **`s390x-unknown-linux-gnu`**        |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 |     **`wasm32-unknown-unknown`**     |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 |           **`wasm32-wasi`**          |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 |       **`x86_64-apple-darwin`**      |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
