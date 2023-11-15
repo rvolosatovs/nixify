@@ -42,9 +42,15 @@ with self.lib.rust.targets;
     then pkgs.pkgsCross.aarch64-multiplatform
     else if target == aarch64-unknown-linux-musl
     then pkgs.pkgsCross.aarch64-multiplatform-musl
+    else if target == arm-unknown-linux-gnueabihf
+    then pkgs.pkgsCross.raspberryPi
+    else if target == arm-unknown-linux-musleabihf
+    then pkgs.pkgsCross.muslpi
     else if target == armv7s-apple-ios
     then pkgs.pkgsCross.iphone32
     else if target == armv7-unknown-linux-musleabihf
+    then pkgs.pkgsCross.armv7l-hf-multiplatform
+    else if target == armv7-unknown-linux-gnueabihf
     then pkgs.pkgsCross.armv7l-hf-multiplatform
     else if target == mips-unknown-linux-gnu
     then pkgs.pkgsCross.mips-linux-gnu
@@ -64,6 +70,10 @@ with self.lib.rust.targets;
     then pkgs.pkgsCross.musl-power
     else if target == riscv64gc-unknown-linux-gnu
     then pkgs.pkgsCross.riscv64
+    else if target == s390x-unknown-linux-gnu
+    then pkgs.pkgsCross.s390x
+    else if target == s390x-unknown-linux-musl
+    then pkgs.pkgsCross.s390x
     else if target == x86_64-apple-darwin
     then pkgs.pkgsCross.x86_64-darwin
     else if target == x86_64-apple-ios

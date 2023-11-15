@@ -151,6 +151,10 @@ in {
   targets.aarch64-unknown-linux-musl = "aarch64-unknown-linux-musl";
   targets.arm-unknown-linux-musleabi = "arm-unknown-linux-musleabi";
   targets.arm-unknown-linux-musleabihf = "arm-unknown-linux-musleabihf";
+  targets.arm-unknown-linux-gnueabi = "arm-unknown-linux-gnueabi";
+  targets.arm-unknown-linux-gnueabihf = "arm-unknown-linux-gnueabihf";
+  targets.armv7-unknown-linux-gnueabi = "armv7-unknown-linux-gnueabi";
+  targets.armv7-unknown-linux-gnueabihf = "armv7-unknown-linux-gnueabihf";
   targets.armv7-unknown-linux-musleabi = "armv7-unknown-linux-musleabi";
   targets.armv7-unknown-linux-musleabihf = "armv7-unknown-linux-musleabihf";
   targets.armv7s-apple-ios = "armv7s-apple-ios";
@@ -170,6 +174,8 @@ in {
   targets.powerpc64le-unknown-linux-musl = "powerpc64le-unknown-linux-musl";
   targets.riscv64gc-unknown-linux-gnu = "riscv64gc-unknown-linux-gnu";
   targets.riscv64gc-unknown-linux-musl = "riscv64gc-unknown-linux-musl";
+  targets.s390x-unknown-linux-gnu = "s390x-unknown-linux-gnu";
+  targets.s390x-unknown-linux-musl = "s390x-unknown-linux-musl";
   targets.wasm32-unknown-unknown = "wasm32-unknown-unknown";
   targets.wasm32-wasi = "wasm32-wasi";
   targets.x86_64-apple-darwin = "x86_64-apple-darwin";
