@@ -12,15 +12,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/install-nix
         with:
-          cachixAuthToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - uses: jessestricker/nix-flake-update@v1
-        id: nix-update
-      - uses: peter-evans/create-pull-request@v5
+          cachixAuthToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - id: app-token
+        uses: tibdex/github-app-token@v2
         with:
-          branch: nix-update
-          commit-message: "build(nix): update flake lock"
-          title: "build(nix): update flake lock"
-          body: ${{ steps.nix-update.outputs.pull-request-body }}
-          labels: dependencies, nix
-          assignees: rvolosatovs
-          signoff: true
+          app_id: ${{ secrets.BOT_APP_ID }}
+          private_key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          revoke: true
+      - uses: DeterminateSystems/update-flake-lock@v20
+        with:
+          token: ${{ steps.app-token.outputs.token }}
