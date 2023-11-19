@@ -1,4 +1,4 @@
-name: update
+name: nix-flake-update
 
 on:
   schedule:
@@ -6,69 +6,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  nix-update:
+  nix-flake-update:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - id: app-token
-        uses: tibdex/github-app-token@v2
+      - uses: rvolosatovs/nix-flake-update-action@v1
         with:
           app_id: ${{ secrets.BOT_APP_ID }}
           private_key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
-          revoke: true
-
-      - uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            flake.nix
-            flake.lock
-
-      - uses: DeterminateSystems/nix-installer-action@v4
-
-      - name: Update flake lock
-        id: update
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email github-actions[bot]@users.noreply.github.com
-
-          tip=$(git rev-parse HEAD)
-          nix flake update --commit-lock-file --commit-lockfile-summary 'build(nix): update dependencies'
-
-          if [ $tip != $(git rev-parse HEAD) ]; then
-            echo "updated=true" >> $GITHUB_OUTPUT
-
-            echo "UPDATED_INPUTS<<EOF" >> $GITHUB_ENV
-            git log --format=%b -n 1 | tail -n +3 >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
-
-            git reset HEAD^
-          fi
-
-      - uses: peter-evans/create-pull-request@v5
-        if: ${{ steps.update.outputs.updated == 'true' }}
-        with:
           assignees: rvolosatovs
-          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-          body: |
-            ## Description
-
-            Automated Nix flake update
-
-            ## Changes
-
-            ```
-            ${{ env.UPDATED_INPUTS }}
-            ```
-          branch: build/update-flake-lock
-          commit-message: |
-            build(nix): update dependencies
-
-            ${{ env.UPDATED_INPUTS }}
-          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-          delete-branch: true
-          labels: dependencies
           reviewers: rvolosatovs
+          delete-branch: true
           signoff: true
-          title: 'build(nix): update dependencies'
-          token: ${{ steps.app-token.outputs.token }}
+          labels: dependencies
