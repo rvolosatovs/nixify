@@ -322,6 +322,10 @@ with self.lib.rust.targets;
 
               CARGO_BUILD_TARGET = target;
             }
+            // optionalAttrs (pkgsCross.stdenv.hostPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isAarch64) {
+              # Removing vendor references here invalidates the signature, which is required on aarch64-darwin
+              doNotRemoveReferencesToVendorDir = true;
+            }
             # Use `rust-lld` linker and Zig C compiler for Darwin targets
             // (
               if pkgsCross.stdenv.hostPlatform.isDarwin
