@@ -25,7 +25,7 @@
   inputs.nix-filter.url = "github:numtide/nix-filter";
   inputs.nix-log.url = "github:rvolosatovs/nix-log";
   inputs.nixlib.url = "github:nix-community/nixpkgs.lib";
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
   inputs.rust-overlay.inputs.flake-utils.follows = "flake-utils";
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
