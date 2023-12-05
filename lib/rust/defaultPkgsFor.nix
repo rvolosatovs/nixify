@@ -2,7 +2,8 @@
 {
   self,
   flake-utils,
-  nixpkgs,
+  nixpkgs-darwin,
+  nixpkgs-nixos,
   ...
 }:
 with flake-utils.lib.system;
@@ -87,7 +88,11 @@ with self.lib.rust.targets;
     else if target == wasm32-unknown-unknown || target == wasm32-wasi
     then pkgs.pkgsCross.wasi32
     else
-      import nixpkgs {
+      import (
+        if pkgs.stdenv.buildPlatform.isDarwin
+        then nixpkgs-darwin
+        else nixpkgs-nixos
+      ) {
         crossSystem.config =
           if target == riscv64gc-unknown-linux-musl
           then "riscv64-unknown-linux-musl"

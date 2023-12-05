@@ -4,7 +4,6 @@
   fenix,
   flake-utils,
   nixlib,
-  nixpkgs,
   nixpkgs-jshon,
   rust-overlay,
   ...

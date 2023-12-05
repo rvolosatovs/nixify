@@ -3,7 +3,8 @@
   crane,
   flake-utils,
   nixlib,
-  nixpkgs,
+  nixpkgs-darwin,
+  nixpkgs-nixos,
   rust-overlay,
   ...
 }: {
@@ -17,6 +18,7 @@
   defaultWithPackages,
   ...
 }:
+with flake-utils.lib.system;
 with nixlib.lib;
 with builtins;
 with self.lib;
@@ -60,13 +62,18 @@ with self.lib;
     // flake-utils.lib.eachSystem systems
     (
       system: let
-        pkgs = import nixpkgs {
-          inherit
-            overlays
-            system
-            ;
-          config = nixpkgsConfig;
-        };
+        pkgs =
+          import (
+            if system == aarch64-darwin || system == x86_64-darwin
+            then nixpkgs-darwin
+            else nixpkgs-nixos
+          ) {
+            inherit
+              overlays
+              system
+              ;
+            config = nixpkgsConfig;
+          };
 
         commonPkgsArgs =
           commonArgs
