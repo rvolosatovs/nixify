@@ -16,7 +16,7 @@
 
   inputs.advisory-db.flake = false;
   inputs.advisory-db.url = "github:rustsec/advisory-db";
-  inputs.crane.url = "github:ipetkov/crane/v0.15.0";
+  inputs.crane.url = "github:ipetkov/crane";
   inputs.fenix.inputs.nixpkgs.follows = "nixpkgs-nixos";
   inputs.fenix.url = "github:nix-community/fenix";
   inputs.flake-utils.url = "github:numtide/flake-utils";
