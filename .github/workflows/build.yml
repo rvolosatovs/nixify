@@ -511,7 +511,7 @@ jobs:
     - run: lipo -create ./rust-complex-aarch64-apple-darwin ./rust-complex-x86_64-apple-darwin -output ./rust-complex-universal-darwin
     - run: chmod +x ./rust-complex-universal-darwin
     - run: ./rust-complex-universal-darwin
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: rust-complex-universal-darwin
         path: rust-complex-universal-darwin
