@@ -3,12 +3,18 @@ name = "rust-hello-multibin"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+some = []
+default = ["some"]
+
 [[bin]]
 bench = true
 name = "hello-other-path"
 path = "src/bin/hello.rs"
 test = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "bye"
+required-features = ["some"]
 
 [dependencies]
