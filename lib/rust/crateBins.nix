@@ -136,6 +136,8 @@ with self.lib.rust;
                 then nameValuePair "src/main.rs" name
                 else if autobins && pathExists "${src}/src/bin/${name}.rs"
                 then nameValuePair "src/bin/${name}.rs" name
+                else if autobins && pathExists "${src}/src/bin/${name}"
+                then nameValuePair "src/bin/${name}/main.rs" name
                 else throw "failed to determine `${name}` binary path, please file a bug report and explicitly set `path` in `Cargo.toml` to temporarily work around this issue"
             )
             bin)
