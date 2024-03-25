@@ -308,7 +308,7 @@ with self.lib.rust.targets;
             # https://actually.fyi/posts/zig-makes-rust-cross-compilation-just-work
             # https://github.com/rust-cross/cargo-zigbuild
             final.writeShellScriptBin "${target}-zigcc" ''
-              ${final.zig}/bin/zig cc -target ${target'} ${optionalString pkgsCross.stdenv.buildPlatform.isDarwin ''--sysroot="$SDKROOT" -I"$SDKROOT/usr/include" -L"$SDKROOT/usr/lib" -F"$SDKROOT/System/Library/Frameworks"''} $@
+              ${final.zig}/bin/zig cc ${optionalString pkgsCross.stdenv.buildPlatform.isDarwin ''--sysroot="$SDKROOT" -I"$SDKROOT/usr/include" -L"$SDKROOT/usr/lib" -F"$SDKROOT/System/Library/Frameworks"''} $@ -target ${target'}
             '';
 
           targetArgs =
