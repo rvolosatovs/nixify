@@ -18,7 +18,7 @@ runs:
     shell: bash
   - run: nix run -L --inputs-from . 'nixpkgs#coreutils' -- --coreutils-prog=ginstall -p "./result${{ inputs.install-path }}" '${{ inputs.package }}'
     shell: bash
-  - uses: actions/upload-artifact@v3
+  - uses: actions/upload-artifact@v4
     with:
       name: ${{ inputs.package }}
       path: ${{ inputs.package }}
