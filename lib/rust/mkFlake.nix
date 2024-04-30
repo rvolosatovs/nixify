@@ -85,6 +85,7 @@ with self.lib.rust;
       inherit
         excludePaths
         includePaths
+        nixpkgsConfig
         pname
         systems
         version
