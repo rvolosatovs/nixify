@@ -164,14 +164,14 @@
     "macos-sdk": {
       "flake": false,
       "locked": {
-        "lastModified": 1694769349,
-        "narHash": "sha256-TEvVJy+NMPyzgWSk/6S29ZMQR+ICFxSdS3tw247uhFc=",
+        "lastModified": 1709691714,
+        "narHash": "sha256-Et4AhL9yJIAYeU/YSQq4n9mUI4ATmDKn1bsiyJvD7Fk=",
         "type": "tarball",
-        "url": "https://github.com/roblabla/MacOSX-SDKs/releases/download/macosx14.0/MacOSX14.0.sdk.tar.xz"
+        "url": "https://github.com/roblabla/MacOSX-SDKs/archive/refs/tags/15.3.tar.gz"
       },
       "original": {
         "type": "tarball",
-        "url": "https://github.com/roblabla/MacOSX-SDKs/releases/download/macosx14.0/MacOSX14.0.sdk.tar.xz"
+        "url": "https://github.com/roblabla/MacOSX-SDKs/archive/refs/tags/15.3.tar.gz"
       }
     },
     "nix-filter": {
@@ -340,22 +340,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-jshon": {
-      "locked": {
-        "lastModified": 1701781644,
-        "narHash": "sha256-z6MHVdvNM6PnwxofjyCTXYrDCRB6dXs82lMyAxfK2ik=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "89023fc074c2333ec5f1d28075602c94341655d2",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "89023fc074c2333ec5f1d28075602c94341655d2",
-        "type": "github"
-      }
-    },
     "nixpkgs-nixos": {
       "locked": {
         "lastModified": 1714272655,
@@ -399,7 +383,6 @@
         "nix-log": "nix-log",
         "nixlib": "nixlib_3",
         "nixpkgs-darwin": "nixpkgs-darwin",
-        "nixpkgs-jshon": "nixpkgs-jshon",
         "nixpkgs-nixos": "nixpkgs-nixos",
         "rust-overlay": "rust-overlay_2"
       }
