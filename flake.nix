@@ -12,7 +12,7 @@
     "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
   ];
 
-  description = "Simple, yet extensible nix flake bootstrapping library for real-world projects";
+  description = "Simple and extensible Nix flake bootstrapping library for real-world projects";
 
   inputs.advisory-db.flake = false;
   inputs.advisory-db.url = "github:rustsec/advisory-db";
@@ -20,13 +20,12 @@
   inputs.fenix.inputs.nixpkgs.follows = "nixpkgs-nixos";
   inputs.fenix.url = "github:nix-community/fenix";
   inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.macos-sdk.url = "https://github.com/roblabla/MacOSX-SDKs/releases/download/macosx14.0/MacOSX14.0.sdk.tar.xz";
+  inputs.macos-sdk.url = "https://github.com/roblabla/MacOSX-SDKs/archive/refs/tags/15.3.tar.gz";
   inputs.macos-sdk.flake = false;
   inputs.nix-filter.url = "github:numtide/nix-filter";
   inputs.nix-log.url = "github:rvolosatovs/nix-log";
   inputs.nixlib.url = "github:nix-community/nixpkgs.lib";
   inputs.nixpkgs-darwin.url = "github:nixos/nixpkgs/nixpkgs-23.11-darwin";
-  inputs.nixpkgs-jshon.url = "github:nixos/nixpkgs/89023fc074c2333ec5f1d28075602c94341655d2"; # https://github.com/NixOS/nixpkgs/pull/272259
   inputs.nixpkgs-nixos.url = "github:nixos/nixpkgs/nixos-23.11";
   inputs.rust-overlay.inputs.flake-utils.follows = "flake-utils";
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs-nixos";

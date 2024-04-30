@@ -4,7 +4,6 @@
   fenix,
   flake-utils,
   nixlib,
-  nixpkgs-jshon,
   rust-overlay,
   ...
 }:
@@ -96,12 +95,6 @@ with self.lib.rust;
       overlays =
         overlays
         ++ [
-          (final: prev: {
-            inherit
-              (nixpkgs-jshon.legacyPackages.${prev.stdenv.buildPlatform.system})
-              jshon
-              ;
-          })
           rust-overlay.overlays.default
           fenix.overlays.default
         ];
