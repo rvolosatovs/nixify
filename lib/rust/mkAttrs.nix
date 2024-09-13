@@ -124,7 +124,7 @@ with self.lib.rust.targets;
       craneArgs ? {},
       craneLib,
       overrideArgs,
-    } @ args: let
+    }: let
       cargoArtifacts =
         callCrane {
           inherit
@@ -372,11 +372,11 @@ with self.lib.rust.targets;
                       final.mold
                     ];
 
-                    RUSTFLAGS = "-Clink-arg=-fuse-ld=mold";
+                    "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Clink-arg=-fuse-ld=mold";
                   }
                   # Always build static binaries for Windows targets
                   // optionalAttrs pkgsCross.stdenv.hostPlatform.isWindows {
-                    RUSTFLAGS = "-Ctarget-feature=+crt-static";
+                    "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Ctarget-feature=+crt-static";
                   }
                   # Use default linker for Wasm targets
                   // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasm) {
