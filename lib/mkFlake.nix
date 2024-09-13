@@ -1,11 +1,9 @@
 {
   self,
-  crane,
   flake-utils,
   nixlib,
   nixpkgs-darwin,
   nixpkgs-nixos,
-  rust-overlay,
   ...
 }: {
   defaultExcludePaths,
