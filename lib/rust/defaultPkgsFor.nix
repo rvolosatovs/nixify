@@ -85,7 +85,7 @@ with self.lib.rust.targets;
     then pkgs.pkgsCross.gnu64
     else if target == x86_64-unknown-linux-musl
     then pkgs.pkgsCross.musl64
-    else if target == wasm32-unknown-unknown || target == wasm32-wasi
+    else if target == wasm32-unknown-unknown || target == wasm32-wasip1
     then pkgs.pkgsCross.wasi32
     else
       import (

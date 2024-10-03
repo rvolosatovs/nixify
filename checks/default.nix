@@ -76,13 +76,13 @@ in
   in
     assert flakes.rust.complex.packages.${system} ? default;
     assert flakes.rust.hello-multibin.packages.${system} ? default;
-    assert flakes.rust.hello-multibin.packages.${system} ? rust-hello-multibin-wasm32-wasi;
+    assert flakes.rust.hello-multibin.packages.${system} ? rust-hello-multibin-wasm32-wasip1;
     assert flakes.rust.hello.packages.${system} ? default;
-    assert flakes.rust.hello.packages.${system} ? rust-hello-wasm32-wasi-oci;
-    assert flakes.rust.hello.packages.${system} ? rust-hello-wasm32-wasi;
-    assert flakes.rust.lib.packages.${system} ? rust-lib-wasm32-wasi;
+    assert flakes.rust.hello.packages.${system} ? rust-hello-wasm32-wasip1-oci;
+    assert flakes.rust.hello.packages.${system} ? rust-hello-wasm32-wasip1;
+    assert flakes.rust.lib.packages.${system} ? rust-lib-wasm32-wasip1;
     assert flakes.rust.workspace.packages.${system} ? default;
-    assert flakes.rust.workspace.packages.${system} ? rust-workspace-wasm32-wasi;
+    assert flakes.rust.workspace.packages.${system} ? rust-workspace-wasm32-wasip1;
       (assertRustPackages flakes.rust.complex.packages "rust-complex")
       (assertRustPackages flakes.rust.hello-multibin.packages "rust-hello-multibin")
       (assertRustPackages flakes.rust.hello.packages "rust-hello")

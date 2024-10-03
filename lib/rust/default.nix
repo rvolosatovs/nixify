@@ -177,7 +177,7 @@ in {
   targets.s390x-unknown-linux-gnu = "s390x-unknown-linux-gnu";
   targets.s390x-unknown-linux-musl = "s390x-unknown-linux-musl";
   targets.wasm32-unknown-unknown = "wasm32-unknown-unknown";
-  targets.wasm32-wasi = "wasm32-wasi";
+  targets.wasm32-wasip1 = "wasm32-wasip1";
   targets.x86_64-apple-darwin = "x86_64-apple-darwin";
   targets.x86_64-apple-ios = "x86_64-apple-ios";
   targets.x86_64-pc-windows-gnu = "x86_64-pc-windows-gnu";

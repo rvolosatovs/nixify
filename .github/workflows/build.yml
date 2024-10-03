@@ -76,7 +76,7 @@ jobs:
         - package: rust-hello-wasm32-unknown-unknown
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
 
-        - package: rust-hello-wasm32-wasi
+        - package: rust-hello-wasm32-wasip1
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
           test-oci: docker load < ./result
 
@@ -157,7 +157,7 @@ jobs:
           test-bin: nix shell --inputs-from . 'nixpkgs#qemu' -c qemu-s390x ./result/bin/rust-hello
           test-oci: docker load < ./result
 
-        - package: rust-hello-debug-wasm32-wasi
+        - package: rust-hello-debug-wasm32-wasip1
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/rust-hello.wasm
           test-oci: docker load < ./result
 
@@ -262,7 +262,7 @@ jobs:
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
           suffix: .wasm
 
-        - package: rust-complex-wasm32-wasi
+        - package: rust-complex-wasm32-wasip1
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
           suffix: .wasm
 
@@ -327,7 +327,7 @@ jobs:
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
           suffix: .wasm
 
-        - package: rust-complex-debug-wasm32-wasi
+        - package: rust-complex-debug-wasm32-wasip1
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
           suffix: .wasm
 
@@ -395,7 +395,7 @@ jobs:
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
           suffix: .wasm
 
-        - package: rust-complex-wasm32-wasi
+        - package: rust-complex-wasm32-wasip1
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
           suffix: .wasm
 
@@ -443,7 +443,7 @@ jobs:
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
           suffix: .wasm
 
-        - package: rust-complex-debug-wasm32-wasi
+        - package: rust-complex-debug-wasm32-wasip1
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
           suffix: .wasm
 

@@ -539,9 +539,9 @@ with self.lib.rust.targets;
                 then {
                   doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
                 }
-                else if target == wasm32-wasi
+                else if target == wasm32-wasip1
                 then {
-                  CARGO_TARGET_WASM32_WASI_RUNNER = "wasmtime --disable-cache";
+                  CARGO_TARGET_WASM32_WASIP1_RUNNER = "wasmtime run -C cache=n";
                 }
                 else if target == x86_64-unknown-linux-gnu
                 then
@@ -632,7 +632,7 @@ with self.lib.rust.targets;
           default.${s390x-unknown-linux-gnu} = true;
           default.${s390x-unknown-linux-musl} = false;
           default.${wasm32-unknown-unknown} = true;
-          default.${wasm32-wasi} = true;
+          default.${wasm32-wasip1} = true;
           default.${x86_64-apple-darwin} = true;
           default.${x86_64-apple-ios} = false;
           default.${x86_64-pc-windows-gnu} = true;
@@ -713,7 +713,7 @@ with self.lib.rust.targets;
         ociArchitecture.${aarch64-unknown-linux-musl} = "arm64";
         ociArchitecture.${armv7-unknown-linux-musleabihf} = "arm";
         ociArchitecture.${wasm32-unknown-unknown} = "wasm";
-        ociArchitecture.${wasm32-wasi} = "wasm";
+        ociArchitecture.${wasm32-wasip1} = "wasm";
         ociArchitecture.${x86_64-apple-darwin} = "amd64";
         ociArchitecture.${x86_64-pc-windows-gnu} = "amd64";
         ociArchitecture.${x86_64-unknown-linux-gnu} = "amd64";
