@@ -344,6 +344,7 @@ with self.lib.rust.targets;
                   ''
                   + optionalString pkgsCross.stdenv.hostPlatform.isDarwin ''
                     export SDKROOT="${macos-sdk}"
+                    strip --version || :
                   '';
 
                 "CC_${target}" = "${target}-zigcc";
