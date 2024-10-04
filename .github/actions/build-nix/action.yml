@@ -4,6 +4,9 @@ inputs:
   package:
     description: package specification to build
     required: true
+  prefix:
+    description: prefix to use in artifact name
+    required: true
   flake:
     description: flake specification
     default: .
@@ -20,5 +23,5 @@ runs:
     shell: bash
   - uses: actions/upload-artifact@v4
     with:
-      name: ${{ inputs.package }}
+      name: ${{ inputs.prefix }}-${{ inputs.package }}
       path: ${{ inputs.package }}
