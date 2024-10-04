@@ -8,7 +8,7 @@
 with nixlib.lib;
 with builtins;
 with self.lib; let
-  defaultRustupToolchain.toolchain.channel = "stable";
+  defaultRustupToolchain.toolchain.channel = "nightly";
   defaultRustupToolchain.toolchain.components = ["rustfmt" "clippy"];
 
   # crateBins returns a list of binaries that would be produced by cargo build
