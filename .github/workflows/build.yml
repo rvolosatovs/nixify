@@ -345,6 +345,7 @@ jobs:
         package: ${{ matrix.config.package }}
         flake: ./examples/rust-complex
         install-path: /bin/foo${{ matrix.config.suffix }}
+        prefix: linux
     - run: ${{ matrix.config.test-bin }}
 
   rust-complex-macos:
@@ -461,6 +462,7 @@ jobs:
         package: ${{ matrix.config.package }}
         flake: ./examples/rust-complex
         install-path: /bin/foo${{ matrix.config.suffix }}
+        prefix: macos
     - run: ${{ matrix.config.test-bin }}
 
   oci-linux:
@@ -494,7 +496,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v4
       with:
-        name: rust-complex-x86_64-unknown-linux-musl
+        name: linux-rust-complex-x86_64-unknown-linux-musl
     - run: chmod +x ./rust-complex-x86_64-unknown-linux-musl
     - run: ./rust-complex-x86_64-unknown-linux-musl
 
@@ -504,10 +506,10 @@ jobs:
     steps:
     - uses: actions/download-artifact@v4
       with:
-        name: rust-complex-aarch64-apple-darwin
+        name: linux-rust-complex-aarch64-apple-darwin
     - uses: actions/download-artifact@v4
       with:
-        name: rust-complex-x86_64-apple-darwin
+        name: linux-rust-complex-x86_64-apple-darwin
     - run: chmod +x ./rust-complex-x86_64-apple-darwin
     - run: ./rust-complex-x86_64-apple-darwin
     - run: lipo -create ./rust-complex-aarch64-apple-darwin ./rust-complex-x86_64-apple-darwin -output ./rust-complex-universal-darwin
@@ -524,7 +526,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v4
       with:
-        name: rust-complex-x86_64-pc-windows-gnu
+        name: linux-rust-complex-x86_64-pc-windows-gnu
     - run: '& .\rust-complex-x86_64-pc-windows-gnu'
 
   test-artifacts:
