@@ -17,8 +17,8 @@ jobs:
     strategy:
       matrix:
         platform:
-        - host: macos-12
-        - host: ubuntu-22.04
+        - host: macos-latest
+        - host: ubuntu-latest
     runs-on: ${{ matrix.platform.host }}
     steps:
     - uses: actions/checkout@v4
