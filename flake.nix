@@ -16,9 +16,9 @@
 
   inputs.advisory-db.flake = false;
   inputs.advisory-db.url = "github:rustsec/advisory-db";
-  inputs.crane.url = "github:ipetkov/crane/v0.19.0";
+  inputs.crane.url = "github:ipetkov/crane/v0.19.1";
   inputs.fenix.inputs.nixpkgs.follows = "nixpkgs-nixos";
-  inputs.fenix.url = "github:nix-community/fenix/4306d494985e00719573bbdeb863c27c6d83dc9c";
+  inputs.fenix.url = "github:nix-community/fenix";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.macos-sdk.url = "https://github.com/roblabla/MacOSX-SDKs/releases/download/macosx14.0/MacOSX14.0.sdk.tar.xz";
   inputs.macos-sdk.flake = false;
@@ -28,7 +28,7 @@
   inputs.nixpkgs-darwin.url = "github:nixos/nixpkgs/nixpkgs-24.05-darwin";
   inputs.nixpkgs-nixos.url = "github:nixos/nixpkgs/nixos-24.05";
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs-nixos";
-  inputs.rust-overlay.url = "github:oxalica/rust-overlay/2e19799819104b46019d339e78d21c14372d3666";
+  inputs.rust-overlay.url = "github:oxalica/rust-overlay";
 
   outputs = inputs: let
     lib = import ./lib inputs;
