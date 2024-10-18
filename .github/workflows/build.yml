@@ -184,7 +184,7 @@ jobs:
             docker load < ./result
             docker run --rm rust-hello:$(nix eval --raw --override-input 'nixify' '.' ./examples/rust-hello#rust-hello-x86_64-unknown-linux-musl-oci.imageTag)
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/install-nix
@@ -334,7 +334,7 @@ jobs:
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
           suffix: .wasm
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/install-nix
@@ -451,7 +451,7 @@ jobs:
           test-bin: nix run --inputs-from . 'nixpkgs#wasmtime' ./result/bin/foo.wasm
           suffix: .wasm
 
-    runs-on: macos-12
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/install-nix
@@ -466,7 +466,7 @@ jobs:
     - run: ${{ matrix.config.test-bin }}
 
   oci-linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' }}
     permissions:
       packages: write
@@ -489,7 +489,7 @@ jobs:
         docker run ghcr.io/${{ github.repository_owner }}/nixify:rust-hello-${{ github.sha }}
 
   test-linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs:
     - rust-complex-linux
     - oci-linux
@@ -501,7 +501,7 @@ jobs:
     - run: ./rust-complex-x86_64-unknown-linux-musl
 
   test-macos:
-    runs-on: macos-12
+    runs-on: macos-latest
     needs: rust-complex-linux
     steps:
     - uses: actions/download-artifact@v4
@@ -521,7 +521,7 @@ jobs:
         path: rust-complex-universal-darwin
 
   test-windows:
-    runs-on: windows-2022
+    runs-on: windows-latest
     needs: rust-complex-linux
     steps:
     - uses: actions/download-artifact@v4
@@ -530,7 +530,7 @@ jobs:
     - run: '& .\rust-complex-x86_64-pc-windows-gnu'
 
   test-artifacts:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs:
     - rust-complex-linux
     - rust-complex-macos
