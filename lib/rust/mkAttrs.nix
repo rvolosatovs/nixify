@@ -59,7 +59,6 @@ with self.lib.rust.targets;
       overrideArgs,
     }: f: let
       buildArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
-      checkArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
       docArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags doc}";
       testArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags test}";
 
@@ -84,7 +83,7 @@ with self.lib.rust.targets;
           version = version';
 
           cargoBuildCommand = "cargoWithProfile build ${buildArgs}";
-          cargoCheckExtraArgs = checkArgs;
+          cargoCheckExtraArgs = buildArgs;
           cargoClippyExtraArgs = clippyArgs;
           cargoDocExtraArgs = docArgs;
           cargoNextestExtraArgs = testArgs;
@@ -226,8 +225,16 @@ with self.lib.rust.targets;
           fmt = callHostCrane {} hostCraneLib.cargoFmt;
           nextest = callHostCraneCheckWithDeps {} hostCraneLib.cargoNextest;
         }
-        // (optionalAttrs (test ? doc && test.doc)) {
-          doctest = callHostCraneCheckWithDeps {} hostCraneLib.cargoDocTest;
+        // (optionalAttrs (test ? doc && test.doc || test ? allTargets && test.allTargets))
+        {
+          doctest =
+            callHostCraneCheckWithDeps {
+              cargoTestExtraArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags (test
+                // {
+                  allTargets = false;
+                })}";
+            }
+            hostCraneLib.cargoDocTest;
         }
         // (optionalAttrs (pathExists "${src}/Cargo.lock") {
           # TODO: Use `cargoLock` if `Cargo.lock` missing

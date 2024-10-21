@@ -14,7 +14,7 @@
 
       build.workspace = true;
       clippy.workspace = true;
-      test.doc = true;
+      test.allTargets = true;
       test.workspace = true;
 
       buildOverrides = {
