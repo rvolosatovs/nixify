@@ -1,6 +1,5 @@
 {
-  inputs.nixify.inputs.nixpkgs-darwin.follows = "nixpkgs";
-  inputs.nixify.inputs.nixpkgs-nixos.follows = "nixpkgs";
+  inputs.nixify.inputs.nixpkgs.follows = "nixpkgs";
   inputs.nixify.url = "github:rvolosatovs/nixify";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs";
 

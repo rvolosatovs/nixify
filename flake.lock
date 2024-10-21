@@ -68,7 +68,7 @@
     "fenix": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs-nixos"
+          "nixpkgs"
         ],
         "rust-analyzer-src": "rust-analyzer-src"
       },
@@ -321,34 +321,18 @@
         "type": "github"
       }
     },
-    "nixpkgs-darwin": {
+    "nixpkgs_2": {
       "locked": {
-        "lastModified": 1729242558,
-        "narHash": "sha256-VgcLDu4igNT0eYua6OAl9pWCI0cYXhDbR+pWP44tte0=",
+        "lastModified": 1729265718,
+        "narHash": "sha256-4HQI+6LsO3kpWTYuVGIzhJs1cetFcwT7quWCk/6rqeo=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "4a3f2d3195b60d07530574988df92e049372c10e",
+        "rev": "ccc0c2126893dd20963580b6478d1a10a4512185",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixpkgs-24.05-darwin",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs-nixos": {
-      "locked": {
-        "lastModified": 1729181673,
-        "narHash": "sha256-LDiPhQ3l+fBjRATNtnuDZsBS7hqoBtPkKBkhpoBHv3I=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "4eb33fe664af7b41a4c446f87d20c9a0a6321fa3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "ref": "nixos-24.05",
+        "ref": "nixpkgs-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -363,8 +347,7 @@
         "nix-filter": "nix-filter",
         "nix-log": "nix-log",
         "nixlib": "nixlib_3",
-        "nixpkgs-darwin": "nixpkgs-darwin",
-        "nixpkgs-nixos": "nixpkgs-nixos",
+        "nixpkgs": "nixpkgs_2",
         "rust-overlay": "rust-overlay_2"
       }
     },
@@ -432,7 +415,7 @@
     "rust-overlay_2": {
       "inputs": {
         "nixpkgs": [
-          "nixpkgs-nixos"
+          "nixpkgs"
         ]
       },
       "locked": {
