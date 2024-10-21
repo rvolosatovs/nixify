@@ -2,8 +2,7 @@
   self,
   flake-utils,
   nixlib,
-  nixpkgs-darwin,
-  nixpkgs-nixos,
+  nixpkgs,
   ...
 }: {
   defaultExcludePaths,
@@ -61,11 +60,7 @@ with self.lib;
     (
       system: let
         pkgs =
-          import (
-            if system == aarch64-darwin || system == x86_64-darwin
-            then nixpkgs-darwin
-            else nixpkgs-nixos
-          ) {
+          import nixpkgs  {
             inherit
               overlays
               system
