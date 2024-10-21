@@ -210,16 +210,24 @@ with self.lib.rust.targets;
         }
         callCraneWithDeps (mkHostArgs craneArgs);
 
+      callHostCraneCheckWithDeps = craneArgs:
+        trace' "callHostCraneCheckWithDeps" {
+          inherit craneArgs;
+        }
+        callHostCraneWithDeps (craneArgs
+          // {
+            doCheck = true; # without performing the actual testing, this check is useless
+          });
+
       checks =
         {
           clippy = callHostCraneWithDeps {} hostCraneLib.cargoClippy;
           doc = callHostCraneWithDeps {} hostCraneLib.cargoDoc;
           fmt = callHostCrane {} hostCraneLib.cargoFmt;
-          nextest =
-            callHostCraneWithDeps {
-              doCheck = true; # without performing the actual testing, this check is useless
-            }
-            hostCraneLib.cargoNextest;
+          nextest = callHostCraneCheckWithDeps {} hostCraneLib.cargoNextest;
+        }
+        // (optionalAttrs (test ? doc && test.doc)) {
+          doctest = callHostCraneCheckWithDeps {} hostCraneLib.cargoDocTest;
         }
         // (optionalAttrs (pathExists "${src}/Cargo.lock") {
           # TODO: Use `cargoLock` if `Cargo.lock` missing

@@ -128,6 +128,7 @@ in {
 
   defaultTestConfig.allFeatures = false;
   defaultTestConfig.allTargets = false;
+  defaultTestConfig.doc = false;
   defaultTestConfig.excludes = [];
   defaultTestConfig.features = [];
   defaultTestConfig.noDefaultFeatures = false;

@@ -74,6 +74,7 @@ in
       assert attrs.${system} ? "${name}-x86_64-unknown-linux-musl-oci";
       assert attrs.${system} ? ${name}; x;
   in
+    assert flakes.rust.complex.checks.${system} ? doctest;
     assert flakes.rust.complex.packages.${system} ? default;
     assert flakes.rust.hello-multibin.packages.${system} ? default;
     assert flakes.rust.hello-multibin.packages.${system} ? rust-hello-multibin-wasm32-wasip1;
