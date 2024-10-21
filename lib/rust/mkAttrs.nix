@@ -334,21 +334,9 @@ with self.lib.rust.targets;
               # Removing vendor references here invalidates the signature, which is required on aarch64-darwin
               doNotRemoveReferencesToVendorDir = true;
             }
-            // optionalAttrs pkgsCross.stdenv.hostPlatform.isDarwin {
-              preBuild = ''
-                export SDKROOT="${macos-sdk}"
-              '';
-
-              # Use `rust-lld` linker for Darwin targets
-              "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "rust-lld";
-            }
             // (
-              if final.stdenv.buildPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isDarwin
-              then {
-                # use defaults for Darwin-to-Darwin builds
-              }
               # Use Zig C compiler and `rust-lld` linker for Darwin targets on non-Darwin platforms
-              else if pkgsCross.stdenv.hostPlatform.isDarwin
+              if !final.stdenv.buildPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isDarwin
               then {
                 depsBuildBuild = [
                   crossZigCC
@@ -358,51 +346,49 @@ with self.lib.rust.targets;
                   crossZigCC
                 ];
 
-                preBuild =
-                  ''
-                    export HOME=$(mktemp -d)
-                  ''
-                  + optionalString pkgsCross.stdenv.hostPlatform.isDarwin ''
-                    export SDKROOT="${macos-sdk}"
-                  '';
+                preBuild = ''
+                  export HOME=$(mktemp -d)
+                  export SDKROOT="${macos-sdk}"
+                '';
 
                 "CC_${target}" = "${target}-zigcc";
 
                 "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "rust-lld";
               }
               else
-                (
-                  {
-                    depsBuildBuild =
-                      [
-                        pkgsCross.stdenv.cc
-                      ]
-                      ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
-
-                    disallowedReferences = [
+                {
+                  depsBuildBuild =
+                    [
                       pkgsCross.stdenv.cc
-                    ];
+                    ]
+                    ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
 
-                    "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
-                    "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
-                  }
-                  # Use `mold` linker for Linux targets
-                  // optionalAttrs pkgsCross.stdenv.hostPlatform.isLinux {
-                    nativeBuildInputs = [
-                      final.mold
-                    ];
+                  disallowedReferences = [
+                    pkgsCross.stdenv.cc
+                  ];
 
-                    "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Clink-arg=-fuse-ld=mold";
-                  }
-                  # Always build static binaries for Windows targets
-                  // optionalAttrs pkgsCross.stdenv.hostPlatform.isWindows {
-                    "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Ctarget-feature=+crt-static";
-                  }
-                  # Use default linker for Wasm targets
-                  // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasm) {
-                    "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
-                  }
-                )
+                  "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
+                  "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
+                }
+                # Use `mold` linker for Linux targets
+                // optionalAttrs pkgsCross.stdenv.hostPlatform.isLinux {
+                  nativeBuildInputs = [
+                    final.mold
+                  ];
+
+                  "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Clink-arg=-fuse-ld=mold";
+                }
+                # Always build static binaries for Windows targets
+                // optionalAttrs pkgsCross.stdenv.hostPlatform.isWindows {
+                  "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Ctarget-feature=+crt-static";
+                }
+                // optionalAttrs pkgsCross.stdenv.hostPlatform.isDarwin {
+                  "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "rust-lld";
+                }
+                # Use default linker for Wasm targets
+                // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasm) {
+                  "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
+                }
             )
             // optionalAttrs (final.stdenv.buildPlatform.config != pkgsCross.stdenv.hostPlatform.config) (
               {
