@@ -28,7 +28,7 @@
   inputs.nix-log.url = "github:rvolosatovs/nix-log";
   inputs.nixlib.url = "github:nix-community/nixpkgs.lib";
   inputs.nixpkgs-darwin.url = "github:nixos/nixpkgs/nixpkgs-24.05-darwin";
-  inputs.nixpkgs-nixos.url = "github:nixos/nixpkgs/cd3e8833d70618c4eea8df06f95b364b016d4950"; # TODO: unpin
+  inputs.nixpkgs-nixos.url = "github:nixos/nixpkgs/nixos-24.05";
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs-nixos";
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
 
