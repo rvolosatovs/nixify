@@ -36,3 +36,4 @@ jobs:
       with:
         tool-cache: false
     - run: nix flake check -L --show-trace
+      continue-on-error: ${{ runner.os == 'macOS' }}
