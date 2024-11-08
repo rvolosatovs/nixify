@@ -8,15 +8,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-foo = { workspace = true }
+complex-foo = { workspace = true }
 ring = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-foo = { workspace = true, features = ["windows"] }
+complex-foo = { workspace = true, features = ["windows"] }
 
 [dev-dependencies]
 rust-complex = { path = "." }
 
 [workspace.dependencies]
-foo = { path = "./foo" }
+complex-foo = { path = "./foo" }
 ring = { version = "0.17", features = ["wasm32_unknown_unknown_js"] }
