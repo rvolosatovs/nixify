@@ -1,6 +1,10 @@
 version: 2
 updates:
 - package-ecosystem: "cargo"
+  directory: "/examples/rust-complex"
+  schedule:
+    interval: "daily"
+- package-ecosystem: "cargo"
   directory: "/examples/rust-hello"
   schedule:
     interval: "daily"
@@ -14,14 +18,6 @@ updates:
     interval: "daily"
 - package-ecosystem: "cargo"
   directory: "/examples/rust-workspace"
-  schedule:
-    interval: "daily"
-- package-ecosystem: "cargo"
-  directory: "/examples/rust-workspace/hello"
-  schedule:
-    interval: "daily"
-- package-ecosystem: "cargo"
-  directory: "/examples/rust-workspace/lib"
   schedule:
     interval: "daily"
 - package-ecosystem: "github-actions"
