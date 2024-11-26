@@ -343,9 +343,21 @@ with self.lib.rust.targets;
               # - fails on Darwin dylibs starting with Rust 1.79
               doNotRemoveReferencesToVendorDir = true;
             }
-            # Use `rust-lld` linker and Zig C compiler for Darwin targets
+            // optionalAttrs pkgsCross.stdenv.hostPlatform.isDarwin {
+              preBuild = ''
+                export SDKROOT="${macos-sdk}"
+              '';
+
+              # Use `rust-lld` linker for Darwin targets
+              "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "rust-lld";
+            }
             // (
-              if pkgsCross.stdenv.hostPlatform.isDarwin
+              if final.stdenv.buildPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isDarwin
+              then {
+                # use defaults for Darwin-to-Darwin builds
+              }
+              # Use Zig C compiler and `rust-lld` linker for Darwin targets on non-Darwin platforms
+              else if pkgsCross.stdenv.hostPlatform.isDarwin
               then {
                 depsBuildBuild = [
                   crossZigCC
