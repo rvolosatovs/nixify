@@ -182,16 +182,13 @@ with self.lib.rust.targets;
         final
         hostRustToolchain;
 
-      mkHostArgs = {depsBuildBuild ? [], ...} @ craneArgs:
+      mkHostArgs = craneArgs:
         trace' "mkHostArgs" {
           inherit craneArgs;
         }
         {
-          craneArgs =
-            craneArgs
-            // {
-              depsBuildBuild = depsBuildBuild ++ optional final.stdenv.hostPlatform.isDarwin final.darwin.apple_sdk.frameworks.Security;
-            };
+          inherit craneArgs;
+
           craneLib = hostCraneLib;
 
           overrideArgs.pkgs = final;
@@ -307,8 +304,6 @@ with self.lib.rust.targets;
           useRosetta = final.stdenv.buildPlatform.isDarwin && final.stdenv.buildPlatform.isAarch64 && pkgsCross.stdenv.hostPlatform.isDarwin && pkgsCross.stdenv.hostPlatform.isx86_64;
           useEmu = final.stdenv.buildPlatform.system != pkgsCross.stdenv.hostPlatform.system && !useRosetta && !pkgsCross.stdenv.hostPlatform.isDarwin;
 
-          buildInputs = optional final.stdenv.buildPlatform.isDarwin final.darwin.apple_sdk.frameworks.Security;
-
           crossZigCC = let
             target' =
               if target == aarch64-apple-darwin
@@ -328,10 +323,6 @@ with self.lib.rust.targets;
 
           targetArgs =
             {
-              inherit
-                buildInputs
-                ;
-
               HOST_AR = "${final.stdenv.cc.targetPrefix}ar";
               HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
 
