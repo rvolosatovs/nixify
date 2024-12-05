@@ -17,4 +17,7 @@ test = true
 name = "bye"
 required-features = ["some"]
 
+[[bin]]
+name = "rust-hello-multibin"
+
 [dependencies]
