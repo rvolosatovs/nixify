@@ -32,38 +32,40 @@
   inputs.rust-overlay.inputs.nixpkgs.follows = "nixpkgs-nixos";
   inputs.rust-overlay.url = "github:oxalica/rust-overlay";
 
-  outputs = inputs: let
-    lib = import ./lib inputs;
-  in
+  outputs =
+    inputs:
+    let
+      lib = import ./lib inputs;
+    in
     with lib;
-      mkFlake {
-        excludePaths = [
-          ".github"
-          ".gitignore"
-          "flake.lock"
-          "flake.nix"
-          "LICENSE"
-          "README.md"
-        ];
+    mkFlake {
+      excludePaths = [
+        ".github"
+        ".gitignore"
+        "flake.lock"
+        "flake.nix"
+        "LICENSE"
+        "README.md"
+      ];
 
-        withDevShells = {
+      withDevShells =
+        {
           pkgs,
           devShells,
           ...
         }:
-          extendDerivations {
-            buildInputs = with pkgs; [
-              buildah
-              wasmtime
-              zig
-            ];
-          }
-          devShells;
-      }
-      // {
-        inherit lib;
+        extendDerivations {
+          buildInputs = with pkgs; [
+            buildah
+            wasmtime
+            zig
+          ];
+        } devShells;
+    }
+    // {
+      inherit lib;
 
-        checks = import ./checks inputs;
-        templates = import ./templates inputs;
-      };
+      checks = import ./checks inputs;
+      templates = import ./templates inputs;
+    };
 }
