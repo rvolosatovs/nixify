@@ -3,10 +3,11 @@
   nixlib,
   nix-filter,
   ...
-} @ inputs:
+}@inputs:
 with flake-utils.lib.system;
 with nixlib.lib;
-with builtins; let
+with builtins;
+let
   f = self': {
     eq = x: y: x == y;
 
@@ -16,24 +17,24 @@ with builtins; let
 
     extendDerivations = import ./extendDerivations.nix inputs;
 
-    filterSource = {
-      include ? null,
-      exclude ? self'.defaultExcludePaths,
-      src,
-    }:
-      nix-filter.lib.filter ({
+    filterSource =
+      {
+        include ? null,
+        exclude ? self'.defaultExcludePaths,
+        src,
+      }:
+      nix-filter.lib.filter (
+        {
           inherit exclude;
           root = src;
         }
         // optionalAttrs (include != null) {
           inherit include;
-        });
+        }
+      );
 
     readTOML = file: fromTOML (readFile file);
-    readTOMLOr = path: def:
-      if pathExists path
-      then self'.readTOML path
-      else def;
+    readTOMLOr = path: def: if pathExists path then self'.readTOML path else def;
 
     defaultExcludePaths = [
       ".codecov.yml"
@@ -44,7 +45,7 @@ with builtins; let
       "flake.nix"
     ];
 
-    defaultNixpkgsConfig = {};
+    defaultNixpkgsConfig = { };
 
     defaultSystems = [
       aarch64-darwin
@@ -53,12 +54,12 @@ with builtins; let
       x86_64-linux
     ];
 
-    defaultWithApps = {apps, ...}: apps;
-    defaultWithChecks = {checks, ...}: checks;
-    defaultWithDevShells = {devShells, ...}: devShells;
-    defaultWithFormatter = {formatter, ...}: formatter;
-    defaultWithOverlays = {overlays, ...}: overlays;
-    defaultWithPackages = {packages, ...}: packages;
+    defaultWithApps = { apps, ... }: apps;
+    defaultWithChecks = { checks, ... }: checks;
+    defaultWithDevShells = { devShells, ... }: devShells;
+    defaultWithFormatter = { formatter, ... }: formatter;
+    defaultWithOverlays = { overlays, ... }: overlays;
+    defaultWithPackages = { packages, ... }: packages;
   };
 in
-  fix f
+fix f
