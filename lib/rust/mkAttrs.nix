@@ -90,8 +90,6 @@ let
           cargoDocExtraArgs = docArgs;
           cargoNextestExtraArgs = testArgs;
           cargoTestExtraArgs = testArgs;
-
-          installCargoArtifactsMode = "use-zstd";
         }
         // optionalAttrs (cargoLock != null) {
           inherit
