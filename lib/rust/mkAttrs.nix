@@ -238,9 +238,26 @@ let
 
   buildHostPackage =
     craneArgs:
-    trace' "buildHostPackage" {
-      inherit craneArgs;
-    } callHostCraneWithDeps craneArgs hostCraneLib.buildPackage;
+    trace' "buildHostPackage"
+      {
+        inherit craneArgs;
+      }
+      callHostCraneWithDeps
+      (
+        craneArgs
+        // {
+          nativeBuildInputs = [
+            final.removeReferencesTo
+          ] ++ optional final.stdenv.hostPlatform.isDarwin final.darwin.autoSignDarwinBinariesHook;
+
+          postInstall = ''
+            find "$out" -type f -exec remove-references-to \
+              -t ${hostRustToolchain} \
+              '{}' +
+          '';
+        }
+      )
+      hostCraneLib.buildPackage;
 
   hostBin = buildHostPackage commonReleaseArgs;
   hostDebugBin = buildHostPackage commonDebugArgs;
@@ -295,6 +312,7 @@ let
           craneArgs,
           craneLib,
           pkgsCross,
+          rustToolchain,
           target,
         }:
         let
@@ -336,31 +354,31 @@ let
 
               CARGO_BUILD_TARGET = target;
             }
-            // optionalAttrs pkgsCross.stdenv.hostPlatform.isDarwin {
-              # Removing vendor references here:
-              # - invalidates the signature, which is required on aarch64-darwin
-              # - fails on Darwin dylibs starting with Rust 1.79
-              doNotRemoveReferencesToVendorDir = true;
-            }
-            # Use `rust-lld` linker and Zig C compiler for Darwin targets
             // (
-              if pkgsCross.stdenv.hostPlatform.isDarwin then
+              if
+                pkgsCross.stdenv.hostPlatform.isDarwin
+              # Use `rust-lld` linker and Zig C compiler for Darwin targets
+              then
                 {
+                  # Removing vendor references here:
+                  # - invalidates the signature, which is required on aarch64-darwin
+                  # - fails on Darwin dylibs starting with Rust 1.79
+                  doNotRemoveReferencesToVendorDir = true;
+
                   depsBuildBuild = [
                     crossZigCC
                   ];
 
                   disallowedReferences = [
+                    final.zig
+
                     crossZigCC
                   ];
 
-                  preBuild =
-                    ''
-                      export HOME=$(mktemp -d)
-                    ''
-                    + optionalString pkgsCross.stdenv.hostPlatform.isDarwin ''
-                      export SDKROOT="${macos-sdk}"
-                    '';
+                  preBuild = ''
+                    export HOME=$(mktemp -d)
+                    export SDKROOT="${macos-sdk}"
+                  '';
 
                   "CC_${target}" = "${target}-zigcc";
 
@@ -369,13 +387,25 @@ let
               else
                 (
                   {
+                    disallowedReferences = [
+                      pkgsCross.stdenv.cc
+                    ] ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
+
                     depsBuildBuild = [
                       pkgsCross.stdenv.cc
                     ] ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
 
-                    disallowedReferences = [
-                      pkgsCross.stdenv.cc
+                    nativeBuildInputs = [
+                      final.removeReferencesTo
                     ];
+
+                    postInstall = ''
+                      find "$out" -type f -exec remove-references-to \
+                        -t ${pkgsCross.stdenv.cc} \
+                        -t ${rustToolchain} \
+                         ${optionalString pkgsCross.stdenv.hostPlatform.isWindows "-t ${pkgsCross.windows.pthreads}"} \
+                        '{}' +
+                    '';
 
                     "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
                     "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
@@ -384,6 +414,7 @@ let
                   // optionalAttrs pkgsCross.stdenv.hostPlatform.isLinux {
                     nativeBuildInputs = [
                       final.mold
+                      final.removeReferencesTo
                     ];
 
                     "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Clink-arg=-fuse-ld=mold";
@@ -701,6 +732,7 @@ let
                       craneArgs
                       craneLib
                       pkgsCross
+                      rustToolchain
                       target
                       ;
                   };
