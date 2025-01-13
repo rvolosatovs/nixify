@@ -18,7 +18,7 @@ jobs:
       matrix:
         platform:
         - host: macos-latest
-        - host: ubuntu-latest
+        - host: ubuntu-24.04
     runs-on: ${{ matrix.platform.host }}
     steps:
     - uses: actions/checkout@v4
