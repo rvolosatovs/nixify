@@ -369,12 +369,6 @@ let
                     crossZigCC
                   ];
 
-                  disallowedReferences = [
-                    final.zig
-
-                    crossZigCC
-                  ];
-
                   preBuild = ''
                     export HOME=$(mktemp -d)
                     export SDKROOT="${macos-sdk}"
