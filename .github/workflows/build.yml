@@ -466,7 +466,7 @@ jobs:
     - run: ${{ matrix.config.test-bin }}
 
   oci-linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: ${{ github.event_name != 'pull_request' }}
     permissions:
       packages: write
@@ -483,9 +483,9 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - run: |
-        nix run -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#build-rust-hello-oci' rust-hello
-        nix profile install --inputs-from . 'nixpkgs#buildah'
-        buildah manifest push --all --format 'v2s2' rust-hello docker://ghcr.io/${{ github.repository_owner }}/nixify:rust-hello-${{ github.sha }}
+        nix build -L --show-trace --override-input 'nixify' '.' './examples/rust-hello#rust-hello-oci'
+        nix profile install --inputs-from . 'nixpkgs#skopeo'
+        skopeo copy --all oci-archive:./result docker://ghcr.io/${{ github.repository_owner }}/nixify:rust-hello-${{ github.sha }}
         docker run ghcr.io/${{ github.repository_owner }}/nixify:rust-hello-${{ github.sha }}
 
   test-linux:
