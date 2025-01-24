@@ -56,7 +56,7 @@
         }:
         extendDerivations {
           buildInputs = with pkgs; [
-            buildah
+            skopeo
             wasmtime
             zig
           ];

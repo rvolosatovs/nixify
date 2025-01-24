@@ -801,12 +801,112 @@ let
         ) targetBins
       );
 
+      buildImageDir =
+        pkg:
+        final.runCommand "${pkg.imageName}-${pkg.imageTag}-dir"
+          {
+            nativeBuildInputs = [ final.skopeo ];
+          }
+          ''
+            skopeo copy --insecure-policy --tmpdir="$(mktemp -d)" docker-archive://${pkg} dir:$out
+          '';
+
+      targetImageDirs = (
+        mapAttrs' (
+          target: pkg:
+          let
+            manifest = buildImageDir pkg;
+          in
+          nameValuePair "${target}-dir" (
+            manifest
+            // {
+              passthru = pkg.passthru;
+            }
+          )
+        ) targetImages
+      );
+
+      buildImageManifest =
+        pkg:
+        final.runCommand "${pkg.imageName}-${pkg.imageTag}-manifest.json"
+          {
+            nativeBuildInputs = [ final.skopeo ];
+          }
+          ''
+            skopeo inspect --raw --tmpdir="$(mktemp -d)" docker-archive://${pkg} > $out
+          '';
+
+      targetImageManifests = (
+        mapAttrs' (
+          target: pkg:
+          let
+            manifest = buildImageManifest pkg;
+          in
+          nameValuePair "${target}-manifest" (
+            manifest
+            // {
+              passthru = pkg.passthru;
+            }
+          )
+        ) targetImages
+      );
+
       multiArchTargets = [
         aarch64-unknown-linux-musl
         armv7-unknown-linux-musleabihf
         #x86_64-pc-windows-gnu # TODO: Re-enable once we can set OS
         x86_64-unknown-linux-musl
       ];
+
+      multiArchManifest = final.writeText "${pname'}-oci-multi-arch-manifest.json" (toJSON {
+        schemaVersion = 2;
+        mediaType = "application/vnd.docker.distribution.manifest.list.v2+json";
+        manifests = concatMap (
+          target:
+          let
+            name = "${pname'}-${target}-oci-manifest";
+          in
+          optional (targetImageManifests ? ${name}) {
+            mediaType = "application/vnd.docker.distribution.manifest.v2+json";
+            size = stringLength "${readFile targetImageManifests.${name}}";
+            digest = "sha256:${hashFile "sha256" targetImageManifests.${name}}";
+            platform.architecture = ociArchitecture.${target};
+            platform.os = "linux"; # TODO: Support other OS'es
+          }
+        ) multiArchTargets;
+      });
+
+      multiArchDir =
+        let
+          copyManifests = concatMapStringsSep "\n" (
+            target:
+            let
+              dirName = "${pname'}-${target}-oci-dir";
+              manifestName = "${pname'}-${target}-oci-manifest";
+            in
+            optionalString (targetImageDirs ? ${dirName} && targetImageManifests ? ${manifestName}) ''
+              mkdir -p $out
+              cp ${targetImageDirs."${dirName}"}/* $out/
+              mv $out/manifest.json $out/${hashFile "sha256" targetImageManifests."${manifestName}"}.manifest.json
+              rm -f $out/version
+            ''
+          ) multiArchTargets;
+        in
+        final.runCommand "${pname'}-oci-dir" { } (
+          copyManifests
+          + ''
+            cp ${multiArchManifest} $out/manifest.json
+          ''
+        );
+
+      multiArchImage =
+        final.runCommand "${pname'}-multi-arch"
+          {
+            nativeBuildInputs = [ final.skopeo ];
+          }
+          ''
+            skopeo copy --all --insecure-policy --tmpdir="$(mktemp -d)" dir:${multiArchDir} oci-archive:$out:${pname'}:${version'}
+          '';
     in
     {
       "${pname'}" = hostBin;
@@ -815,36 +915,12 @@ let
     // targetDeps
     // targetBins
     // targetImages
+    // targetImageDirs
+    // targetImageManifests
     // optionalAttrs (any (target: targetImages ? "${pname'}-${target}-oci") multiArchTargets) {
-      "build-${pname'}-oci" =
-        let
-          build = final.writeShellScriptBin "build-${pname'}-oci" ''
-            set -xe
-
-            build() {
-              ${final.buildah}/bin/buildah manifest create "''${1}"
-              ${concatMapStringsSep "\n" (
-                target:
-                let
-                  name = "${pname'}-${target}-oci";
-                in
-                optionalString (targetImages ? ${name}) ''
-                  ${final.buildah}/bin/buildah manifest add "''${1}" docker-archive:${targetImages."${name}"}
-                  ${final.buildah}/bin/buildah pull docker-archive:${targetImages."${name}"}
-                ''
-              ) multiArchTargets}
-            }
-            build "''${1:-${pname'}:${version'}}"
-          '';
-        in
-        (
-          build
-          // {
-            inherit
-              version
-              ;
-          }
-        );
+      "${pname'}-oci-manifest" = multiArchManifest;
+      "${pname'}-oci-dir" = multiArchDir;
+      "${pname'}-oci" = multiArchImage;
     };
 
   packages = mkPackages final;
