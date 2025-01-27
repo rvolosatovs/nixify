@@ -212,8 +212,8 @@ let
 
   checks =
     {
-      clippy = callHostCraneWithDeps { } hostCraneLib.cargoClippy;
-      doc = callHostCraneWithDeps { } hostCraneLib.cargoDoc;
+      clippy = callHostCraneCheckWithDeps { } hostCraneLib.cargoClippy;
+      doc = callHostCraneCheckWithDeps { } hostCraneLib.cargoDoc;
       fmt = callHostCrane { } hostCraneLib.cargoFmt;
       nextest = callHostCraneCheckWithDeps { } hostCraneLib.cargoNextest;
     }
