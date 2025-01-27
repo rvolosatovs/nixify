@@ -203,6 +203,15 @@ self.lib.mkFlake {
       cx
       // {
         inherit (attrs)
+          buildHostPackage
+          buildImageDir
+          buildImageManifest
+          callCrane
+          callCraneWithDeps
+          callHostCrane
+          callHostCraneCheckWithDeps
+          callHostCraneWithDeps
+          hostCraneLib
           hostRustToolchain
           ;
 
