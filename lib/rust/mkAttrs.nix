@@ -927,9 +927,12 @@ in
 {
   inherit
     buildHostPackage
+    buildImageDir
+    buildImageManifest
     callCrane
     callCraneWithDeps
     callHostCrane
+    callHostCraneCheckWithDeps
     callHostCraneWithDeps
     checks
     hostCraneLib
