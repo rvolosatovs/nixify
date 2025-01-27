@@ -858,24 +858,6 @@ let
         x86_64-unknown-linux-musl
       ];
 
-      multiArchManifest = final.writeText "${pname'}-oci-multi-arch-manifest.json" (toJSON {
-        schemaVersion = 2;
-        mediaType = "application/vnd.docker.distribution.manifest.list.v2+json";
-        manifests = concatMap (
-          target:
-          let
-            name = "${pname'}-${target}-oci-manifest";
-          in
-          optional (targetImageManifests ? ${name}) {
-            mediaType = "application/vnd.docker.distribution.manifest.v2+json";
-            size = stringLength "${readFile targetImageManifests.${name}}";
-            digest = "sha256:${hashFile "sha256" targetImageManifests.${name}}";
-            platform.architecture = ociArchitecture.${target};
-            platform.os = "linux"; # TODO: Support other OS'es
-          }
-        ) multiArchTargets;
-      });
-
       multiArchDir =
         let
           copyManifests = concatMapStringsSep "\n" (
@@ -891,11 +873,29 @@ let
               rm -f $out/version
             ''
           ) multiArchTargets;
+
+          manifest = final.writeText "${pname'}-oci-multi-arch-manifest.json" (toJSON {
+            schemaVersion = 2;
+            mediaType = "application/vnd.docker.distribution.manifest.list.v2+json";
+            manifests = concatMap (
+              target:
+              let
+                name = "${pname'}-${target}-oci-manifest";
+              in
+              optional (targetImageManifests ? ${name}) {
+                mediaType = "application/vnd.docker.distribution.manifest.v2+json";
+                size = stringLength "${readFile targetImageManifests.${name}}";
+                digest = "sha256:${hashFile "sha256" targetImageManifests.${name}}";
+                platform.architecture = ociArchitecture.${target};
+                platform.os = "linux"; # TODO: Support other OS'es
+              }
+            ) multiArchTargets;
+          });
         in
         final.runCommand "${pname'}-oci-dir" { } (
           copyManifests
           + ''
-            cp ${multiArchManifest} $out/manifest.json
+            cp ${manifest} $out/manifest.json
           ''
         );
 
@@ -918,7 +918,6 @@ let
     // targetImageDirs
     // targetImageManifests
     // optionalAttrs (any (target: targetImages ? "${pname'}-${target}-oci") multiArchTargets) {
-      "${pname'}-oci-manifest" = multiArchManifest;
       "${pname'}-oci-dir" = multiArchDir;
       "${pname'}-oci" = multiArchImage;
     };
