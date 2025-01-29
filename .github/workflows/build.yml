@@ -353,13 +353,19 @@ jobs:
       matrix:
         config:
         - package: default
-          test-bin: ./result/bin/complex-foo
+          test-bin: |
+            ./result/bin/complex-foo
+            codesign --verify ./result/bin/complex-foo
 
         - package: rust-complex
-          test-bin: ./result/bin/complex-foo
+          test-bin: |
+            ./result/bin/complex-foo
+            codesign --verify ./result/bin/complex-foo
 
         - package: rust-complex-aarch64-apple-darwin
-          test-bin: file ./result/bin/complex-foo
+          test-bin: |
+            ./result/bin/complex-foo
+            codesign --verify ./result/bin/complex-foo
 
         - package: rust-complex-aarch64-unknown-linux-musl
           test-bin: file ./result/bin/complex-foo
@@ -386,7 +392,9 @@ jobs:
           test-bin: file ./result/bin/complex-foo
 
         - package: rust-complex-x86_64-apple-darwin
-          test-bin: ./result/bin/complex-foo
+          test-bin: |
+            ./result/bin/complex-foo
+            codesign --verify ./result/bin/complex-foo
 
         - package: rust-complex-x86_64-pc-windows-gnu
           test-bin: file ./result/bin/complex-foo.exe
@@ -404,10 +412,14 @@ jobs:
           suffix: .wasm
 
         - package: rust-complex-debug
-          test-bin: ./result/bin/complex-foo
+          test-bin: |
+            ./result/bin/complex-foo
+            codesign --verify ./result/bin/complex-foo
 
         - package: rust-complex-debug-aarch64-apple-darwin
-          test-bin: file ./result/bin/complex-foo
+          test-bin: |
+            ./result/bin/complex-foo
+            codesign --verify ./result/bin/complex-foo
 
         - package: rust-complex-debug-aarch64-unknown-linux-musl
           test-bin: file ./result/bin/complex-foo
@@ -434,7 +446,9 @@ jobs:
           test-bin: file ./result/bin/complex-foo
 
         - package: rust-complex-debug-x86_64-apple-darwin
-          test-bin: ./result/bin/complex-foo
+          test-bin: |
+            ./result/bin/complex-foo
+            codesign --verify ./result/bin/complex-foo
 
         - package: rust-complex-debug-x86_64-pc-windows-gnu
           test-bin: file ./result/bin/complex-foo.exe
@@ -510,8 +524,12 @@ jobs:
     - uses: actions/download-artifact@v4
       with:
         name: linux-rust-complex-x86_64-apple-darwin
+    - run: chmod +x ./rust-complex-aarch64-apple-darwin
+    - run: ./rust-complex-aarch64-apple-darwin
+    - run: codesign --verify ./rust-complex-aarch64-apple-darwin
     - run: chmod +x ./rust-complex-x86_64-apple-darwin
     - run: ./rust-complex-x86_64-apple-darwin
+    - run: codesign --verify ./rust-complex-x86_64-apple-darwin
     - run: lipo -create ./rust-complex-aarch64-apple-darwin ./rust-complex-x86_64-apple-darwin -output ./rust-complex-universal-darwin
     - run: chmod +x ./rust-complex-universal-darwin
     - run: ./rust-complex-universal-darwin
