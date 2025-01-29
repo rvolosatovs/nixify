@@ -248,13 +248,12 @@ let
         // {
           nativeBuildInputs = [
             final.removeReferencesTo
-          ] ++ optional final.stdenv.hostPlatform.isDarwin final.darwin.autoSignDarwinBinariesHook;
+          ] ++ optional final.stdenv.hostPlatform.isDarwin final.rcodesign;
 
           postInstall = ''
             find "$out" -type f -exec remove-references-to \
               -t ${hostRustToolchain} \
-              '{}' +
-          '';
+              '{}' + ${optionalString final.stdenv.hostPlatform.isDarwin ''-exec sh -c "rcodesign sign '{}' || true" \;''}'';
         }
       )
       hostCraneLib.buildPackage;
@@ -360,18 +359,32 @@ let
               # Use `rust-lld` linker and Zig C compiler for Darwin targets
               then
                 {
-                  # Removing vendor references here:
-                  # - invalidates the signature, which is required on aarch64-darwin
-                  # - fails on Darwin dylibs starting with Rust 1.79
+                  # Removing vendor references here fails on Darwin dylibs starting with Rust 1.79
                   doNotRemoveReferencesToVendorDir = true;
 
                   depsBuildBuild = [
                     crossZigCC
                   ];
 
+                  nativeBuildInputs = [
+                    final.rcodesign
+                    final.removeReferencesTo
+                  ];
+
                   preBuild = ''
                     export HOME=$(mktemp -d)
                     export SDKROOT="${macos-sdk}"
+                  '';
+
+                  postInstall = ''
+                    find "$out" -type f -exec remove-references-to \
+                      -t ${final.stdenv.cc} \
+                      -t ${rustToolchain} \
+                      -t ${crossZigCC} \
+                      -t ${final.zig} \
+                      -t ${macos-sdk} \
+                      '{}' + \
+                      -exec sh -c "rcodesign sign '{}' || true" \;
                   '';
 
                   "CC_${target}" = "${target}-zigcc";
@@ -395,6 +408,7 @@ let
 
                     postInstall = ''
                       find "$out" -type f -exec remove-references-to \
+                        -t ${final.stdenv.cc} \
                         -t ${pkgsCross.stdenv.cc} \
                         -t ${rustToolchain} \
                          ${optionalString pkgsCross.stdenv.hostPlatform.isWindows "-t ${pkgsCross.windows.pthreads}"} \
