@@ -253,7 +253,8 @@ let
           postInstall = ''
             find "$out" -type f -exec remove-references-to \
               -t ${hostRustToolchain} \
-              '{}' + ${optionalString final.stdenv.hostPlatform.isDarwin ''-exec sh -c "rcodesign sign '{}' || true" \;''}'';
+              '{}' + ${optionalString final.stdenv.hostPlatform.isDarwin ''-exec sh -c "rcodesign sign '{}' || true" \;''}
+          '';
         }
       )
       hostCraneLib.buildPackage;
@@ -358,9 +359,11 @@ let
                 pkgsCross.stdenv.hostPlatform.isDarwin
               # Use `rust-lld` linker and Zig C compiler for Darwin targets
               then
+                let
+                  removeReferencesTo = final.removeReferencesTo.overrideAttrs { postFixup = ""; }; # disable Darwin signing hooks
+                in
                 {
-                  # Removing vendor references here fails on Darwin dylibs starting with Rust 1.79
-                  doNotRemoveReferencesToVendorDir = true;
+                  doNotSign = true;
 
                   depsBuildBuild = [
                     crossZigCC
@@ -368,7 +371,8 @@ let
 
                   nativeBuildInputs = [
                     final.rcodesign
-                    final.removeReferencesTo
+
+                    removeReferencesTo
                   ];
 
                   preBuild = ''
