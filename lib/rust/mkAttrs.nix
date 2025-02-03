@@ -238,6 +238,34 @@ let
 
   buildHostPackage =
     craneArgs:
+    let
+      hook =
+        final.makeSetupHook
+          {
+            name = "nixify-rust-host-strip-and-sign";
+            propagatedBuildInputs = [
+              final.removeReferencesTo
+            ] ++ optional final.stdenv.hostPlatform.isDarwin final.rcodesign;
+          }
+          (
+            final.writeShellScript "nixify-rust-host-strip-and-sign.sh" (
+              ''
+                _nixifyRustHostStrip() {
+                    find "$out" -type f -exec remove-references-to \
+                      -t ${hostRustToolchain} \
+                      '{}' +
+                }
+                postInstallHooks+=(_nixifyRustHostStrip)
+              ''
+              + optionalString final.stdenv.hostPlatform.isDarwin ''
+                _nixifyRustHostSign() {
+                    find "$out" -type f -exec sh -c "rcodesign sign '{}' || true" \;
+                }
+                preFixupHooks+=(_nixifyRustHostSign)
+              ''
+            )
+          );
+    in
     trace' "buildHostPackage"
       {
         inherit craneArgs;
@@ -247,14 +275,8 @@ let
         craneArgs
         // {
           nativeBuildInputs = [
-            final.removeReferencesTo
-          ] ++ optional final.stdenv.hostPlatform.isDarwin final.rcodesign;
-
-          postInstall = ''
-            find "$out" -type f -exec remove-references-to \
-              -t ${hostRustToolchain} \
-              '{}' + ${optionalString final.stdenv.hostPlatform.isDarwin ''-exec sh -c "rcodesign sign '{}' || true" \;''}
-          '';
+            hook
+          ];
         }
       )
       hostCraneLib.buildPackage;
@@ -361,6 +383,34 @@ let
               then
                 let
                   removeReferencesTo = final.removeReferencesTo.overrideAttrs { postFixup = ""; }; # disable Darwin signing hooks
+                  hook =
+                    final.makeSetupHook
+                      {
+                        name = "nixify-rust-darwin-strip-and-sign";
+                        propagatedBuildInputs = [
+                          final.rcodesign
+
+                          removeReferencesTo
+                        ];
+                      }
+                      (
+                        final.writeShellScript "nixify-rust-darwin-strip-and-sign.sh" ''
+                          _nixifyRustDarwinStrip() {
+                            find "$out" -type f -exec remove-references-to \
+                              -t ${crossZigCC} \
+                              -t ${final.stdenv.cc} \
+                              -t ${final.zig} \
+                              -t ${macos-sdk} \
+                              -t ${rustToolchain} \
+                              '{}' +
+                          }
+                          _nixifyRustDarwinSign() {
+                            find "$out" -type f -exec sh -c "rcodesign sign '{}' || true" \;
+                          }
+                          postInstallHooks+=(_nixifyRustDarwinStrip)
+                          preFixupHooks+=(_nixifyRustDarwinSign)
+                        ''
+                      );
                 in
                 {
                   doNotSign = true;
@@ -370,9 +420,7 @@ let
                   ];
 
                   nativeBuildInputs = [
-                    final.rcodesign
-
-                    removeReferencesTo
+                    hook
                   ];
 
                   preBuild = ''
@@ -380,22 +428,34 @@ let
                     export SDKROOT="${macos-sdk}"
                   '';
 
-                  postInstall = ''
-                    find "$out" -type f -exec remove-references-to \
-                      -t ${final.stdenv.cc} \
-                      -t ${rustToolchain} \
-                      -t ${crossZigCC} \
-                      -t ${final.zig} \
-                      -t ${macos-sdk} \
-                      '{}' + \
-                      -exec sh -c "rcodesign sign '{}' || true" \;
-                  '';
-
                   "CC_${target}" = "${target}-zigcc";
 
                   "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "rust-lld";
                 }
               else
+                let
+                  hook =
+                    final.makeSetupHook
+                      {
+                        name = "nixify-rust-strip";
+                        propagatedBuildInputs = [
+                          final.removeReferencesTo
+                        ];
+                      }
+                      (
+                        final.writeShellScript "nixify-rust-strip.sh" ''
+                          _nixifyRustStrip() {
+                            find "$out" -type f -exec remove-references-to \
+                              -t ${final.stdenv.cc} \
+                              -t ${pkgsCross.stdenv.cc} \
+                              -t ${rustToolchain} \
+                               ${optionalString pkgsCross.stdenv.hostPlatform.isWindows "-t ${pkgsCross.windows.pthreads}"} \
+                              '{}' +
+                          }
+                          postInstallHooks+=(_nixifyRustStrip)
+                        ''
+                      );
+                in
                 (
                   {
                     disallowedReferences = [
@@ -407,17 +467,8 @@ let
                     ] ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
 
                     nativeBuildInputs = [
-                      final.removeReferencesTo
+                      hook
                     ];
-
-                    postInstall = ''
-                      find "$out" -type f -exec remove-references-to \
-                        -t ${final.stdenv.cc} \
-                        -t ${pkgsCross.stdenv.cc} \
-                        -t ${rustToolchain} \
-                         ${optionalString pkgsCross.stdenv.hostPlatform.isWindows "-t ${pkgsCross.windows.pthreads}"} \
-                        '{}' +
-                    '';
 
                     "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
                     "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
