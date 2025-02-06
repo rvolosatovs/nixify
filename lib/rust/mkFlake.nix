@@ -155,7 +155,7 @@ self.lib.mkFlake {
       // {
         devShells = extendDerivations (
           {
-            packages = [
+            nativeBuildInputs = [
               attrs.hostRustToolchain
             ];
           }
