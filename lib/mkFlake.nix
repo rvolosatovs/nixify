@@ -139,13 +139,6 @@ in
               formatter
             ];
           }
-          // optionalAttrs (packages ? default) {
-            inherit (packages.default)
-              buildInputs
-              depsBuildBuild
-              nativeBuildInputs
-              ;
-          }
           // optionalAttrs (pname != null) {
             inherit pname;
           }

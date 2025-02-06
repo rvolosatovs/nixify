@@ -159,13 +159,6 @@ self.lib.mkFlake {
               attrs.hostRustToolchain
             ];
           }
-          // optionalAttrs (checks ? ${pname}) {
-            inherit (checks.${pname})
-              buildInputs
-              depsBuildBuild
-              nativeBuildInputs
-              ;
-          }
         ) devShells;
       }
     );
