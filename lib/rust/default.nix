@@ -155,6 +155,9 @@ in
 
   defaultBuildOverrides = _: const { };
 
+  defaultOverrideVendorCargoPackage = _: const { };
+  defaultOverrideVendorGitCheckout = _: const { };
+
   defaultExcludePaths = defaultExcludePaths ++ [
     "rust-toolchain.toml"
   ];

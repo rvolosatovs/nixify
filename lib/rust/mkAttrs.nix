@@ -22,6 +22,9 @@ with self.lib.rust.targets;
   clippy ? defaultClippyConfig,
   doc ? defaultDocConfig,
   doCheck ? true,
+  dummySrc ? null,
+  overrideVendorCargoPackage ? defaultOverrideVendorCargoPackage,
+  overrideVendorGitCheckout ? defaultOverrideVendorGitCheckout,
   pkgsFor ? defaultPkgsFor,
   pname ? null,
   rustupToolchain ? defaultRustupToolchain,
@@ -74,6 +77,21 @@ let
         )
       }";
 
+      vendorArgs =
+        {
+          inherit
+            overrideVendorCargoPackage
+            overrideVendorGitCheckout
+            ;
+
+          src = if (dummySrc != null) then dummySrc else src;
+        }
+        // optionalAttrs (cargoLock != null) {
+          inherit
+            cargoLock
+            ;
+        };
+
       commonArgs =
         {
           inherit
@@ -90,17 +108,13 @@ let
           cargoDocExtraArgs = docArgs;
           cargoNextestExtraArgs = testArgs;
           cargoTestExtraArgs = testArgs;
+
+          cargoVendorDir = craneLib.vendorCargoDeps vendorArgs;
         }
         // optionalAttrs (cargoLock != null) {
           inherit
             cargoLock
             ;
-          cargoVendorDir = craneLib.vendorCargoDeps {
-            inherit
-              cargoLock
-              src
-              ;
-          };
         }
         // craneArgs;
 

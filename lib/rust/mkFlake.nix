@@ -20,11 +20,14 @@ with self.lib.rust;
   clippy ? defaultClippyConfig,
   doc ? defaultDocConfig,
   doCheck ? true,
+  dummySrc ? null,
   excludePaths ? defaultExcludePaths,
   includePaths ? null,
   name ? null,
   nixpkgsConfig ? defaultNixpkgsConfig,
   overlays ? [ ],
+  overrideVendorCargoPackage ? _: drv: drv,
+  overrideVendorGitCheckout ? _: drv: drv,
   pkgsFor ? defaultPkgsFor,
   rustupToolchain ? null,
   src,
@@ -69,6 +72,8 @@ let
       clippy
       doc
       doCheck
+      overrideVendorCargoPackage
+      overrideVendorGitCheckout
       pkgsFor
       pname
       targets
@@ -153,13 +158,11 @@ self.lib.mkFlake {
     withDevShells (
       cx
       // {
-        devShells = extendDerivations (
-          {
-            nativeBuildInputs = [
-              attrs.hostRustToolchain
-            ];
-          }
-        ) devShells;
+        devShells = extendDerivations {
+          nativeBuildInputs = [
+            attrs.hostRustToolchain
+          ];
+        } devShells;
       }
     );
 
