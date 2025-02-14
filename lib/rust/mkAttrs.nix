@@ -22,6 +22,8 @@ with self.lib.rust.targets;
   clippy ? defaultClippyConfig,
   doc ? defaultDocConfig,
   doCheck ? true,
+  overrideVendorCargoPackage ? _: drv: drv,
+  overrideVendorGitCheckout ? _: drv: drv,
   pkgsFor ? defaultPkgsFor,
   pname ? null,
   rustupToolchain ? defaultRustupToolchain,
@@ -98,6 +100,8 @@ let
           cargoVendorDir = craneLib.vendorCargoDeps {
             inherit
               cargoLock
+              overrideVendorCargoPackage
+              overrideVendorGitCheckout
               src
               ;
           };
