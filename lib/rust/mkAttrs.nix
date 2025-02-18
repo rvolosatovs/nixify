@@ -23,8 +23,8 @@ with self.lib.rust.targets;
   doc ? defaultDocConfig,
   doCheck ? true,
   dummySrc ? null,
-  overrideVendorCargoPackage ? defaultOverrideVendorCargoPackage,
-  overrideVendorGitCheckout ? defaultOverrideVendorGitCheckout,
+  overrideVendorCargoPackage ? null,
+  overrideVendorGitCheckout ? null,
   pkgsFor ? defaultPkgsFor,
   pname ? null,
   rustupToolchain ? defaultRustupToolchain,
@@ -79,12 +79,17 @@ let
 
       vendorArgs =
         {
+          src = if (dummySrc != null) then dummySrc else src;
+        }
+        // optionalAttrs (overrideVendorCargoPackage != null) {
           inherit
             overrideVendorCargoPackage
+            ;
+        }
+        // optionalAttrs (overrideVendorGitCheckout != null) {
+          inherit
             overrideVendorGitCheckout
             ;
-
-          src = if (dummySrc != null) then dummySrc else src;
         }
         // optionalAttrs (cargoLock != null) {
           inherit
@@ -92,9 +97,12 @@ let
             ;
         };
 
+      cargoVendorDir = craneLib.vendorCargoDeps vendorArgs;
+
       commonArgs =
         {
           inherit
+            cargoVendorDir
             doCheck
             src
             ;
@@ -108,8 +116,6 @@ let
           cargoDocExtraArgs = docArgs;
           cargoNextestExtraArgs = testArgs;
           cargoTestExtraArgs = testArgs;
-
-          cargoVendorDir = craneLib.vendorCargoDeps vendorArgs;
         }
         // optionalAttrs (cargoLock != null) {
           inherit
@@ -139,10 +145,17 @@ let
     let
       cargoArtifacts = callCrane {
         inherit
-          craneArgs
           craneLib
           overrideArgs
           ;
+        craneArgs =
+          optionalAttrs (dummySrc != null) {
+            src = null;
+            inherit
+              dummySrc
+              ;
+          }
+          // craneArgs;
       } craneLib.buildDepsOnly;
     in
     trace "callCraneWithDeps" callCrane {
