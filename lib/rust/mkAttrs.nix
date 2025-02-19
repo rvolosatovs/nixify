@@ -216,6 +216,8 @@ let
         craneLib = hostCraneLib;
 
         overrideArgs.pkgs = final;
+        overrideArgs.craneLib = hostCraneLib;
+        overrideArgs.rustToolchain = hostRustToolchain;
       };
 
   callHostCrane =
@@ -731,6 +733,10 @@ let
                 target
                 ;
               pkgs = final;
+              craneLib = hostCraneLib;
+              craneLibCross = craneLib;
+              rustToolchain = hostRustToolchain;
+              rustToolchainCross = rustToolchain;
             };
             craneArgs = targetArgs // craneArgs;
           };
