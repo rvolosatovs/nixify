@@ -102,7 +102,6 @@ let
       commonArgs =
         {
           inherit
-            cargoVendorDir
             doCheck
             src
             ;
@@ -122,6 +121,14 @@ let
             cargoLock
             ;
         }
+        //
+          optionalAttrs
+            (cargoLock != null || overrideVendorCargoPackage != null || overrideVendorGitCheckout != null)
+            {
+              inherit
+                cargoVendorDir
+                ;
+            }
         // craneArgs;
 
       craneArgs' = commonArgs // buildOverrides overrideArgs commonArgs;
