@@ -19,7 +19,7 @@ runs:
   steps:
   - run: nix build -L --show-trace --override-input 'nixify' '.' '${{ inputs.flake }}#${{ inputs.package }}'
     shell: bash
-  - run: nix run -L --inputs-from . 'nixpkgs#coreutils' -- --coreutils-prog=ginstall -p "./result${{ inputs.install-path }}" '${{ inputs.package }}'
+  - run: nix run -L --inputs-from . 'nixpkgs-nixos#coreutils' -- --coreutils-prog=ginstall -p "./result${{ inputs.install-path }}" '${{ inputs.package }}'
     shell: bash
   - uses: actions/upload-artifact@v4
     with:
