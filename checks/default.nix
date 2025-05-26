@@ -30,22 +30,27 @@ let
     // mapAttrs' (n: nameValuePair "${name}-package-${n}") flake.packages.${system};
 
   flakes.rust.complex = (import ../examples/rust-complex/flake.nix).outputs {
+    self = ../examples/rust-complex;
     nixify = self;
   };
 
   flakes.rust.hello = (import ../examples/rust-hello/flake.nix).outputs {
+    self = ../examples/rust-hello;
     nixify = self;
   };
 
   flakes.rust.hello-multibin = (import ../examples/rust-hello-multibin/flake.nix).outputs {
+    self = ../examples/rust-hello-multibin;
     nixify = self;
   };
 
   flakes.rust.lib = (import ../examples/rust-lib/flake.nix).outputs {
+    self = ../examples/rust-lib;
     nixify = self;
   };
 
   flakes.rust.workspace = (import ../examples/rust-workspace/flake.nix).outputs {
+    self = ../examples/rust-workspace;
     nixify = self;
   };
 in
