@@ -510,7 +510,7 @@ let
                     "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
                   }
                   # Use `mold` linker for Linux targets
-                  // optionalAttrs pkgsCross.stdenv.hostPlatform.isLinux {
+                  // optionalAttrs (pkgsCross.stdenv.hostPlatform.isLinux && !final.mold.meta.broken) {
                     nativeBuildInputs = [
                       final.mold
                       final.removeReferencesTo

@@ -2,9 +2,16 @@
   inputs.nixify.url = "github:rvolosatovs/nixify";
 
   outputs =
-    { nixify, ... }:
+    {
+      self,
+      nixify,
+      ...
+    }:
     nixify.lib.rust.mkFlake {
-      src = ./.;
+      src = self;
+
+      nixpkgsConfig.allowUnfree = true;
+
       excludePaths = [
         ".gitignore"
         "flake.lock"
