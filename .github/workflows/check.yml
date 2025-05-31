@@ -20,6 +20,9 @@ jobs:
         - host: macos-latest
         - host: ubuntu-24.04
     runs-on: ${{ matrix.platform.host }}
+    permissions:
+      id-token: write
+      contents: read
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/install-nix
