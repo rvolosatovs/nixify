@@ -1,12 +1,12 @@
 name: install Nix
 
-permissions:
-  id-token: write
-  contents: read
-
 inputs:
   cachixAuthToken:
     description: auth token for https://app.cachix.org/cache/rvolosatovs
+
+permissions:
+  id-token: write
+  contents: read
 
 runs:
   using: composite
