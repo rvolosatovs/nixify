@@ -66,6 +66,7 @@ let
       buildArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags build}";
       docArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags doc}";
       testArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags test}";
+      nextestArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags test} --no-tests=warn";
 
       clippyArgs = "-j $NIX_BUILD_CORES ${mkCargoFlags clippy} -- ${
         with clippy;
@@ -113,7 +114,7 @@ let
           cargoCheckExtraArgs = buildArgs;
           cargoClippyExtraArgs = clippyArgs;
           cargoDocExtraArgs = docArgs;
-          cargoNextestExtraArgs = testArgs;
+          cargoNextestExtraArgs = nextestArgs;
           cargoTestExtraArgs = testArgs;
         }
         // optionalAttrs (cargoLock != null) {
