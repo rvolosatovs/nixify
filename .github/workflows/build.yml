@@ -519,7 +519,7 @@ jobs:
     - rust-complex-linux
     - oci-linux
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         name: linux-rust-complex-x86_64-unknown-linux-musl
     - run: chmod +x ./rust-complex-x86_64-unknown-linux-musl
@@ -529,10 +529,10 @@ jobs:
     runs-on: macos-latest
     needs: rust-complex-linux
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         name: linux-rust-complex-aarch64-apple-darwin
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         name: linux-rust-complex-x86_64-apple-darwin
     - run: chmod +x ./rust-complex-aarch64-apple-darwin
@@ -553,7 +553,7 @@ jobs:
     runs-on: windows-latest
     needs: rust-complex-linux
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         name: linux-rust-complex-x86_64-pc-windows-gnu
     - run: '& .\rust-complex-x86_64-pc-windows-gnu'
