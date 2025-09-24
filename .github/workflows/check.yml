@@ -24,7 +24,7 @@ jobs:
       id-token: write
       contents: read
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: ./.github/actions/install-nix
       with:
         cachixAuthToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
