@@ -486,7 +486,6 @@ let
                               -t ${final.stdenv.cc} \
                               -t ${pkgsCross.stdenv.cc} \
                               -t ${rustToolchain} \
-                               ${optionalString pkgsCross.stdenv.hostPlatform.isWindows "-t ${pkgsCross.windows.pthreads}"} \
                               '{}' +
                           }
                           postInstallHooks+=(_nixifyRustStrip)
@@ -501,7 +500,7 @@ let
 
                     depsBuildBuild = [
                       pkgsCross.stdenv.cc
-                    ] ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
+                    ];
 
                     nativeBuildInputs = [
                       hook
@@ -521,7 +520,7 @@ let
                   }
                   # Always build static binaries for Windows targets
                   // optionalAttrs pkgsCross.stdenv.hostPlatform.isWindows {
-                    "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Ctarget-feature=+crt-static";
+                    "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Ctarget-feature=+crt-static -L${pkgsCross.windows.pthreads}/lib";
                   }
                   # Use default linker for Wasm targets
                   // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasm) {
