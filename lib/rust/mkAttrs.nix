@@ -741,8 +741,6 @@ let
             craneArgs = targetArgs // craneArgs;
           };
 
-      targets' = optionalAttrs (targets != null) targets;
-
       targetBins =
         let
           mkOutputs =
@@ -791,7 +789,7 @@ let
                 in
                 withPassthru craneArgs pkg;
             in
-            optionalAttrs (targets' ? ${target} && targets'.${target}) {
+            optionalAttrs (targets != null && targets ? ${target} && targets.${target}) {
               "${pname'}-${target}" = buildPackageFor' commonReleaseArgs;
               "${pname'}-debug-${target}" = buildPackageFor' commonDebugArgs;
             };
