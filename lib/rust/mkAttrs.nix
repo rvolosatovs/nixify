@@ -741,58 +741,7 @@ let
             craneArgs = targetArgs // craneArgs;
           };
 
-      targets' =
-        let
-          default.${aarch64-apple-darwin} = true;
-          default.${aarch64-apple-ios} = false;
-          default.${aarch64-linux-android} =
-            prev.stdenv.hostPlatform.isLinux && prev.stdenv.hostPlatform.isx86_64;
-          default.${aarch64-unknown-linux-gnu} = true;
-          default.${aarch64-unknown-linux-musl} = true;
-          default.${arm-unknown-linux-gnueabi} = false;
-          default.${arm-unknown-linux-gnueabihf} = true;
-          default.${arm-unknown-linux-musleabi} = false;
-          default.${arm-unknown-linux-musleabihf} = true;
-          default.${armv7-unknown-linux-gnueabi} = false;
-          default.${armv7-unknown-linux-gnueabihf} = true;
-          default.${armv7-unknown-linux-musleabi} = false;
-          default.${armv7-unknown-linux-musleabihf} = true;
-          default.${armv7s-apple-ios} = false;
-          default.${mips-unknown-linux-gnu} = false;
-          default.${mips-unknown-linux-musl} = false;
-          default.${mips64-unknown-linux-gnuabi64} = false;
-          default.${mips64-unknown-linux-muslabi64} = false;
-          default.${mips64el-unknown-linux-gnuabi64} = false;
-          default.${mips64el-unknown-linux-muslabi64} = false;
-          default.${mipsel-unknown-linux-gnu} = false;
-          default.${mipsel-unknown-linux-musl} = false;
-          default.${powerpc-unknown-linux-gnu} = false;
-          default.${powerpc-unknown-linux-musl} = false;
-          default.${powerpc64-unknown-linux-gnu} = false;
-          default.${powerpc64-unknown-linux-musl} = false;
-          default.${powerpc64le-unknown-linux-gnu} = true;
-          default.${powerpc64le-unknown-linux-musl} = false;
-          default.${riscv64gc-unknown-linux-gnu} = true;
-          default.${riscv64gc-unknown-linux-musl} = false;
-          default.${s390x-unknown-linux-gnu} = true;
-          default.${s390x-unknown-linux-musl} = false;
-          default.${wasm32-unknown-unknown} = true;
-          default.${wasm32-wasip1} = false;
-          default.${wasm32-wasip2} = true;
-          default.${x86_64-apple-darwin} = true;
-          default.${x86_64-apple-ios} = false;
-          default.${x86_64-pc-windows-gnu} = true;
-          default.${x86_64-unknown-linux-gnu} = true;
-          default.${x86_64-unknown-linux-musl} = true;
-
-          selected = optionalAttrs (targets != null) (default // targets);
-        in
-        mapAttrs' (
-          target: enabled:
-          warnIf (enabled && !(default ? ${target})) ''
-            target `${target}` is not supported
-            set `targets.${target} = false` to remove this warning'' (nameValuePair target enabled)
-        ) selected;
+      targets' = optionalAttrs (targets != null) targets;
 
       targetBins =
         let
