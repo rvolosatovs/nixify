@@ -785,7 +785,7 @@ let
           default.${x86_64-unknown-linux-gnu} = true;
           default.${x86_64-unknown-linux-musl} = true;
 
-          selected = default // optionalAttrs (targets != null) targets;
+          selected = optionalAttrs (targets != null) (default // targets);
         in
         mapAttrs' (
           target: enabled:
