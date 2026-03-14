@@ -147,7 +147,6 @@ let
   callCraneWithDeps =
     {
       craneArgs ? { },
-      packageCraneArgs ? { },
       craneLib,
       overrideArgs,
     }:
@@ -164,7 +163,13 @@ let
               dummySrc
               ;
           }
-          // craneArgs;
+          // craneArgs
+          # Only enforce disallowedReferences on final builds (when cargoArtifacts
+          # are already present), not on the intermediate deps-only artifact whose
+          # compressed archive cannot have store paths stripped.
+          // optionalAttrs (!(craneArgs ? cargoArtifacts) && craneArgs ? disallowedReferences) {
+            disallowedReferences = [ ];
+          };
       } craneLib.buildDepsOnly;
     in
     trace "callCraneWithDeps" callCrane {
@@ -178,21 +183,19 @@ let
         passthru = {
           inherit cargoArtifacts;
         } // (craneArgs.passthru or { });
-      } // craneArgs // packageCraneArgs;
+      } // craneArgs;
     };
 
   # buildPackage builds using `craneLib`.
   buildPackage =
     {
       craneArgs ? { },
-      packageCraneArgs ? { },
       craneLib,
       overrideArgs,
     }:
     trace "buildPackage" callCraneWithDeps {
       inherit
         craneArgs
-        packageCraneArgs
         craneLib
         overrideArgs
         ;
@@ -498,6 +501,10 @@ let
                 in
                 (
                   {
+                    disallowedReferences = [
+                      pkgsCross.stdenv.cc
+                    ] ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
+
                     depsBuildBuild = [
                       pkgsCross.stdenv.cc
                     ];
@@ -739,11 +746,6 @@ let
               rustToolchainCross = rustToolchain;
             };
             craneArgs = targetArgs // craneArgs;
-            packageCraneArgs = optionalAttrs (!pkgsCross.stdenv.hostPlatform.isDarwin) {
-              disallowedReferences = [
-                pkgsCross.stdenv.cc
-              ] ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
-            };
           };
 
       targets' =
