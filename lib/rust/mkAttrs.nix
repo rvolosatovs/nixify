@@ -163,7 +163,7 @@ let
               dummySrc
               ;
           }
-          // removeAttrs craneArgs [ "disallowedReferences" ];
+          // craneArgs;
       } craneLib.buildDepsOnly;
     in
     trace "callCraneWithDeps" callCrane {
@@ -486,6 +486,7 @@ let
                               -t ${final.stdenv.cc} \
                               -t ${pkgsCross.stdenv.cc} \
                               -t ${rustToolchain} \
+                              ${optionalString pkgsCross.stdenv.hostPlatform.isWindows "-t ${pkgsCross.windows.pthreads}"} \
                               '{}' +
                           }
                           postInstallHooks+=(_nixifyRustStrip)
