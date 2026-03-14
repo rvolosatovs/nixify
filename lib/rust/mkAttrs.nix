@@ -163,7 +163,7 @@ let
               dummySrc
               ;
           }
-          // craneArgs;
+          // removeAttrs craneArgs [ "disallowedReferences" ];
       } craneLib.buildDepsOnly;
     in
     trace "callCraneWithDeps" callCrane {
