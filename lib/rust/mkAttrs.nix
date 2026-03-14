@@ -147,6 +147,7 @@ let
   callCraneWithDeps =
     {
       craneArgs ? { },
+      packageCraneArgs ? { },
       craneLib,
       overrideArgs,
     }:
@@ -163,7 +164,7 @@ let
               dummySrc
               ;
           }
-          // removeAttrs craneArgs [ "disallowedReferences" ];
+          // craneArgs;
       } craneLib.buildDepsOnly;
     in
     trace "callCraneWithDeps" callCrane {
@@ -177,19 +178,21 @@ let
         passthru = {
           inherit cargoArtifacts;
         } // (craneArgs.passthru or { });
-      } // craneArgs;
+      } // craneArgs // packageCraneArgs;
     };
 
   # buildPackage builds using `craneLib`.
   buildPackage =
     {
       craneArgs ? { },
+      packageCraneArgs ? { },
       craneLib,
       overrideArgs,
     }:
     trace "buildPackage" callCraneWithDeps {
       inherit
         craneArgs
+        packageCraneArgs
         craneLib
         overrideArgs
         ;
@@ -495,10 +498,6 @@ let
                 in
                 (
                   {
-                    disallowedReferences = [
-                      pkgsCross.stdenv.cc
-                    ] ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
-
                     depsBuildBuild = [
                       pkgsCross.stdenv.cc
                     ];
@@ -740,6 +739,11 @@ let
               rustToolchainCross = rustToolchain;
             };
             craneArgs = targetArgs // craneArgs;
+            packageCraneArgs = optionalAttrs (!pkgsCross.stdenv.hostPlatform.isDarwin) {
+              disallowedReferences = [
+                pkgsCross.stdenv.cc
+              ] ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
+            };
           };
 
       targets' =
