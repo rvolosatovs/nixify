@@ -68,8 +68,7 @@ genAttrs
     assert flakes.rust.hello-multibin.packages.${system} ? default;
     assert flakes.rust.hello.packages.${system} ? default;
     assert flakes.rust.workspace.packages.${system} ? default;
-    foldl
-      (checks: example: checks // (assertRustOutputs flakes.rust.${example} "rust-${example}" system))
-      { }
-      (attrNames flakes.rust)
+    foldl (
+      checks: example: checks // (assertRustOutputs flakes.rust.${example} "rust-${example}" system)
+    ) { } (attrNames flakes.rust)
   )

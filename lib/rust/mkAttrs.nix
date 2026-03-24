@@ -78,59 +78,57 @@ let
         )
       }";
 
-      vendorArgs =
-        {
-          src = if (dummySrc != null) then dummySrc else src;
-        }
-        // optionalAttrs (overrideVendorCargoPackage != null) {
-          inherit
-            overrideVendorCargoPackage
-            ;
-        }
-        // optionalAttrs (overrideVendorGitCheckout != null) {
-          inherit
-            overrideVendorGitCheckout
-            ;
-        }
-        // optionalAttrs (cargoLock != null) {
-          inherit
-            cargoLock
-            ;
-        };
+      vendorArgs = {
+        src = if (dummySrc != null) then dummySrc else src;
+      }
+      // optionalAttrs (overrideVendorCargoPackage != null) {
+        inherit
+          overrideVendorCargoPackage
+          ;
+      }
+      // optionalAttrs (overrideVendorGitCheckout != null) {
+        inherit
+          overrideVendorGitCheckout
+          ;
+      }
+      // optionalAttrs (cargoLock != null) {
+        inherit
+          cargoLock
+          ;
+      };
 
       cargoVendorDir = craneLib.vendorCargoDeps vendorArgs;
 
-      commonArgs =
-        {
-          inherit
-            doCheck
-            src
-            ;
+      commonArgs = {
+        inherit
+          doCheck
+          src
+          ;
 
-          pname = pname';
-          version = version';
+        pname = pname';
+        version = version';
 
-          cargoBuildCommand = "cargoWithProfile build ${buildArgs}";
-          cargoCheckExtraArgs = buildArgs;
-          cargoClippyExtraArgs = clippyArgs;
-          cargoDocExtraArgs = docArgs;
-          cargoNextestExtraArgs = nextestArgs;
-          cargoTestExtraArgs = testArgs;
-        }
-        // optionalAttrs (cargoLock != null) {
-          inherit
-            cargoLock
-            ;
-        }
-        //
-          optionalAttrs
-            (cargoLock != null || overrideVendorCargoPackage != null || overrideVendorGitCheckout != null)
-            {
-              inherit
-                cargoVendorDir
-                ;
-            }
-        // craneArgs;
+        cargoBuildCommand = "cargoWithProfile build ${buildArgs}";
+        cargoCheckExtraArgs = buildArgs;
+        cargoClippyExtraArgs = clippyArgs;
+        cargoDocExtraArgs = docArgs;
+        cargoNextestExtraArgs = nextestArgs;
+        cargoTestExtraArgs = testArgs;
+      }
+      // optionalAttrs (cargoLock != null) {
+        inherit
+          cargoLock
+          ;
+      }
+      //
+        optionalAttrs
+          (cargoLock != null || overrideVendorCargoPackage != null || overrideVendorGitCheckout != null)
+          {
+            inherit
+              cargoVendorDir
+              ;
+          }
+      // craneArgs;
 
       craneArgs' = commonArgs // buildOverrides overrideArgs commonArgs;
     in
@@ -176,8 +174,10 @@ let
 
         passthru = {
           inherit cargoArtifacts;
-        } // (craneArgs.passthru or { });
-      } // craneArgs;
+        }
+        // (craneArgs.passthru or { });
+      }
+      // craneArgs;
     };
 
   # buildPackage builds using `craneLib`.
@@ -247,31 +247,30 @@ let
         }
       );
 
-  checks =
-    {
-      clippy = callHostCraneCheckWithDeps { } hostCraneLib.cargoClippy;
-      doc = callHostCraneCheckWithDeps { } hostCraneLib.cargoDoc;
-      fmt = callHostCrane { } hostCraneLib.cargoFmt;
-      nextest = callHostCraneCheckWithDeps { } hostCraneLib.cargoNextest;
-    }
-    // (optionalAttrs (test ? doc && test.doc || test ? allTargets && test.allTargets)) {
-      doctest = callHostCraneCheckWithDeps {
-        cargoTestExtraArgs = "-j $NIX_BUILD_CORES ${
-          mkCargoFlags (
-            test
-            // {
-              allTargets = false;
-            }
-          )
-        }";
-      } hostCraneLib.cargoDocTest;
-    }
-    // (optionalAttrs (pathExists "${src}/Cargo.lock") {
-      # TODO: Use `cargoLock` if `Cargo.lock` missing
-      audit = callHostCrane {
-        advisory-db = audit.database;
-      } hostCraneLib.cargoAudit;
-    });
+  checks = {
+    clippy = callHostCraneCheckWithDeps { } hostCraneLib.cargoClippy;
+    doc = callHostCraneCheckWithDeps { } hostCraneLib.cargoDoc;
+    fmt = callHostCrane { } hostCraneLib.cargoFmt;
+    nextest = callHostCraneCheckWithDeps { } hostCraneLib.cargoNextest;
+  }
+  // (optionalAttrs (test ? doc && test.doc || test ? allTargets && test.allTargets)) {
+    doctest = callHostCraneCheckWithDeps {
+      cargoTestExtraArgs = "-j $NIX_BUILD_CORES ${
+        mkCargoFlags (
+          test
+          // {
+            allTargets = false;
+          }
+        )
+      }";
+    } hostCraneLib.cargoDocTest;
+  }
+  // (optionalAttrs (pathExists "${src}/Cargo.lock") {
+    # TODO: Use `cargoLock` if `Cargo.lock` missing
+    audit = callHostCrane {
+      advisory-db = audit.database;
+    } hostCraneLib.cargoAudit;
+  });
 
   buildHostPackage =
     craneArgs:
@@ -282,7 +281,8 @@ let
             name = "nixify-rust-host-strip-and-sign";
             propagatedBuildInputs = [
               final.removeReferencesTo
-            ] ++ optional final.stdenv.hostPlatform.isDarwin final.rcodesign;
+            ]
+            ++ optional final.stdenv.hostPlatform.isDarwin final.rcodesign;
           }
           (
             final.writeShellScript "nixify-rust-host-strip-and-sign.sh" (
@@ -406,309 +406,310 @@ let
               ${final.zig}/bin/zig cc ${optionalString pkgsCross.stdenv.buildPlatform.isDarwin ''--sysroot="$SDKROOT" -I"$SDKROOT/usr/include" -L"$SDKROOT/usr/lib" -F"$SDKROOT/System/Library/Frameworks"''} $@ -target ${target'}
             '';
 
-          targetArgs =
-            {
-              HOST_AR = "${final.stdenv.cc.targetPrefix}ar";
-              HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
+          targetArgs = {
+            HOST_AR = "${final.stdenv.cc.targetPrefix}ar";
+            HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
 
-              CARGO_BUILD_TARGET = target;
-            }
-            // (
-              if
-                pkgsCross.stdenv.hostPlatform.isDarwin
-              # Use `rust-lld` linker and Zig C compiler for Darwin targets
-              then
-                let
-                  removeReferencesTo = final.removeReferencesTo.overrideAttrs { postFixup = ""; }; # disable Darwin signing hooks
-                  hook =
-                    final.makeSetupHook
-                      {
-                        name = "nixify-rust-darwin-strip-and-sign";
-                        propagatedBuildInputs = [
-                          final.rcodesign
+            CARGO_BUILD_TARGET = target;
+          }
+          // (
+            if
+              pkgsCross.stdenv.hostPlatform.isDarwin
+            # Use `rust-lld` linker and Zig C compiler for Darwin targets
+            then
+              let
+                removeReferencesTo = final.removeReferencesTo.overrideAttrs { postFixup = ""; }; # disable Darwin signing hooks
+                hook =
+                  final.makeSetupHook
+                    {
+                      name = "nixify-rust-darwin-strip-and-sign";
+                      propagatedBuildInputs = [
+                        final.rcodesign
 
-                          removeReferencesTo
-                        ];
-                      }
-                      (
-                        final.writeShellScript "nixify-rust-darwin-strip-and-sign.sh" ''
-                          _nixifyRustDarwinStrip() {
-                            find "$out" -type f -exec remove-references-to \
-                              -t ${crossZigCC} \
-                              -t ${final.stdenv.cc} \
-                              -t ${final.zig} \
-                              -t ${macos-sdk} \
-                              -t ${rustToolchain} \
-                              '{}' +
-                          }
-                          _nixifyRustDarwinSign() {
-                            find "$out" -type f -exec sh -c "rcodesign sign '{}' || true" \;
-                          }
-                          postInstallHooks+=(_nixifyRustDarwinStrip)
-                          preFixupHooks+=(_nixifyRustDarwinSign)
-                        ''
-                      );
-                in
+                        removeReferencesTo
+                      ];
+                    }
+                    (
+                      final.writeShellScript "nixify-rust-darwin-strip-and-sign.sh" ''
+                        _nixifyRustDarwinStrip() {
+                          find "$out" -type f -exec remove-references-to \
+                            -t ${crossZigCC} \
+                            -t ${final.stdenv.cc} \
+                            -t ${final.zig} \
+                            -t ${macos-sdk} \
+                            -t ${rustToolchain} \
+                            '{}' +
+                        }
+                        _nixifyRustDarwinSign() {
+                          find "$out" -type f -exec sh -c "rcodesign sign '{}' || true" \;
+                        }
+                        postInstallHooks+=(_nixifyRustDarwinStrip)
+                        preFixupHooks+=(_nixifyRustDarwinSign)
+                      ''
+                    );
+              in
+              {
+                doNotSign = true;
+
+                depsBuildBuild = [
+                  crossZigCC
+                ];
+
+                nativeBuildInputs = [
+                  hook
+                ];
+
+                preBuild = ''
+                  export HOME=$(mktemp -d)
+                  export SDKROOT="${macos-sdk}"
+                '';
+
+                "CC_${target}" = "${target}-zigcc";
+
+                "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "rust-lld";
+              }
+            else
+              let
+                hook =
+                  final.makeSetupHook
+                    {
+                      name = "nixify-rust-strip";
+                      propagatedBuildInputs = [
+                        final.removeReferencesTo
+                      ];
+                    }
+                    (
+                      final.writeShellScript "nixify-rust-strip.sh" ''
+                        _nixifyRustStrip() {
+                          find "$out" -type f -exec remove-references-to \
+                            -t ${final.stdenv.cc} \
+                            -t ${pkgsCross.stdenv.cc} \
+                            -t ${rustToolchain} \
+                            '{}' +
+                        }
+                        postInstallHooks+=(_nixifyRustStrip)
+                      ''
+                    );
+              in
+              (
                 {
-                  doNotSign = true;
+                  disallowedReferences = [
+                    pkgsCross.stdenv.cc
+                  ]
+                  ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
 
                   depsBuildBuild = [
-                    crossZigCC
+                    pkgsCross.stdenv.cc
                   ];
 
                   nativeBuildInputs = [
                     hook
                   ];
 
-                  preBuild = ''
-                    export HOME=$(mktemp -d)
-                    export SDKROOT="${macos-sdk}"
+                  "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
+                  "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
+                }
+                # Use `mold` linker for Linux targets
+                // optionalAttrs (pkgsCross.stdenv.hostPlatform.isLinux && !final.mold.meta.broken) {
+                  nativeBuildInputs = [
+                    final.mold
+                    final.removeReferencesTo
+                  ];
+
+                  "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Clink-arg=-fuse-ld=mold";
+                }
+                # Always build static binaries for Windows targets
+                // optionalAttrs pkgsCross.stdenv.hostPlatform.isWindows {
+                  "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" =
+                    "-Ctarget-feature=+crt-static -L${pkgsCross.windows.pthreads}/lib";
+                }
+                # Use default linker for Wasm targets
+                // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasm) {
+                  "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
+                }
+              )
+          )
+          // optionalAttrs (final.stdenv.buildPlatform.config != pkgsCross.stdenv.hostPlatform.config) (
+            {
+              strictDeps = true;
+
+              nativeCheckInputs = optional useEmu (
+                if pkgsCross.stdenv.hostPlatform.isWasm then
+                  final.wasmtime
+                else if pkgsCross.stdenv.hostPlatform.isWindows then
+                  final.wine64
+                else
+                  final.qemu
+              );
+            }
+            // optionalAttrs (doCheck && target == aarch64-apple-darwin) {
+              doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
+            }
+            //
+              optionalAttrs
+                (doCheck && pkgsCross.stdenv.hostPlatform.isDarwin && !final.stdenv.buildPlatform.isDarwin)
+                {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` from non-Darwin platform" false;
+                }
+            // optionalAttrs (doCheck && useEmu) (
+              if target == arm-unknown-linux-gnueabihf then
+                {
+                  CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_RUNNER = "qemu-arm";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == arm-unknown-linux-musleabihf then
+                {
+                  CARGO_TARGET_ARM_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == armv7-unknown-linux-gnueabihf then
+                {
+                  CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_RUNNER = "qemu-arm";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == armv7-unknown-linux-musleabihf then
+                {
+                  CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == aarch64-linux-android then
+                {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
+                }
+              else if target == aarch64-unknown-linux-gnu then
+                {
+                  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-aarch64";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == aarch64-unknown-linux-musl then
+                {
+                  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-aarch64";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == mips-unknown-linux-gnu then
+                {
+                  CARGO_TARGET_MIPS_UNKNOWN_LINUX_GNU_RUNNER = "qemu-mips";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == mips64-unknown-linux-gnuabi64 then
+                {
+                  CARGO_TARGET_MIPS64_UNKNOWN_LINUX_GNUABI64_RUNNER = "qemu-mips64";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == mips64el-unknown-linux-gnuabi64 then
+                {
+                  CARGO_TARGET_MIPS64EL_UNKNOWN_LINUX_GNUABI64_RUNNER = "qemu-mips64el";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == mipsel-unknown-linux-gnu then
+                {
+                  CARGO_TARGET_MIPSEL_UNKNOWN_LINUX_GNU_RUNNER = "qemu-mipsel";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == powerpc64-unknown-linux-gnu then
+                {
+                  CARGO_TARGET_POWERPC64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-ppc64";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == powerpc64-unknown-linux-musl then
+                {
+                  CARGO_TARGET_POWERPC64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-ppc64";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == powerpc64le-unknown-linux-gnu then
+                {
+                  CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_GNU_RUNNER = "qemu-ppc64le";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == powerpc64le-unknown-linux-musl then
+                {
+                  CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-ppc64le";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == riscv64gc-unknown-linux-gnu then
+                {
+                  CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_RUNNER = "qemu-riscv64";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == s390x-unknown-linux-gnu then
+                {
+                  CARGO_TARGET_S390X_UNKNOWN_LINUX_GNU_RUNNER = "qemu-s390x";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == wasm32-unknown-unknown then
+                {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
+                }
+              else if target == wasm32-wasip1 then
+                {
+                  CARGO_TARGET_WASM32_WASIP1_RUNNER = "wasmtime run -C cache=n";
+                }
+              else if target == wasm32-wasip2 then
+                {
+                  CARGO_TARGET_WASM32_WASIP2_RUNNER = "wasmtime run -C cache=n";
+                }
+              else if target == x86_64-unknown-linux-gnu then
+                {
+                  CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-x86_64";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == x86_64-unknown-linux-musl then
+                {
+                  CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-x86_64";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
+                }
+              else if target == x86_64-pc-windows-gnu then
+                {
+                  # TODO: This works locally, but for some reason does not within the sanbox
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
+
+                  CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER = final.writeScript "wine-wrapper" ''
+                    export WINEPREFIX="$(mktemp -d)"
+                    exec wine64 $@
                   '';
-
-                  "CC_${target}" = "${target}-zigcc";
-
-                  "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "rust-lld";
                 }
               else
-                let
-                  hook =
-                    final.makeSetupHook
-                      {
-                        name = "nixify-rust-strip";
-                        propagatedBuildInputs = [
-                          final.removeReferencesTo
-                        ];
-                      }
-                      (
-                        final.writeShellScript "nixify-rust-strip.sh" ''
-                          _nixifyRustStrip() {
-                            find "$out" -type f -exec remove-references-to \
-                              -t ${final.stdenv.cc} \
-                              -t ${pkgsCross.stdenv.cc} \
-                              -t ${rustToolchain} \
-                              '{}' +
-                          }
-                          postInstallHooks+=(_nixifyRustStrip)
-                        ''
-                      );
-                in
-                (
-                  {
-                    disallowedReferences = [
-                      pkgsCross.stdenv.cc
-                    ] ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
-
-                    depsBuildBuild = [
-                      pkgsCross.stdenv.cc
-                    ];
-
-                    nativeBuildInputs = [
-                      hook
-                    ];
-
-                    "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
-                    "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
-                  }
-                  # Use `mold` linker for Linux targets
-                  // optionalAttrs (pkgsCross.stdenv.hostPlatform.isLinux && !final.mold.meta.broken) {
-                    nativeBuildInputs = [
-                      final.mold
-                      final.removeReferencesTo
-                    ];
-
-                    "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Clink-arg=-fuse-ld=mold";
-                  }
-                  # Always build static binaries for Windows targets
-                  // optionalAttrs pkgsCross.stdenv.hostPlatform.isWindows {
-                    "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Ctarget-feature=+crt-static -L${pkgsCross.windows.pthreads}/lib";
-                  }
-                  # Use default linker for Wasm targets
-                  // optionalAttrs (!pkgsCross.stdenv.hostPlatform.isWasm) {
-                    "CARGO_TARGET_${toUpper (kebab2snake target)}_LINKER" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
-                  }
-                )
+                warn
+                  "do not know which test runner to use for target `${target}`, set `CARGO_TARGET_${toUpper (kebab2snake target)}_RUNNER` to appropriate `qemu` binary name"
+                  { }
             )
-            // optionalAttrs (final.stdenv.buildPlatform.config != pkgsCross.stdenv.hostPlatform.config) (
-              {
-                strictDeps = true;
-
-                nativeCheckInputs = optional useEmu (
-                  if pkgsCross.stdenv.hostPlatform.isWasm then
-                    final.wasmtime
-                  else if pkgsCross.stdenv.hostPlatform.isWindows then
-                    final.wine64
-                  else
-                    final.qemu
-                );
-              }
-              // optionalAttrs (doCheck && target == aarch64-apple-darwin) {
-                doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
-              }
-              //
-                optionalAttrs
-                  (doCheck && pkgsCross.stdenv.hostPlatform.isDarwin && !final.stdenv.buildPlatform.isDarwin)
-                  {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` from non-Darwin platform" false;
-                  }
-              // optionalAttrs (doCheck && useEmu) (
-                if target == arm-unknown-linux-gnueabihf then
-                  {
-                    CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_RUNNER = "qemu-arm";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == arm-unknown-linux-musleabihf then
-                  {
-                    CARGO_TARGET_ARM_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == armv7-unknown-linux-gnueabihf then
-                  {
-                    CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_RUNNER = "qemu-arm";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == armv7-unknown-linux-musleabihf then
-                  {
-                    CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == aarch64-linux-android then
-                  {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
-                  }
-                else if target == aarch64-unknown-linux-gnu then
-                  {
-                    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-aarch64";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == aarch64-unknown-linux-musl then
-                  {
-                    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-aarch64";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == mips-unknown-linux-gnu then
-                  {
-                    CARGO_TARGET_MIPS_UNKNOWN_LINUX_GNU_RUNNER = "qemu-mips";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == mips64-unknown-linux-gnuabi64 then
-                  {
-                    CARGO_TARGET_MIPS64_UNKNOWN_LINUX_GNUABI64_RUNNER = "qemu-mips64";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == mips64el-unknown-linux-gnuabi64 then
-                  {
-                    CARGO_TARGET_MIPS64EL_UNKNOWN_LINUX_GNUABI64_RUNNER = "qemu-mips64el";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == mipsel-unknown-linux-gnu then
-                  {
-                    CARGO_TARGET_MIPSEL_UNKNOWN_LINUX_GNU_RUNNER = "qemu-mipsel";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == powerpc64-unknown-linux-gnu then
-                  {
-                    CARGO_TARGET_POWERPC64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-ppc64";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == powerpc64-unknown-linux-musl then
-                  {
-                    CARGO_TARGET_POWERPC64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-ppc64";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == powerpc64le-unknown-linux-gnu then
-                  {
-                    CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_GNU_RUNNER = "qemu-ppc64le";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == powerpc64le-unknown-linux-musl then
-                  {
-                    CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-ppc64le";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == riscv64gc-unknown-linux-gnu then
-                  {
-                    CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_RUNNER = "qemu-riscv64";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == s390x-unknown-linux-gnu then
-                  {
-                    CARGO_TARGET_S390X_UNKNOWN_LINUX_GNU_RUNNER = "qemu-s390x";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == wasm32-unknown-unknown then
-                  {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
-                  }
-                else if target == wasm32-wasip1 then
-                  {
-                    CARGO_TARGET_WASM32_WASIP1_RUNNER = "wasmtime run -C cache=n";
-                  }
-                else if target == wasm32-wasip2 then
-                  {
-                    CARGO_TARGET_WASM32_WASIP2_RUNNER = "wasmtime run -C cache=n";
-                  }
-                else if target == x86_64-unknown-linux-gnu then
-                  {
-                    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-x86_64";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == x86_64-unknown-linux-musl then
-                  {
-                    CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-x86_64";
-                  }
-                  // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                  }
-                else if target == x86_64-pc-windows-gnu then
-                  {
-                    # TODO: This works locally, but for some reason does not within the sanbox
-                    doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
-
-                    CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER = final.writeScript "wine-wrapper" ''
-                      export WINEPREFIX="$(mktemp -d)"
-                      exec wine64 $@
-                    '';
-                  }
-                else
-                  warn
-                    "do not know which test runner to use for target `${target}`, set `CARGO_TARGET_${toUpper (kebab2snake target)}_RUNNER` to appropriate `qemu` binary name"
-                    { }
-              )
-            );
+          );
         in
         trace' "buildPackageFor"
           {
