@@ -97,12 +97,9 @@ let
           ) attrs;
           deps = collect (dep: dep ? path && normalise' dep.path != src) depAttrs;
         in
-        trace' "collectPathDeps" {
-          inherit
-            depAttrs
-            deps
-            ;
-        } map ({ path, ... }: if hasPrefix "/" path then path else "${src}/${path}") deps;
+        trace' "collectPathDeps" { inherit depAttrs deps; } map (
+          { path, ... }: if hasPrefix "/" path then path else "${src}/${path}"
+        ) deps;
 
       pathDeps =
         collectPathDeps cargoToml

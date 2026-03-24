@@ -1,8 +1,4 @@
-{
-  self,
-  nixlib,
-  ...
-}:
+{ self, nixlib, ... }:
 with nixlib.lib;
 with builtins;
 {
@@ -20,8 +16,6 @@ mapAttrs (
       depsBuildBuild = (attrs.depsBuildBuild or [ ]) ++ depsBuildBuild;
       nativeBuildInputs = (attrs.nativeBuildInputs or [ ]) ++ nativeBuildInputs;
     }
-    // optionalAttrs (env != null) {
-      env = (attrs.env or { }) // env;
-    }
+    // optionalAttrs (env != null) { env = (attrs.env or { }) // env; }
   )
 )

@@ -2,17 +2,11 @@
   inputs.nixify.url = "github:rvolosatovs/nixify";
 
   outputs =
-    {
-      self,
-      nixify,
-      ...
-    }:
+    { self, nixify, ... }:
     nixify.lib.rust.mkFlake {
       src = self;
 
-      excludePaths = [
-        "rust-toolchain.toml"
-      ];
+      excludePaths = [ "rust-toolchain.toml" ];
 
       nixpkgsConfig.allowUnfree = true;
 

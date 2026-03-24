@@ -69,10 +69,7 @@ let
       channel' = channels.${channel};
       targets' = map (target: fenix.targets.${target}.${channel'}.rust-std) targets;
       toolchain = fenix.combine (
-        [
-          (fenix.${channel'}.withComponents (components ++ [ "cargo" ]))
-        ]
-        ++ targets'
+        [ (fenix.${channel'}.withComponents (components ++ [ "cargo" ])) ] ++ targets'
       );
     in
     if channels ? ${channel} then
@@ -155,9 +152,7 @@ in
 
   defaultBuildOverrides = _: const { };
 
-  defaultExcludePaths = defaultExcludePaths ++ [
-    "rust-toolchain.toml"
-  ];
+  defaultExcludePaths = defaultExcludePaths ++ [ "rust-toolchain.toml" ];
 
   # From https://doc.rust-lang.org/nightly/rustc/platform-support.html
   targets.aarch64-apple-darwin = "aarch64-apple-darwin";

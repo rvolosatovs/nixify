@@ -49,11 +49,7 @@
       ];
 
       withDevShells =
-        {
-          pkgs,
-          devShells,
-          ...
-        }:
+        { pkgs, devShells, ... }:
         extendDerivations {
           buildInputs = with pkgs; [
             skopeo

@@ -39,12 +39,8 @@ with self.lib;
 }:
 let
   commonArgs =
-    optionalAttrs (pname != null) {
-      inherit pname;
-    }
-    // optionalAttrs (version != null) {
-      inherit version;
-    }
+    optionalAttrs (pname != null) { inherit pname; }
+    // optionalAttrs (version != null) { inherit version; }
     // optionalAttrs (src != null) {
       src = filterSource {
         inherit src;
@@ -54,12 +50,7 @@ let
     };
 in
 {
-  overlays = withOverlays (
-    commonArgs
-    // {
-      overlays = { };
-    }
-  );
+  overlays = withOverlays (commonArgs // { overlays = { }; });
 }
 // flake-utils.lib.eachSystem systems (
   system:
@@ -68,58 +59,30 @@ in
       import
         (if system == aarch64-darwin || system == x86_64-darwin then nixpkgs-darwin else nixpkgs-nixos)
         {
-          inherit
-            overlays
-            system
-            ;
+          inherit overlays system;
           config = nixpkgsConfig;
         };
 
     commonPkgsArgs = commonArgs // {
-      inherit
-        pkgs
-        ;
+      inherit pkgs;
     };
 
-    checks = withChecks (
-      commonPkgsArgs
-      // {
-        checks = { };
-      }
-    );
+    checks = withChecks (commonPkgsArgs // { checks = { }; });
 
-    formatter = withFormatter (
-      commonPkgsArgs
-      // {
-        formatter = pkgs.nixfmt;
-      }
-    );
+    formatter = withFormatter (commonPkgsArgs // { formatter = pkgs.nixfmt; });
 
-    packages = withPackages (
-      commonPkgsArgs
-      // {
-        packages = { };
-      }
-    );
+    packages = withPackages (commonPkgsArgs // { packages = { }; });
   in
   {
-    inherit
-      formatter
-      checks
-      packages
-      ;
+    inherit formatter checks packages;
 
     apps = withApps (
       commonPkgsArgs
       // {
-        inherit
-          packages
-          ;
+        inherit packages;
 
         apps = optionalAttrs (packages ? default) {
-          default = flake-utils.lib.mkApp {
-            drv = packages.default;
-          };
+          default = flake-utils.lib.mkApp { drv = packages.default; };
         };
       }
     );
@@ -127,24 +90,14 @@ in
     devShells = withDevShells (
       commonPkgsArgs
       // {
-        inherit
-          formatter
-          checks
-          packages
-          ;
+        inherit formatter checks packages;
 
         devShells.default = pkgs.mkShell (
           {
-            packages = [
-              formatter
-            ];
+            packages = [ formatter ];
           }
-          // optionalAttrs (pname != null) {
-            inherit pname;
-          }
-          // optionalAttrs (version != null) {
-            inherit version;
-          }
+          // optionalAttrs (pname != null) { inherit pname; }
+          // optionalAttrs (version != null) { inherit version; }
         );
       }
     );
