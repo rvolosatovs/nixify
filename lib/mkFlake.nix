@@ -91,7 +91,7 @@ in
     formatter = withFormatter (
       commonPkgsArgs
       // {
-        formatter = pkgs.nixfmt-rfc-style;
+        formatter = pkgs.nixfmt;
       }
     );
 
