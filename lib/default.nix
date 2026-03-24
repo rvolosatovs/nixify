@@ -28,9 +28,7 @@ let
           inherit exclude;
           root = src;
         }
-        // optionalAttrs (include != null) {
-          inherit include;
-        }
+        // optionalAttrs (include != null) { inherit include; }
       );
 
     readTOML = file: fromTOML (readFile file);

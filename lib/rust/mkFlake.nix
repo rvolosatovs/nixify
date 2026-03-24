@@ -116,33 +116,20 @@ self.lib.mkFlake {
           apps
           # TODO: Add cross apps
           // optionalAttrs (packages ? "${pname}") {
-            ${pname} = flake-utils.lib.mkApp {
-              drv = packages."${pname}";
-            };
+            ${pname} = flake-utils.lib.mkApp { drv = packages."${pname}"; };
           }
           // optionalAttrs (packages ? "${pname}-debug") {
-            "${pname}-debug" = flake-utils.lib.mkApp {
-              drv = packages."${pname}-debug";
-            };
+            "${pname}-debug" = flake-utils.lib.mkApp { drv = packages."${pname}-debug"; };
           };
       }
     );
 
   withChecks =
-    {
-      checks,
-      pkgs,
-      ...
-    }@cx:
+    { checks, pkgs, ... }@cx:
     let
       attrs = mkAttrs' pkgs;
     in
-    withChecks (
-      cx
-      // {
-        checks = checks // attrs.checks;
-      }
-    );
+    withChecks (cx // { checks = checks // attrs.checks; });
 
   withDevShells =
     {
@@ -158,11 +145,7 @@ self.lib.mkFlake {
     withDevShells (
       cx
       // {
-        devShells = extendDerivations {
-          nativeBuildInputs = [
-            attrs.hostRustToolchain
-          ];
-        } devShells;
+        devShells = extendDerivations { nativeBuildInputs = [ attrs.hostRustToolchain ]; } devShells;
       }
     );
 
@@ -186,11 +169,7 @@ self.lib.mkFlake {
     );
 
   withPackages =
-    {
-      packages,
-      pkgs,
-      ...
-    }@cx:
+    { packages, pkgs, ... }@cx:
     let
       attrs = mkAttrs' pkgs;
       attrPkgs = optionalAttrs (attrs ? packages) attrs.packages;
@@ -213,11 +192,7 @@ self.lib.mkFlake {
 
         buildLib = attrs.lib;
         packages =
-          packages
-          // attrPkgs
-          // optionalAttrs (attrPkgs ? ${pname}) {
-            default = attrPkgs.${pname};
-          };
+          packages // attrPkgs // optionalAttrs (attrPkgs ? ${pname}) { default = attrPkgs.${pname}; };
       }
     );
 }

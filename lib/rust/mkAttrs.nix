@@ -48,12 +48,7 @@ let
 
   rustupToolchain' = rustupToolchain.toolchain or { };
 
-  bins = crateBins {
-    inherit
-      build
-      src
-      ;
-  };
+  bins = crateBins { inherit build src; };
 
   callCrane =
     {
@@ -81,29 +76,14 @@ let
       vendorArgs = {
         src = if (dummySrc != null) then dummySrc else src;
       }
-      // optionalAttrs (overrideVendorCargoPackage != null) {
-        inherit
-          overrideVendorCargoPackage
-          ;
-      }
-      // optionalAttrs (overrideVendorGitCheckout != null) {
-        inherit
-          overrideVendorGitCheckout
-          ;
-      }
-      // optionalAttrs (cargoLock != null) {
-        inherit
-          cargoLock
-          ;
-      };
+      // optionalAttrs (overrideVendorCargoPackage != null) { inherit overrideVendorCargoPackage; }
+      // optionalAttrs (overrideVendorGitCheckout != null) { inherit overrideVendorGitCheckout; }
+      // optionalAttrs (cargoLock != null) { inherit cargoLock; };
 
       cargoVendorDir = craneLib.vendorCargoDeps vendorArgs;
 
       commonArgs = {
-        inherit
-          doCheck
-          src
-          ;
+        inherit doCheck src;
 
         pname = pname';
         version = version';
@@ -115,19 +95,10 @@ let
         cargoNextestExtraArgs = nextestArgs;
         cargoTestExtraArgs = testArgs;
       }
-      // optionalAttrs (cargoLock != null) {
-        inherit
-          cargoLock
-          ;
-      }
-      //
-        optionalAttrs
-          (cargoLock != null || overrideVendorCargoPackage != null || overrideVendorGitCheckout != null)
-          {
-            inherit
-              cargoVendorDir
-              ;
-          }
+      // optionalAttrs (cargoLock != null) { inherit cargoLock; }
+      // optionalAttrs (
+        cargoLock != null || overrideVendorCargoPackage != null || overrideVendorGitCheckout != null
+      ) { inherit cargoVendorDir; }
       // craneArgs;
 
       craneArgs' = commonArgs // buildOverrides overrideArgs commonArgs;
@@ -150,25 +121,17 @@ let
     }:
     let
       cargoArtifacts = callCrane {
-        inherit
-          craneLib
-          overrideArgs
-          ;
+        inherit craneLib overrideArgs;
         craneArgs =
           optionalAttrs (dummySrc != null) {
             src = null;
-            inherit
-              dummySrc
-              ;
+            inherit dummySrc;
           }
           // craneArgs;
       } craneLib.buildDepsOnly;
     in
     trace "callCraneWithDeps" callCrane {
-      inherit
-        craneLib
-        overrideArgs
-        ;
+      inherit craneLib overrideArgs;
       craneArgs = {
         inherit cargoArtifacts;
 
@@ -188,11 +151,7 @@ let
       overrideArgs,
     }:
     trace "buildPackage" callCraneWithDeps {
-      inherit
-        craneArgs
-        craneLib
-        overrideArgs
-        ;
+      inherit craneArgs craneLib overrideArgs;
     } craneLib.buildPackage;
 in
 final:
@@ -207,45 +166,31 @@ let
 
   mkHostArgs =
     craneArgs:
-    trace' "mkHostArgs"
-      {
-        inherit craneArgs;
-      }
-      {
-        inherit craneArgs;
+    trace' "mkHostArgs" { inherit craneArgs; } {
+      inherit craneArgs;
 
-        craneLib = hostCraneLib;
+      craneLib = hostCraneLib;
 
-        overrideArgs.pkgs = final;
-        overrideArgs.craneLib = hostCraneLib;
-        overrideArgs.rustToolchain = hostRustToolchain;
-      };
+      overrideArgs.pkgs = final;
+      overrideArgs.craneLib = hostCraneLib;
+      overrideArgs.rustToolchain = hostRustToolchain;
+    };
 
   callHostCrane =
-    craneArgs:
-    trace' "callHostCrane" {
-      inherit craneArgs;
-    } callCrane (mkHostArgs craneArgs);
+    craneArgs: trace' "callHostCrane" { inherit craneArgs; } callCrane (mkHostArgs craneArgs);
 
   callHostCraneWithDeps =
     craneArgs:
-    trace' "callHostCraneWithDeps" {
-      inherit craneArgs;
-    } callCraneWithDeps (mkHostArgs craneArgs);
+    trace' "callHostCraneWithDeps" { inherit craneArgs; } callCraneWithDeps (mkHostArgs craneArgs);
 
   callHostCraneCheckWithDeps =
     craneArgs:
-    trace' "callHostCraneCheckWithDeps"
-      {
-        inherit craneArgs;
+    trace' "callHostCraneCheckWithDeps" { inherit craneArgs; } callHostCraneWithDeps (
+      craneArgs
+      // {
+        doCheck = true; # without performing the actual testing, this check is useless
       }
-      callHostCraneWithDeps
-      (
-        craneArgs
-        // {
-          doCheck = true; # without performing the actual testing, this check is useless
-        }
-      );
+    );
 
   checks = {
     clippy = callHostCraneCheckWithDeps { } hostCraneLib.cargoClippy;
@@ -267,9 +212,7 @@ let
   }
   // (optionalAttrs (pathExists "${src}/Cargo.lock") {
     # TODO: Use `cargoLock` if `Cargo.lock` missing
-    audit = callHostCrane {
-      advisory-db = audit.database;
-    } hostCraneLib.cargoAudit;
+    audit = callHostCrane { advisory-db = audit.database; } hostCraneLib.cargoAudit;
   });
 
   buildHostPackage =
@@ -303,20 +246,9 @@ let
             )
           );
     in
-    trace' "buildHostPackage"
-      {
-        inherit craneArgs;
-      }
-      callHostCraneWithDeps
-      (
-        craneArgs
-        // {
-          nativeBuildInputs = [
-            hook
-          ];
-        }
-      )
-      hostCraneLib.buildPackage;
+    trace' "buildHostPackage" { inherit craneArgs; } callHostCraneWithDeps (
+      craneArgs // { nativeBuildInputs = [ hook ]; }
+    ) hostCraneLib.buildPackage;
 
   hostBin = buildHostPackage commonReleaseArgs;
   hostDebugBin = buildHostPackage commonDebugArgs;
@@ -328,40 +260,31 @@ let
 
       rustupToolchainWithTarget =
         target:
-        trace' "rustupToolchainWithTarget"
-          {
-            inherit target;
-          }
-          (
-            if any (eq target) rustupToolchainTargets then
-              rustupToolchain'
-            else if target == aarch64-apple-darwin && prev.stdenv.buildPlatform.system == aarch64-darwin then
-              rustupToolchain'
-            else if
-              target == aarch64-unknown-linux-gnu && prev.stdenv.buildPlatform.system == aarch64-linux
-            then
-              rustupToolchain'
-            else if target == x86_64-apple-darwin && prev.stdenv.buildPlatform.system == x86_64-darwin then
-              rustupToolchain'
-            else if target == x86_64-pc-windows-gnu && prev.stdenv.buildPlatform.system == x86_64-windows then
-              rustupToolchain'
-            else if target == x86_64-unknown-linux-gnu && prev.stdenv.buildPlatform.system == x86_64-linux then
-              rustupToolchain'
-            else
-              rustupToolchain'
-              // {
-                targets = rustupToolchainTargets ++ [ target ];
-              }
-          );
+        trace' "rustupToolchainWithTarget" { inherit target; } (
+          if any (eq target) rustupToolchainTargets then
+            rustupToolchain'
+          else if target == aarch64-apple-darwin && prev.stdenv.buildPlatform.system == aarch64-darwin then
+            rustupToolchain'
+          else if
+            target == aarch64-unknown-linux-gnu && prev.stdenv.buildPlatform.system == aarch64-linux
+          then
+            rustupToolchain'
+          else if target == x86_64-apple-darwin && prev.stdenv.buildPlatform.system == x86_64-darwin then
+            rustupToolchain'
+          else if target == x86_64-pc-windows-gnu && prev.stdenv.buildPlatform.system == x86_64-windows then
+            rustupToolchain'
+          else if target == x86_64-unknown-linux-gnu && prev.stdenv.buildPlatform.system == x86_64-linux then
+            rustupToolchain'
+          else
+            rustupToolchain' // { targets = rustupToolchainTargets ++ [ target ]; }
+        );
 
       rustToolchainFor =
         target:
         let
           rustupToolchain = rustupToolchainWithTarget target;
         in
-        trace' "rustupToolchainFor" {
-          inherit target;
-        } withToolchain final rustupToolchain;
+        trace' "rustupToolchainFor" { inherit target; } withToolchain final rustupToolchain;
 
       # buildPackageFor builds for `target`.
       # `extraArgs` are passed through to `buildPackage` verbatim.
@@ -451,13 +374,9 @@ let
               {
                 doNotSign = true;
 
-                depsBuildBuild = [
-                  crossZigCC
-                ];
+                depsBuildBuild = [ crossZigCC ];
 
-                nativeBuildInputs = [
-                  hook
-                ];
+                nativeBuildInputs = [ hook ];
 
                 preBuild = ''
                   export HOME=$(mktemp -d)
@@ -474,9 +393,7 @@ let
                   final.makeSetupHook
                     {
                       name = "nixify-rust-strip";
-                      propagatedBuildInputs = [
-                        final.removeReferencesTo
-                      ];
+                      propagatedBuildInputs = [ final.removeReferencesTo ];
                     }
                     (
                       final.writeShellScript "nixify-rust-strip.sh" ''
@@ -498,13 +415,9 @@ let
                   ]
                   ++ optional pkgsCross.stdenv.hostPlatform.isWindows pkgsCross.windows.pthreads;
 
-                  depsBuildBuild = [
-                    pkgsCross.stdenv.cc
-                  ];
+                  depsBuildBuild = [ pkgsCross.stdenv.cc ];
 
-                  nativeBuildInputs = [
-                    hook
-                  ];
+                  nativeBuildInputs = [ hook ];
 
                   "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
                   "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
@@ -581,9 +494,7 @@ let
                   doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                 }
               else if target == aarch64-linux-android then
-                {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
-                }
+                { doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false; }
               else if target == aarch64-unknown-linux-gnu then
                 {
                   CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-aarch64";
@@ -669,17 +580,11 @@ let
                   doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                 }
               else if target == wasm32-unknown-unknown then
-                {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
-                }
+                { doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false; }
               else if target == wasm32-wasip1 then
-                {
-                  CARGO_TARGET_WASM32_WASIP1_RUNNER = "wasmtime run -C cache=n";
-                }
+                { CARGO_TARGET_WASM32_WASIP1_RUNNER = "wasmtime run -C cache=n"; }
               else if target == wasm32-wasip2 then
-                {
-                  CARGO_TARGET_WASM32_WASIP2_RUNNER = "wasmtime run -C cache=n";
-                }
+                { CARGO_TARGET_WASM32_WASIP2_RUNNER = "wasmtime run -C cache=n"; }
               else if target == x86_64-unknown-linux-gnu then
                 {
                   CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-x86_64";
@@ -724,15 +629,10 @@ let
           }
           buildPackage
           {
-            inherit
-              craneLib
-              ;
+            inherit craneLib;
 
             overrideArgs = {
-              inherit
-                pkgsCross
-                target
-                ;
+              inherit pkgsCross target;
               pkgs = final;
               craneLib = hostCraneLib;
               craneLibCross = craneLib;
@@ -762,17 +662,9 @@ let
                   passthru =
                     passthru
                     // {
-                      inherit
-                        pkgsCross
-                        rustToolchain
-                        target
-                        ;
+                      inherit pkgsCross rustToolchain target;
                     }
-                    // optionalAttrs (craneArgs ? CARGO_PROFILE) {
-                      inherit (craneArgs)
-                        CARGO_PROFILE
-                        ;
-                    };
+                    // optionalAttrs (craneArgs ? CARGO_PROFILE) { inherit (craneArgs) CARGO_PROFILE; };
                 };
 
               buildPackageFor' =
@@ -838,35 +730,22 @@ let
                 };
                 config.Env = [ "PATH=${pkg}/bin" ];
               }
-              // optionalAttrs (bins' ? ${pname'}) {
-                config.Cmd = [ pname' ];
-              }
-              // optionalAttrs (length bins == 1) {
-                config.Cmd = bins;
-              }
+              // optionalAttrs (bins' ? ${pname'}) { config.Cmd = [ pname' ]; }
+              // optionalAttrs (length bins == 1) { config.Cmd = bins; }
               // optionalAttrs (ociArchitecture ? ${pkg.passthru.target}) {
                 architecture = ociArchitecture.${pkg.passthru.target};
               }
             );
           in
-          nameValuePair "${target}-oci" (
-            img
-            // {
-              passthru = pkg.passthru // img.passthru;
-            }
-          )
+          nameValuePair "${target}-oci" (img // { passthru = pkg.passthru // img.passthru; })
         ) targetBins
       );
 
       buildImageDir =
         pkg:
-        final.runCommand "${pkg.imageName}-${pkg.imageTag}-dir"
-          {
-            nativeBuildInputs = [ final.skopeo ];
-          }
-          ''
-            skopeo copy --insecure-policy --tmpdir="$(mktemp -d)" docker-archive://${pkg} dir:$out
-          '';
+        final.runCommand "${pkg.imageName}-${pkg.imageTag}-dir" { nativeBuildInputs = [ final.skopeo ]; } ''
+          skopeo copy --insecure-policy --tmpdir="$(mktemp -d)" docker-archive://${pkg} dir:$out
+        '';
 
       targetImageDirs = (
         mapAttrs' (
@@ -874,21 +753,14 @@ let
           let
             manifest = buildImageDir pkg;
           in
-          nameValuePair "${target}-dir" (
-            manifest
-            // {
-              passthru = pkg.passthru;
-            }
-          )
+          nameValuePair "${target}-dir" (manifest // { passthru = pkg.passthru; })
         ) targetImages
       );
 
       buildImageManifest =
         pkg:
         final.runCommand "${pkg.imageName}-${pkg.imageTag}-manifest.json"
-          {
-            nativeBuildInputs = [ final.skopeo ];
-          }
+          { nativeBuildInputs = [ final.skopeo ]; }
           ''
             skopeo inspect --raw --tmpdir="$(mktemp -d)" docker-archive://${pkg} > $out
           '';
@@ -899,12 +771,7 @@ let
           let
             manifest = buildImageManifest pkg;
           in
-          nameValuePair "${target}-manifest" (
-            manifest
-            // {
-              passthru = pkg.passthru;
-            }
-          )
+          nameValuePair "${target}-manifest" (manifest // { passthru = pkg.passthru; })
         ) targetImages
       );
 
@@ -957,10 +824,7 @@ let
         );
 
       multiArchImage =
-        final.runCommand "${pname'}-multi-arch"
-          {
-            nativeBuildInputs = [ final.skopeo ];
-          }
+        final.runCommand "${pname'}-multi-arch" { nativeBuildInputs = [ final.skopeo ]; }
           ''
             skopeo copy --all --insecure-policy --tmpdir="$(mktemp -d)" dir:${multiArchDir} oci-archive:$out:${pname'}:${version'}
           '';

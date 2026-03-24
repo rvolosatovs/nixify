@@ -1,8 +1,4 @@
-{
-  self,
-  nixlib,
-  ...
-}:
+{ self, nixlib, ... }:
 with builtins;
 with nixlib.lib;
 with self.lib.rust;

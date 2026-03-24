@@ -2,11 +2,7 @@
   inputs.nixify.url = "github:rvolosatovs/nixify";
 
   outputs =
-    {
-      self,
-      nixify,
-      ...
-    }:
+    { self, nixify, ... }:
     nixify.lib.rust.mkFlake {
       src = self;
 
