@@ -8,6 +8,7 @@
 
       nixpkgsConfig.allowUnfree = true;
 
+      # these match the defaults; passing `excludePaths` replaces (not extends) them
       excludePaths = [
         ".gitignore"
         "flake.lock"
