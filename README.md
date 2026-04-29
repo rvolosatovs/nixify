@@ -44,11 +44,14 @@ Simple, yet extensible, batteries-included Nix flake bootstrapping library for r
 | **`riscv64gc-unknown-linux-gnu`**    |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 | **`s390x-unknown-linux-gnu`**        |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 |     **`wasm32-unknown-unknown`**     |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
-|           **`wasm32-wasi`**          |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|         **`wasm32-wasip1`**          |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+|         **`wasm32-wasip2`**          |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 |       **`x86_64-apple-darwin`**      |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 |      **`x86_64-pc-windows-gnu`**     |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 |    **`x86_64-unknown-linux-gnu`**    |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
 |    **`x86_64-unknown-linux-musl`**   |         ✔️        |        ✔️        |        ✔️        |        ✔️       |
+
+Additional targets (e.g. `aarch64-apple-ios`, `mips*`, `powerpc*-musl`, `riscv64gc-unknown-linux-musl`, `s390x-unknown-linux-musl`) are wired through `lib/rust/defaultPkgsFor.nix` and `lib/rust/default.nix`'s `targets` attrset, but are not exercised in CI.
 
 ### Template
 
@@ -59,6 +62,16 @@ nix flake init --template 'github:rvolosatovs/nixify#rust'
 
 ### Examples
 
+In-tree, exercised by `nix flake check`:
+
+- [`examples/rust-hello`](examples/rust-hello) — single-binary crate with the full cross-compilation matrix
+- [`examples/rust-hello-multibin`](examples/rust-hello-multibin) — multiple binaries from one crate
+- [`examples/rust-complex`](examples/rust-complex) — non-trivial crate with build-time deps
+- [`examples/rust-lib`](examples/rust-lib) — library crate (no binaries)
+- [`examples/rust-workspace`](examples/rust-workspace) — Cargo workspace
+
+External:
+
 - https://github.com/bytecodealliance/wit-deps/blob/main/flake.nix
 - https://github.com/profianinc/drawbridge/blob/main/flake.nix
 - https://github.com/profianinc/steward/blob/main/flake.nix
@@ -66,20 +79,55 @@ nix flake init --template 'github:rvolosatovs/nixify#rust'
 A flake definition at `examples/rust-hello/flake.nix`:
 ```nix
 {
-  inputs.nixify.url = github:rvolosatovs/nixify;
+  inputs.nixify.url = "github:rvolosatovs/nixify";
 
-  outputs = {nixify, ...}:
+  outputs =
+    { self, nixify, ... }:
     nixify.lib.rust.mkFlake {
-      src = ./.;
+      src = self;
+
+      nixpkgsConfig.allowUnfree = true;
+
+      targets.aarch64-apple-darwin = true;
+      targets.aarch64-linux-android = true;
+      targets.aarch64-unknown-linux-gnu = true;
+      targets.aarch64-unknown-linux-musl = true;
+      targets.arm-unknown-linux-gnueabihf = true;
+      targets.arm-unknown-linux-musleabihf = true;
+      targets.armv7-unknown-linux-gnueabihf = true;
+      targets.armv7-unknown-linux-musleabihf = true;
+      targets.powerpc64le-unknown-linux-gnu = true;
+      targets.riscv64gc-unknown-linux-gnu = true;
+      targets.s390x-unknown-linux-gnu = true;
+      targets.wasm32-unknown-unknown = true;
+      targets.wasm32-wasip2 = true;
+      targets.x86_64-apple-darwin = true;
+      targets.x86_64-pc-windows-gnu = true;
+      targets.x86_64-unknown-linux-gnu = true;
+      targets.x86_64-unknown-linux-musl = true;
     };
 }
 ```
 
-Produces the following outputs:
+Produces the following outputs (per system):
+
+- `apps.<system>.{default,<pname>,<pname>-debug}` — `nix run` entry points wrapping the host-system binaries.
+- `checks.<system>.{audit,clippy,doc,fmt,nextest}` — what `nix flake check` runs (`doctest` is added when `test.allTargets` or `test.doc` is set).
+- `devShells.<system>.default` — dev shell with the resolved Rust toolchain on `PATH`.
+- `formatter.<system>` — the Nix formatter (`nixfmt`).
+- `overlays.{default,<pname>,fenix,rust-overlay}` — re-exported toolchain overlays plus one that adds `<pname>` to nixpkgs.
+- `packages.<system>` — per target (`<target>` in the enabled `targets` set), five packages each, in both release and debug flavors:
+  - `<pname>[-debug]-<target>` — the binary built for that target.
+  - `<pname>[-debug]-<target>-deps` — the prebuilt cargo dependency artifact (cached separately).
+  - `<pname>[-debug]-<target>-oci` — a `docker load`-able image tarball.
+  - `<pname>[-debug]-<target>-oci-dir` — the same image as an OCI image directory.
+  - `<pname>[-debug]-<target>-oci-manifest` — the OCI manifest JSON.
+  - Plus host-system aliases: `default`, `<pname>`, `<pname>-debug`, `<pname>-oci`, `<pname>-oci-dir` (target suffix dropped).
+
+<details>
+<summary><code>nix flake show --no-write-lock-file --all-systems 'github:rvolosatovs/nixify?dir=examples/rust-hello'</code></summary>
 
 ```
-$ nix flake show --no-write-lock-file 'github:rvolosatovs/nixify?dir=examples/rust-hello'
-<...>
 ├───apps
 │   ├───aarch64-darwin
 │   │   ├───default: app
@@ -99,43 +147,43 @@ $ nix flake show --no-write-lock-file 'github:rvolosatovs/nixify?dir=examples/ru
 │       └───rust-hello-debug: app
 ├───checks
 │   ├───aarch64-darwin
-│   │   ├───audit: derivation 'rust-hello-audit-0.1.0'
-│   │   ├───clippy: derivation 'rust-hello-clippy-0.1.0'
-│   │   ├───doc: derivation 'rust-hello-doc-0.1.0'
-│   │   ├───fmt: derivation 'rust-hello-fmt-0.1.0'
-│   │   └───nextest: derivation 'rust-hello-nextest-0.1.0'
+│   │   ├───audit: CI test
+│   │   ├───clippy: CI test
+│   │   ├───doc: CI test
+│   │   ├───fmt: CI test
+│   │   └───nextest: CI test
 │   ├───aarch64-linux
-│   │   ├───audit: derivation 'rust-hello-audit-0.1.0'
-│   │   ├───clippy: derivation 'rust-hello-clippy-0.1.0'
-│   │   ├───doc: derivation 'rust-hello-doc-0.1.0'
-│   │   ├───fmt: derivation 'rust-hello-fmt-0.1.0'
-│   │   └───nextest: derivation 'rust-hello-nextest-0.1.0'
+│   │   ├───audit: CI test
+│   │   ├───clippy: CI test
+│   │   ├───doc: CI test
+│   │   ├───fmt: CI test
+│   │   └───nextest: CI test
 │   ├───x86_64-darwin
-│   │   ├───audit: derivation 'rust-hello-audit-0.1.0'
-│   │   ├───clippy: derivation 'rust-hello-clippy-0.1.0'
-│   │   ├───doc: derivation 'rust-hello-doc-0.1.0'
-│   │   ├───fmt: derivation 'rust-hello-fmt-0.1.0'
-│   │   └───nextest: derivation 'rust-hello-nextest-0.1.0'
+│   │   ├───audit: CI test
+│   │   ├───clippy: CI test
+│   │   ├───doc: CI test
+│   │   ├───fmt: CI test
+│   │   └───nextest: CI test
 │   └───x86_64-linux
-│       ├───audit: derivation 'rust-hello-audit-0.1.0'
-│       ├───clippy: derivation 'rust-hello-clippy-0.1.0'
-│       ├───doc: derivation 'rust-hello-doc-0.1.0'
-│       ├───fmt: derivation 'rust-hello-fmt-0.1.0'
-│       └───nextest: derivation 'rust-hello-nextest-0.1.0'
+│       ├───audit: CI test
+│       ├───clippy: CI test
+│       ├───doc: CI test
+│       ├───fmt: CI test
+│       └───nextest: CI test
 ├───devShells
 │   ├───aarch64-darwin
-│   │   └───default: development environment 'nix-shell'
+│   │   └───default: development environment
 │   ├───aarch64-linux
-│   │   └───default: development environment 'nix-shell'
+│   │   └───default: development environment
 │   ├───x86_64-darwin
-│   │   └───default: development environment 'nix-shell'
+│   │   └───default: development environment
 │   └───x86_64-linux
-│       └───default: development environment 'nix-shell'
+│       └───default: development environment
 ├───formatter
-│   ├───aarch64-darwin: package 'alejandra-3.0.0'
-│   ├───aarch64-linux: package 'alejandra-3.0.0'
-│   ├───x86_64-darwin: package 'alejandra-3.0.0'
-│   └───x86_64-linux: package 'alejandra-3.0.0'
+│   ├───aarch64-darwin: formatter
+│   ├───aarch64-linux: formatter
+│   ├───x86_64-darwin: formatter
+│   └───x86_64-linux: formatter
 ├───overlays
 │   ├───default: Nixpkgs overlay
 │   ├───fenix: Nixpkgs overlay
@@ -143,278 +191,712 @@ $ nix flake show --no-write-lock-file 'github:rvolosatovs/nixify?dir=examples/ru
 │   └───rust-overlay: Nixpkgs overlay
 └───packages
     ├───aarch64-darwin
-    │   ├───build-rust-hello-oci: package 'build-rust-hello-oci'
-    │   ├───default: package 'rust-hello-0.1.0'
-    │   ├───rust-hello: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-aarch64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-aarch64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-aarch64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-armv7-unknown-linux-musleabihf: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-armv7-unknown-linux-musleabihf-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-aarch64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-wasm32-unknown-unknown: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-wasm32-unknown-unknown-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-wasm32-wasi: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-wasm32-wasi-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-wasm32-wasi-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-pc-windows-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-wasm32-unknown-unknown: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-wasm32-unknown-unknown-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-wasm32-unknown-unknown-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-wasm32-wasi: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-wasm32-wasi-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-wasm32-wasi-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-x86_64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-pc-windows-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-pc-windows-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-x86_64-pc-windows-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   └───rust-hello-x86_64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
+    │   ├───default: package
+    │   ├───rust-hello: package
+    │   ├───rust-hello-aarch64-apple-darwin: package
+    │   ├───rust-hello-aarch64-apple-darwin-deps: package
+    │   ├───rust-hello-aarch64-apple-darwin-oci: package
+    │   ├───rust-hello-aarch64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-aarch64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-aarch64-linux-android: package
+    │   ├───rust-hello-aarch64-linux-android-deps: package
+    │   ├───rust-hello-aarch64-linux-android-oci: package
+    │   ├───rust-hello-aarch64-linux-android-oci-dir: package
+    │   ├───rust-hello-aarch64-linux-android-oci-manifest: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-oci-dir: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-oci-manifest: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-debug: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-deps: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-oci: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-debug-aarch64-linux-android: package
+    │   ├───rust-hello-debug-aarch64-linux-android-deps: package
+    │   ├───rust-hello-debug-aarch64-linux-android-oci: package
+    │   ├───rust-hello-debug-aarch64-linux-android-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-linux-android-oci-manifest: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci-manifest: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-deps: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci-dir: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci-manifest: package
+    │   ├───rust-hello-debug-wasm32-wasip2: package
+    │   ├───rust-hello-debug-wasm32-wasip2-deps: package
+    │   ├───rust-hello-debug-wasm32-wasip2-oci: package
+    │   ├───rust-hello-debug-wasm32-wasip2-oci-dir: package
+    │   ├───rust-hello-debug-wasm32-wasip2-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-deps: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-oci: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-deps: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci-manifest: package
+    │   ├───rust-hello-oci: package
+    │   ├───rust-hello-oci-dir: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-wasm32-unknown-unknown: package
+    │   ├───rust-hello-wasm32-unknown-unknown-deps: package
+    │   ├───rust-hello-wasm32-unknown-unknown-oci: package
+    │   ├───rust-hello-wasm32-unknown-unknown-oci-dir: package
+    │   ├───rust-hello-wasm32-unknown-unknown-oci-manifest: package
+    │   ├───rust-hello-wasm32-wasip2: package
+    │   ├───rust-hello-wasm32-wasip2-deps: package
+    │   ├───rust-hello-wasm32-wasip2-oci: package
+    │   ├───rust-hello-wasm32-wasip2-oci-dir: package
+    │   ├───rust-hello-wasm32-wasip2-oci-manifest: package
+    │   ├───rust-hello-x86_64-apple-darwin: package
+    │   ├───rust-hello-x86_64-apple-darwin-deps: package
+    │   ├───rust-hello-x86_64-apple-darwin-oci: package
+    │   ├───rust-hello-x86_64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-x86_64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-deps: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-oci: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-oci-dir: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-oci-manifest: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl-oci-dir: package
+    │   └───rust-hello-x86_64-unknown-linux-musl-oci-manifest: package
     ├───aarch64-linux
-    │   ├───build-rust-hello-oci: package 'build-rust-hello-oci'
-    │   ├───default: package 'rust-hello-0.1.0'
-    │   ├───rust-hello: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-aarch64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-aarch64-linux-android: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-linux-android-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-aarch64-linux-android-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-aarch64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-aarch64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-armv7-unknown-linux-musleabihf: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-armv7-unknown-linux-musleabihf-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-aarch64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-aarch64-linux-android: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-linux-android-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-aarch64-linux-android-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-wasm32-unknown-unknown: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-wasm32-unknown-unknown-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-wasm32-wasi: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-wasm32-wasi-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-wasm32-wasi-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-pc-windows-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-wasm32-unknown-unknown: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-wasm32-unknown-unknown-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-wasm32-unknown-unknown-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-wasm32-wasi: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-wasm32-wasi-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-wasm32-wasi-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-x86_64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-pc-windows-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-pc-windows-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-x86_64-pc-windows-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   └───rust-hello-x86_64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
+    │   ├───default: package
+    │   ├───rust-hello: package
+    │   ├───rust-hello-aarch64-apple-darwin: package
+    │   ├───rust-hello-aarch64-apple-darwin-deps: package
+    │   ├───rust-hello-aarch64-apple-darwin-oci: package
+    │   ├───rust-hello-aarch64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-aarch64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-aarch64-linux-android: package
+    │   ├───rust-hello-aarch64-linux-android-deps: package
+    │   ├───rust-hello-aarch64-linux-android-oci: package
+    │   ├───rust-hello-aarch64-linux-android-oci-dir: package
+    │   ├───rust-hello-aarch64-linux-android-oci-manifest: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-oci-dir: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-oci-manifest: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-debug: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-deps: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-oci: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-debug-aarch64-linux-android: package
+    │   ├───rust-hello-debug-aarch64-linux-android-deps: package
+    │   ├───rust-hello-debug-aarch64-linux-android-oci: package
+    │   ├───rust-hello-debug-aarch64-linux-android-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-linux-android-oci-manifest: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci-manifest: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-deps: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci-dir: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci-manifest: package
+    │   ├───rust-hello-debug-wasm32-wasip2: package
+    │   ├───rust-hello-debug-wasm32-wasip2-deps: package
+    │   ├───rust-hello-debug-wasm32-wasip2-oci: package
+    │   ├───rust-hello-debug-wasm32-wasip2-oci-dir: package
+    │   ├───rust-hello-debug-wasm32-wasip2-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-deps: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-oci: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-deps: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci-manifest: package
+    │   ├───rust-hello-oci: package
+    │   ├───rust-hello-oci-dir: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-wasm32-unknown-unknown: package
+    │   ├───rust-hello-wasm32-unknown-unknown-deps: package
+    │   ├───rust-hello-wasm32-unknown-unknown-oci: package
+    │   ├───rust-hello-wasm32-unknown-unknown-oci-dir: package
+    │   ├───rust-hello-wasm32-unknown-unknown-oci-manifest: package
+    │   ├───rust-hello-wasm32-wasip2: package
+    │   ├───rust-hello-wasm32-wasip2-deps: package
+    │   ├───rust-hello-wasm32-wasip2-oci: package
+    │   ├───rust-hello-wasm32-wasip2-oci-dir: package
+    │   ├───rust-hello-wasm32-wasip2-oci-manifest: package
+    │   ├───rust-hello-x86_64-apple-darwin: package
+    │   ├───rust-hello-x86_64-apple-darwin-deps: package
+    │   ├───rust-hello-x86_64-apple-darwin-oci: package
+    │   ├───rust-hello-x86_64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-x86_64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-deps: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-oci: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-oci-dir: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-oci-manifest: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl-oci-dir: package
+    │   └───rust-hello-x86_64-unknown-linux-musl-oci-manifest: package
     ├───x86_64-darwin
-    │   ├───build-rust-hello-oci: package 'build-rust-hello-oci'
-    │   ├───default: package 'rust-hello-0.1.0'
-    │   ├───rust-hello: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-aarch64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-aarch64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-aarch64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-aarch64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-armv7-unknown-linux-musleabihf: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-armv7-unknown-linux-musleabihf-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-aarch64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-wasm32-unknown-unknown: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-wasm32-unknown-unknown-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-wasm32-wasi: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-wasm32-wasi-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-wasm32-wasi-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-pc-windows-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-wasm32-unknown-unknown: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-wasm32-unknown-unknown-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-wasm32-unknown-unknown-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-wasm32-wasi: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-wasm32-wasi-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-wasm32-wasi-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-apple-darwin: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-x86_64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-pc-windows-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-pc-windows-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-x86_64-pc-windows-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-    │   ├───rust-hello-x86_64-unknown-linux-musl: package 'rust-hello-0.1.0'
-    │   ├───rust-hello-x86_64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-    │   └───rust-hello-x86_64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
+    │   ├───default: package
+    │   ├───rust-hello: package
+    │   ├───rust-hello-aarch64-apple-darwin: package
+    │   ├───rust-hello-aarch64-apple-darwin-deps: package
+    │   ├───rust-hello-aarch64-apple-darwin-oci: package
+    │   ├───rust-hello-aarch64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-aarch64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-aarch64-linux-android: package
+    │   ├───rust-hello-aarch64-linux-android-deps: package
+    │   ├───rust-hello-aarch64-linux-android-oci: package
+    │   ├───rust-hello-aarch64-linux-android-oci-dir: package
+    │   ├───rust-hello-aarch64-linux-android-oci-manifest: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-aarch64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-oci-dir: package
+    │   ├───rust-hello-aarch64-unknown-linux-musl-oci-manifest: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-arm-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-arm-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-armv7-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-armv7-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-debug: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-deps: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-oci: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-debug-aarch64-linux-android: package
+    │   ├───rust-hello-debug-aarch64-linux-android-deps: package
+    │   ├───rust-hello-debug-aarch64-linux-android-oci: package
+    │   ├───rust-hello-debug-aarch64-linux-android-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-linux-android-oci-manifest: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci-dir: package
+    │   ├───rust-hello-debug-aarch64-unknown-linux-musl-oci-manifest: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-deps: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci-dir: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci-manifest: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-deps: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci-dir: package
+    │   ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci-manifest: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-s390x-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-deps: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci-dir: package
+    │   ├───rust-hello-debug-wasm32-unknown-unknown-oci-manifest: package
+    │   ├───rust-hello-debug-wasm32-wasip2: package
+    │   ├───rust-hello-debug-wasm32-wasip2-deps: package
+    │   ├───rust-hello-debug-wasm32-wasip2-oci: package
+    │   ├───rust-hello-debug-wasm32-wasip2-oci-dir: package
+    │   ├───rust-hello-debug-wasm32-wasip2-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-deps: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-oci: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-deps: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-pc-windows-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci-dir: package
+    │   ├───rust-hello-debug-x86_64-unknown-linux-musl-oci-manifest: package
+    │   ├───rust-hello-oci: package
+    │   ├───rust-hello-oci-dir: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-powerpc64le-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-riscv64gc-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-s390x-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-wasm32-unknown-unknown: package
+    │   ├───rust-hello-wasm32-unknown-unknown-deps: package
+    │   ├───rust-hello-wasm32-unknown-unknown-oci: package
+    │   ├───rust-hello-wasm32-unknown-unknown-oci-dir: package
+    │   ├───rust-hello-wasm32-unknown-unknown-oci-manifest: package
+    │   ├───rust-hello-wasm32-wasip2: package
+    │   ├───rust-hello-wasm32-wasip2-deps: package
+    │   ├───rust-hello-wasm32-wasip2-oci: package
+    │   ├───rust-hello-wasm32-wasip2-oci-dir: package
+    │   ├───rust-hello-wasm32-wasip2-oci-manifest: package
+    │   ├───rust-hello-x86_64-apple-darwin: package
+    │   ├───rust-hello-x86_64-apple-darwin-deps: package
+    │   ├───rust-hello-x86_64-apple-darwin-oci: package
+    │   ├───rust-hello-x86_64-apple-darwin-oci-dir: package
+    │   ├───rust-hello-x86_64-apple-darwin-oci-manifest: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-deps: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-oci: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-oci-dir: package
+    │   ├───rust-hello-x86_64-pc-windows-gnu-oci-manifest: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-deps: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci-dir: package
+    │   ├───rust-hello-x86_64-unknown-linux-gnu-oci-manifest: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl-deps: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl-oci: package
+    │   ├───rust-hello-x86_64-unknown-linux-musl-oci-dir: package
+    │   └───rust-hello-x86_64-unknown-linux-musl-oci-manifest: package
     └───x86_64-linux
-        ├───build-rust-hello-oci: package 'build-rust-hello-oci'
-        ├───default: package 'rust-hello-0.1.0'
-        ├───rust-hello: package 'rust-hello-0.1.0'
-        ├───rust-hello-aarch64-apple-darwin: package 'rust-hello-0.1.0'
-        ├───rust-hello-aarch64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-aarch64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-aarch64-linux-android: package 'rust-hello-0.1.0'
-        ├───rust-hello-aarch64-linux-android-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-aarch64-linux-android-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-aarch64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-        ├───rust-hello-aarch64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-aarch64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-aarch64-unknown-linux-musl: package 'rust-hello-0.1.0'
-        ├───rust-hello-aarch64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-aarch64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-armv7-unknown-linux-musleabihf: package 'rust-hello-0.1.0'
-        ├───rust-hello-armv7-unknown-linux-musleabihf-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-armv7-unknown-linux-musleabihf-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-aarch64-apple-darwin: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-aarch64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-aarch64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug-aarch64-linux-android: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-aarch64-linux-android-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-aarch64-linux-android-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug-aarch64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-aarch64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug-aarch64-unknown-linux-musl: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-aarch64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-aarch64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug-armv7-unknown-linux-musleabihf: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-armv7-unknown-linux-musleabihf-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug-wasm32-unknown-unknown: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-wasm32-unknown-unknown-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-wasm32-unknown-unknown-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug-wasm32-wasi: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-wasm32-wasi-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-wasm32-wasi-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug-x86_64-apple-darwin: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-x86_64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-x86_64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug-x86_64-pc-windows-gnu: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-x86_64-pc-windows-gnu-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-x86_64-pc-windows-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug-x86_64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-x86_64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-debug-x86_64-unknown-linux-musl: package 'rust-hello-0.1.0'
-        ├───rust-hello-debug-x86_64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-debug-x86_64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-wasm32-unknown-unknown: package 'rust-hello-0.1.0'
-        ├───rust-hello-wasm32-unknown-unknown-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-wasm32-unknown-unknown-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-wasm32-wasi: package 'rust-hello-0.1.0'
-        ├───rust-hello-wasm32-wasi-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-wasm32-wasi-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-x86_64-apple-darwin: package 'rust-hello-0.1.0'
-        ├───rust-hello-x86_64-apple-darwin-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-x86_64-apple-darwin-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-x86_64-pc-windows-gnu: package 'rust-hello-0.1.0'
-        ├───rust-hello-x86_64-pc-windows-gnu-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-x86_64-pc-windows-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-x86_64-unknown-linux-gnu: package 'rust-hello-0.1.0'
-        ├───rust-hello-x86_64-unknown-linux-gnu-deps: package 'rust-hello-deps-0.1.0'
-        ├───rust-hello-x86_64-unknown-linux-gnu-oci: package 'docker-image-rust-hello.tar.gz'
-        ├───rust-hello-x86_64-unknown-linux-musl: package 'rust-hello-0.1.0'
-        ├───rust-hello-x86_64-unknown-linux-musl-deps: package 'rust-hello-deps-0.1.0'
-        └───rust-hello-x86_64-unknown-linux-musl-oci: package 'docker-image-rust-hello.tar.gz'
+        ├───default: package
+        ├───rust-hello: package
+        ├───rust-hello-aarch64-apple-darwin: package
+        ├───rust-hello-aarch64-apple-darwin-deps: package
+        ├───rust-hello-aarch64-apple-darwin-oci: package
+        ├───rust-hello-aarch64-apple-darwin-oci-dir: package
+        ├───rust-hello-aarch64-apple-darwin-oci-manifest: package
+        ├───rust-hello-aarch64-linux-android: package
+        ├───rust-hello-aarch64-linux-android-deps: package
+        ├───rust-hello-aarch64-linux-android-oci: package
+        ├───rust-hello-aarch64-linux-android-oci-dir: package
+        ├───rust-hello-aarch64-linux-android-oci-manifest: package
+        ├───rust-hello-aarch64-unknown-linux-gnu: package
+        ├───rust-hello-aarch64-unknown-linux-gnu-deps: package
+        ├───rust-hello-aarch64-unknown-linux-gnu-oci: package
+        ├───rust-hello-aarch64-unknown-linux-gnu-oci-dir: package
+        ├───rust-hello-aarch64-unknown-linux-gnu-oci-manifest: package
+        ├───rust-hello-aarch64-unknown-linux-musl: package
+        ├───rust-hello-aarch64-unknown-linux-musl-deps: package
+        ├───rust-hello-aarch64-unknown-linux-musl-oci: package
+        ├───rust-hello-aarch64-unknown-linux-musl-oci-dir: package
+        ├───rust-hello-aarch64-unknown-linux-musl-oci-manifest: package
+        ├───rust-hello-arm-unknown-linux-gnueabihf: package
+        ├───rust-hello-arm-unknown-linux-gnueabihf-deps: package
+        ├───rust-hello-arm-unknown-linux-gnueabihf-oci: package
+        ├───rust-hello-arm-unknown-linux-gnueabihf-oci-dir: package
+        ├───rust-hello-arm-unknown-linux-gnueabihf-oci-manifest: package
+        ├───rust-hello-arm-unknown-linux-musleabihf: package
+        ├───rust-hello-arm-unknown-linux-musleabihf-deps: package
+        ├───rust-hello-arm-unknown-linux-musleabihf-oci: package
+        ├───rust-hello-arm-unknown-linux-musleabihf-oci-dir: package
+        ├───rust-hello-arm-unknown-linux-musleabihf-oci-manifest: package
+        ├───rust-hello-armv7-unknown-linux-gnueabihf: package
+        ├───rust-hello-armv7-unknown-linux-gnueabihf-deps: package
+        ├───rust-hello-armv7-unknown-linux-gnueabihf-oci: package
+        ├───rust-hello-armv7-unknown-linux-gnueabihf-oci-dir: package
+        ├───rust-hello-armv7-unknown-linux-gnueabihf-oci-manifest: package
+        ├───rust-hello-armv7-unknown-linux-musleabihf: package
+        ├───rust-hello-armv7-unknown-linux-musleabihf-deps: package
+        ├───rust-hello-armv7-unknown-linux-musleabihf-oci: package
+        ├───rust-hello-armv7-unknown-linux-musleabihf-oci-dir: package
+        ├───rust-hello-armv7-unknown-linux-musleabihf-oci-manifest: package
+        ├───rust-hello-debug: package
+        ├───rust-hello-debug-aarch64-apple-darwin: package
+        ├───rust-hello-debug-aarch64-apple-darwin-deps: package
+        ├───rust-hello-debug-aarch64-apple-darwin-oci: package
+        ├───rust-hello-debug-aarch64-apple-darwin-oci-dir: package
+        ├───rust-hello-debug-aarch64-apple-darwin-oci-manifest: package
+        ├───rust-hello-debug-aarch64-linux-android: package
+        ├───rust-hello-debug-aarch64-linux-android-deps: package
+        ├───rust-hello-debug-aarch64-linux-android-oci: package
+        ├───rust-hello-debug-aarch64-linux-android-oci-dir: package
+        ├───rust-hello-debug-aarch64-linux-android-oci-manifest: package
+        ├───rust-hello-debug-aarch64-unknown-linux-gnu: package
+        ├───rust-hello-debug-aarch64-unknown-linux-gnu-deps: package
+        ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci: package
+        ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci-dir: package
+        ├───rust-hello-debug-aarch64-unknown-linux-gnu-oci-manifest: package
+        ├───rust-hello-debug-aarch64-unknown-linux-musl: package
+        ├───rust-hello-debug-aarch64-unknown-linux-musl-deps: package
+        ├───rust-hello-debug-aarch64-unknown-linux-musl-oci: package
+        ├───rust-hello-debug-aarch64-unknown-linux-musl-oci-dir: package
+        ├───rust-hello-debug-aarch64-unknown-linux-musl-oci-manifest: package
+        ├───rust-hello-debug-arm-unknown-linux-gnueabihf: package
+        ├───rust-hello-debug-arm-unknown-linux-gnueabihf-deps: package
+        ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci: package
+        ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci-dir: package
+        ├───rust-hello-debug-arm-unknown-linux-gnueabihf-oci-manifest: package
+        ├───rust-hello-debug-arm-unknown-linux-musleabihf: package
+        ├───rust-hello-debug-arm-unknown-linux-musleabihf-deps: package
+        ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci: package
+        ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci-dir: package
+        ├───rust-hello-debug-arm-unknown-linux-musleabihf-oci-manifest: package
+        ├───rust-hello-debug-armv7-unknown-linux-gnueabihf: package
+        ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-deps: package
+        ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci: package
+        ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci-dir: package
+        ├───rust-hello-debug-armv7-unknown-linux-gnueabihf-oci-manifest: package
+        ├───rust-hello-debug-armv7-unknown-linux-musleabihf: package
+        ├───rust-hello-debug-armv7-unknown-linux-musleabihf-deps: package
+        ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci: package
+        ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci-dir: package
+        ├───rust-hello-debug-armv7-unknown-linux-musleabihf-oci-manifest: package
+        ├───rust-hello-debug-powerpc64le-unknown-linux-gnu: package
+        ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-deps: package
+        ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci: package
+        ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci-dir: package
+        ├───rust-hello-debug-powerpc64le-unknown-linux-gnu-oci-manifest: package
+        ├───rust-hello-debug-riscv64gc-unknown-linux-gnu: package
+        ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-deps: package
+        ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci: package
+        ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci-dir: package
+        ├───rust-hello-debug-riscv64gc-unknown-linux-gnu-oci-manifest: package
+        ├───rust-hello-debug-s390x-unknown-linux-gnu: package
+        ├───rust-hello-debug-s390x-unknown-linux-gnu-deps: package
+        ├───rust-hello-debug-s390x-unknown-linux-gnu-oci: package
+        ├───rust-hello-debug-s390x-unknown-linux-gnu-oci-dir: package
+        ├───rust-hello-debug-s390x-unknown-linux-gnu-oci-manifest: package
+        ├───rust-hello-debug-wasm32-unknown-unknown: package
+        ├───rust-hello-debug-wasm32-unknown-unknown-deps: package
+        ├───rust-hello-debug-wasm32-unknown-unknown-oci: package
+        ├───rust-hello-debug-wasm32-unknown-unknown-oci-dir: package
+        ├───rust-hello-debug-wasm32-unknown-unknown-oci-manifest: package
+        ├───rust-hello-debug-wasm32-wasip2: package
+        ├───rust-hello-debug-wasm32-wasip2-deps: package
+        ├───rust-hello-debug-wasm32-wasip2-oci: package
+        ├───rust-hello-debug-wasm32-wasip2-oci-dir: package
+        ├───rust-hello-debug-wasm32-wasip2-oci-manifest: package
+        ├───rust-hello-debug-x86_64-apple-darwin: package
+        ├───rust-hello-debug-x86_64-apple-darwin-deps: package
+        ├───rust-hello-debug-x86_64-apple-darwin-oci: package
+        ├───rust-hello-debug-x86_64-apple-darwin-oci-dir: package
+        ├───rust-hello-debug-x86_64-apple-darwin-oci-manifest: package
+        ├───rust-hello-debug-x86_64-pc-windows-gnu: package
+        ├───rust-hello-debug-x86_64-pc-windows-gnu-deps: package
+        ├───rust-hello-debug-x86_64-pc-windows-gnu-oci: package
+        ├───rust-hello-debug-x86_64-pc-windows-gnu-oci-dir: package
+        ├───rust-hello-debug-x86_64-pc-windows-gnu-oci-manifest: package
+        ├───rust-hello-debug-x86_64-unknown-linux-gnu: package
+        ├───rust-hello-debug-x86_64-unknown-linux-gnu-deps: package
+        ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci: package
+        ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci-dir: package
+        ├───rust-hello-debug-x86_64-unknown-linux-gnu-oci-manifest: package
+        ├───rust-hello-debug-x86_64-unknown-linux-musl: package
+        ├───rust-hello-debug-x86_64-unknown-linux-musl-deps: package
+        ├───rust-hello-debug-x86_64-unknown-linux-musl-oci: package
+        ├───rust-hello-debug-x86_64-unknown-linux-musl-oci-dir: package
+        ├───rust-hello-debug-x86_64-unknown-linux-musl-oci-manifest: package
+        ├───rust-hello-oci: package
+        ├───rust-hello-oci-dir: package
+        ├───rust-hello-powerpc64le-unknown-linux-gnu: package
+        ├───rust-hello-powerpc64le-unknown-linux-gnu-deps: package
+        ├───rust-hello-powerpc64le-unknown-linux-gnu-oci: package
+        ├───rust-hello-powerpc64le-unknown-linux-gnu-oci-dir: package
+        ├───rust-hello-powerpc64le-unknown-linux-gnu-oci-manifest: package
+        ├───rust-hello-riscv64gc-unknown-linux-gnu: package
+        ├───rust-hello-riscv64gc-unknown-linux-gnu-deps: package
+        ├───rust-hello-riscv64gc-unknown-linux-gnu-oci: package
+        ├───rust-hello-riscv64gc-unknown-linux-gnu-oci-dir: package
+        ├───rust-hello-riscv64gc-unknown-linux-gnu-oci-manifest: package
+        ├───rust-hello-s390x-unknown-linux-gnu: package
+        ├───rust-hello-s390x-unknown-linux-gnu-deps: package
+        ├───rust-hello-s390x-unknown-linux-gnu-oci: package
+        ├───rust-hello-s390x-unknown-linux-gnu-oci-dir: package
+        ├───rust-hello-s390x-unknown-linux-gnu-oci-manifest: package
+        ├───rust-hello-wasm32-unknown-unknown: package
+        ├───rust-hello-wasm32-unknown-unknown-deps: package
+        ├───rust-hello-wasm32-unknown-unknown-oci: package
+        ├───rust-hello-wasm32-unknown-unknown-oci-dir: package
+        ├───rust-hello-wasm32-unknown-unknown-oci-manifest: package
+        ├───rust-hello-wasm32-wasip2: package
+        ├───rust-hello-wasm32-wasip2-deps: package
+        ├───rust-hello-wasm32-wasip2-oci: package
+        ├───rust-hello-wasm32-wasip2-oci-dir: package
+        ├───rust-hello-wasm32-wasip2-oci-manifest: package
+        ├───rust-hello-x86_64-apple-darwin: package
+        ├───rust-hello-x86_64-apple-darwin-deps: package
+        ├───rust-hello-x86_64-apple-darwin-oci: package
+        ├───rust-hello-x86_64-apple-darwin-oci-dir: package
+        ├───rust-hello-x86_64-apple-darwin-oci-manifest: package
+        ├───rust-hello-x86_64-pc-windows-gnu: package
+        ├───rust-hello-x86_64-pc-windows-gnu-deps: package
+        ├───rust-hello-x86_64-pc-windows-gnu-oci: package
+        ├───rust-hello-x86_64-pc-windows-gnu-oci-dir: package
+        ├───rust-hello-x86_64-pc-windows-gnu-oci-manifest: package
+        ├───rust-hello-x86_64-unknown-linux-gnu: package
+        ├───rust-hello-x86_64-unknown-linux-gnu-deps: package
+        ├───rust-hello-x86_64-unknown-linux-gnu-oci: package
+        ├───rust-hello-x86_64-unknown-linux-gnu-oci-dir: package
+        ├───rust-hello-x86_64-unknown-linux-gnu-oci-manifest: package
+        ├───rust-hello-x86_64-unknown-linux-musl: package
+        ├───rust-hello-x86_64-unknown-linux-musl-deps: package
+        ├───rust-hello-x86_64-unknown-linux-musl-oci: package
+        ├───rust-hello-x86_64-unknown-linux-musl-oci-dir: package
+        └───rust-hello-x86_64-unknown-linux-musl-oci-manifest: package
 ```
+
+</details>
 
 # Motivation
 
