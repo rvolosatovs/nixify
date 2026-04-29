@@ -60,7 +60,6 @@ nix flake init --template 'github:rvolosatovs/nixify#rust'
 ### Examples
 
 - https://github.com/bytecodealliance/wit-deps/blob/main/flake.nix
-- https://github.com/wasmcloud/wasmcloud/blob/main/flake.nix
 - https://github.com/profianinc/drawbridge/blob/main/flake.nix
 - https://github.com/profianinc/steward/blob/main/flake.nix
 
