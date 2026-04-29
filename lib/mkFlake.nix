@@ -69,7 +69,7 @@ in
 
     checks = withChecks (commonPkgsArgs // { checks = { }; });
 
-    formatter = withFormatter (commonPkgsArgs // { formatter = pkgs.nixfmt; });
+    formatter = withFormatter (commonPkgsArgs // { formatter = pkgs.nixfmt-tree; });
 
     packages = withPackages (commonPkgsArgs // { packages = { }; });
   in
