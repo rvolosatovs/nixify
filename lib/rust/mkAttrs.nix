@@ -156,6 +156,10 @@ let
 in
 final:
 let
+  # `targets` may be a plain attrset or a function `pkgs: attrset`, allowing
+  # consumers to enable targets conditionally on the build platform.
+  targets' = if isFunction targets then targets final else targets;
+
   # hostRustToolchain is the default Rust toolchain.
   hostRustToolchain = withToolchain final rustupToolchain';
 
@@ -682,7 +686,7 @@ let
                 in
                 withPassthru craneArgs pkg;
             in
-            optionalAttrs (targets != null && targets ? ${target} && targets.${target}) {
+            optionalAttrs (targets' != null && targets' ? ${target} && targets'.${target}) {
               "${pname'}-${target}" = buildPackageFor' commonReleaseArgs;
               "${pname'}-debug-${target}" = buildPackageFor' commonDebugArgs;
             };
