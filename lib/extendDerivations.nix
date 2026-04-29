@@ -1,21 +1,45 @@
 { self, nixlib, ... }:
 with nixlib.lib;
 with builtins;
-{
+inputs@{
   buildInputs ? [ ],
-  depsBuildBuild ? [ ],
-  env ? null,
   nativeBuildInputs ? [ ],
+  propagatedBuildInputs ? [ ],
+  propagatedNativeBuildInputs ? [ ],
+
+  depsBuildBuild ? [ ],
+  depsBuildBuildPropagated ? [ ],
+  depsBuildHost ? [ ],
+  depsBuildHostPropagated ? [ ],
+  depsBuildTarget ? [ ],
+  depsBuildTargetPropagated ? [ ],
+  depsHostHost ? [ ],
+  depsHostHostPropagated ? [ ],
+  depsTargetTarget ? [ ],
+  depsTargetTargetPropagated ? [ ],
+
+  checkInputs ? [ ],
+  nativeCheckInputs ? [ ],
+  installCheckInputs ? [ ],
+  nativeInstallCheckInputs ? [ ],
+
+  env ? null,
+  shellHook ? null,
 }:
+let
+  listInputs = removeAttrs inputs [
+    "env"
+    "shellHook"
+  ];
+in
 mapAttrs (
-  n: v:
+  _: v:
   v.overrideAttrs (
     attrs:
-    {
-      buildInputs = (attrs.buildInputs or [ ]) ++ buildInputs;
-      depsBuildBuild = (attrs.depsBuildBuild or [ ]) ++ depsBuildBuild;
-      nativeBuildInputs = (attrs.nativeBuildInputs or [ ]) ++ nativeBuildInputs;
-    }
+    (mapAttrs (k: xs: (attrs.${k} or [ ]) ++ xs) listInputs)
     // optionalAttrs (env != null) { env = (attrs.env or { }) // env; }
+    // optionalAttrs (shellHook != null) {
+      shellHook = (attrs.shellHook or "") + shellHook;
+    }
   )
 )
