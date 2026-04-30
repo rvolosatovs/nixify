@@ -1,23 +1,19 @@
-name: Dependabot auto-approve
-on: pull_request_target
+name: dependabot
+on: pull_request
+
 permissions:
+  contents: write
   pull-requests: write
+
 jobs:
-  dependabot:
-    runs-on: ubuntu-24.04
-    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
     steps:
-      - name: Dependabot metadata
-        id: dependabot-metadata
-        uses: dependabot/fetch-metadata@v3
-      - uses: actions/checkout@v6
-      - name: Approve a PR if not already approved
-        run: |
-          gh pr checkout "$PR_URL" # sets the upstream metadata for `gh pr status`
-          if [ "$(gh pr status --json reviewDecision -q .currentBranch.reviewDecision)" != "APPROVED" ];
-          then gh pr review --approve "$PR_URL"
-          else echo "PR already approved, skipping additional approvals to minimize emails/notification noise.";
-          fi
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+    - id: meta
+      uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+    - if: steps.meta.outputs.package-ecosystem == 'nix'
+      run: gh pr merge --auto --rebase "$PR_URL"
+      env:
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
