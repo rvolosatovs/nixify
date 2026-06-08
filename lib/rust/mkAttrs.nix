@@ -433,7 +433,15 @@ let
                     final.removeReferencesTo
                   ];
 
-                  "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Clink-arg=-fuse-ld=mold";
+                  "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" =
+                    "-Clink-arg=-fuse-ld=mold"
+                    + optionalString pkgsCross.stdenv.hostPlatform.isMusl " -Ctarget-feature=+crt-static";
+                }
+                # Statically link musl's C runtime even when `mold` is unavailable:
+                # rustc no longer enables `+crt-static` by default for musl targets,
+                # which would otherwise dynamically link against the host libc.
+                // optionalAttrs (pkgsCross.stdenv.hostPlatform.isMusl && final.mold.meta.broken) {
+                  "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Ctarget-feature=+crt-static";
                 }
                 # Always build static binaries for Windows targets
                 // optionalAttrs pkgsCross.stdenv.hostPlatform.isWindows {
