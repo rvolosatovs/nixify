@@ -333,6 +333,17 @@ let
               ${final.zig}/bin/zig cc ${optionalString pkgsCross.stdenv.buildPlatform.isDarwin ''--sysroot="$SDKROOT" -I"$SDKROOT/usr/include" -L"$SDKROOT/usr/lib" -F"$SDKROOT/System/Library/Frameworks"''} $@ -target ${target'}
             '';
 
+          # On a Darwin build host the toolchain's LLD (`rust-lld`, and the
+          # `wasm-ld` that `wasm-component-ld` drives) links against
+          # `@rpath/libLLVM.dylib`, but its only usable rpath
+          # (`@loader_path/../lib`) points at the rustlib `lib` dir while
+          # `libLLVM.dylib` lives in the toolchain's top-level `lib` — so any
+          # link (including build-script links for every target) aborts with
+          # SIGABRT. Expose the dylib via the dyld fallback search path.
+          darwinHostLldEnv = optionalString final.stdenv.buildPlatform.isDarwin ''
+            export DYLD_FALLBACK_LIBRARY_PATH="${rustToolchain}/lib''${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+          '';
+
           targetArgs = {
             HOST_AR = "${final.stdenv.cc.targetPrefix}ar";
             HOST_CC = "${final.stdenv.cc.targetPrefix}cc";
@@ -385,6 +396,7 @@ let
                 preBuild = ''
                   export HOME=$(mktemp -d)
                   export SDKROOT="${macos-sdk}"
+                  ${darwinHostLldEnv}
                 '';
 
                 "CC_${target}" = "${target}-zigcc";
@@ -442,6 +454,8 @@ let
                   depsBuildBuild = [ pkgsCross.stdenv.cc ];
 
                   nativeBuildInputs = [ hook ];
+
+                  preBuild = darwinHostLldEnv;
 
                   "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
                   "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
