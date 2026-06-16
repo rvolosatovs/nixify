@@ -393,6 +393,26 @@ let
               }
             else
               let
+                # Whether the *Rust target* is musl. Keyed off the triple rather than
+                # `pkgsCross…isMusl` because some musl targets (e.g.
+                # `armv7-unknown-linux-musleabihf`) have no musl `pkgsCross` and are
+                # built with a glibc cross toolchain that only drives the link —
+                # rustc still supplies a musl libc and we still want a static binary.
+                targetIsMusl = hasInfix "musl" target;
+
+                # Flags that force a fully static musl binary.
+                #
+                # rustc no longer enables `+crt-static` by default for musl
+                # targets (rust-lang/compiler-team#422), so request it explicitly,
+                # otherwise the binary links dynamically against the host libc.
+                #
+                # `mold` additionally embeds a (glibc) `PT_INTERP` even for an
+                # otherwise static link — because rustc's link line ends in
+                # `-Wl,-Bdynamic` — which makes the binary request a dynamic
+                # loader and crash at startup. `--no-dynamic-linker` drops it;
+                # it is a harmless no-op for the non-`mold` linker.
+                muslStaticRustflags = " -Ctarget-feature=+crt-static -Clink-arg=-Wl,--no-dynamic-linker";
+
                 hook =
                   final.makeSetupHook
                     {
@@ -434,14 +454,11 @@ let
                   ];
 
                   "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" =
-                    "-Clink-arg=-fuse-ld=mold"
-                    + optionalString pkgsCross.stdenv.hostPlatform.isMusl " -Ctarget-feature=+crt-static";
+                    "-Clink-arg=-fuse-ld=mold" + optionalString targetIsMusl muslStaticRustflags;
                 }
-                # Statically link musl's C runtime even when `mold` is unavailable:
-                # rustc no longer enables `+crt-static` by default for musl targets,
-                # which would otherwise dynamically link against the host libc.
-                // optionalAttrs (pkgsCross.stdenv.hostPlatform.isMusl && final.mold.meta.broken) {
-                  "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = "-Ctarget-feature=+crt-static";
+                # Statically link musl targets even when `mold` is unavailable.
+                // optionalAttrs (targetIsMusl && final.mold.meta.broken) {
+                  "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = muslStaticRustflags;
                 }
                 # Always build static binaries for Windows targets
                 // optionalAttrs pkgsCross.stdenv.hostPlatform.isWindows {
