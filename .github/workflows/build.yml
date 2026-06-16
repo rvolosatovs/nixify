@@ -88,7 +88,7 @@ jobs:
           test-oci: docker load < ./result
 
         - package: rust-hello-x86_64-pc-windows-gnu
-          test-bin: nix shell --inputs-from . 'nixpkgs-nixos#wine64' -c wine64 ./result/bin/rust-hello.exe
+          test-bin: nix shell --inputs-from . 'nixpkgs-nixos#wine64' -c wine ./result/bin/rust-hello.exe
           test-oci: docker load < ./result
 
         - package: rust-hello-x86_64-unknown-linux-gnu
@@ -169,7 +169,7 @@ jobs:
           test-oci: docker load < ./result
 
         - package: rust-hello-debug-x86_64-pc-windows-gnu
-          test-bin: nix shell --inputs-from . 'nixpkgs-nixos#wine64' -c wine64 ./result/bin/rust-hello.exe
+          test-bin: nix shell --inputs-from . 'nixpkgs-nixos#wine64' -c wine ./result/bin/rust-hello.exe
           test-oci: docker load < ./result
 
         - package: rust-hello-debug-x86_64-unknown-linux-gnu
@@ -255,7 +255,7 @@ jobs:
           test-bin: file ./result/bin/complex-foo
 
         - package: rust-complex-x86_64-pc-windows-gnu
-          test-bin: nix shell --inputs-from . 'nixpkgs-nixos#wine64' -c wine64 ./result/bin/complex-foo.exe
+          test-bin: nix shell --inputs-from . 'nixpkgs-nixos#wine64' -c wine ./result/bin/complex-foo.exe
           suffix: .exe
 
         - package: rust-complex-x86_64-unknown-linux-gnu
@@ -320,7 +320,7 @@ jobs:
           test-bin: file ./result/bin/complex-foo
 
         - package: rust-complex-debug-x86_64-pc-windows-gnu
-          test-bin: nix shell --inputs-from . 'nixpkgs-nixos#wine64' -c wine64 ./result/bin/complex-foo.exe
+          test-bin: nix shell --inputs-from . 'nixpkgs-nixos#wine64' -c wine ./result/bin/complex-foo.exe
           suffix: .exe
 
         - package: rust-complex-debug-x86_64-unknown-linux-gnu
