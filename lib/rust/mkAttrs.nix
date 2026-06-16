@@ -446,10 +446,18 @@ let
                   "AR_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}ar";
                   "CC_${target}" = "${pkgsCross.stdenv.cc.targetPrefix}cc";
                 }
-                # Use `mold` linker for Linux targets
-                // optionalAttrs (pkgsCross.stdenv.hostPlatform.isLinux && !final.mold.meta.broken) {
+                # Use `mold` linker for Linux targets.
+                #
+                # Use `mold-unwrapped` rather than `mold`: on a Darwin build
+                # host `final.mold` is a bintools-wrapped binary that injects
+                # Mach-O linker flags (e.g. `-platform_version`) for its Darwin
+                # role, which are invalid when linking an ELF binary for a Linux
+                # cross-target. The wrapper buys us nothing here anyway — mold is
+                # driven as the `ld` backend through the already-wrapped cross
+                # `cc` via `-fuse-ld=mold`.
+                // optionalAttrs (pkgsCross.stdenv.hostPlatform.isLinux && !final.mold-unwrapped.meta.broken) {
                   nativeBuildInputs = [
-                    final.mold
+                    final.mold-unwrapped
                     final.removeReferencesTo
                   ];
 
@@ -457,7 +465,7 @@ let
                     "-Clink-arg=-fuse-ld=mold" + optionalString targetIsMusl muslStaticRustflags;
                 }
                 # Statically link musl targets even when `mold` is unavailable.
-                // optionalAttrs (targetIsMusl && final.mold.meta.broken) {
+                // optionalAttrs (targetIsMusl && final.mold-unwrapped.meta.broken) {
                   "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" = muslStaticRustflags;
                 }
                 # Always build static binaries for Windows targets
