@@ -635,7 +635,7 @@ let
 
                   CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER = final.writeScript "wine-wrapper" ''
                     export WINEPREFIX="$(mktemp -d)"
-                    exec wine64 $@
+                    exec wine $@
                   '';
                 }
               else
