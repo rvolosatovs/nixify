@@ -190,7 +190,6 @@ self.lib.mkFlake {
           hostRustToolchain
           ;
 
-        buildLib = attrs.lib;
         packages =
           packages // attrPkgs // optionalAttrs (attrPkgs ? ${pname}) { default = attrPkgs.${pname}; };
       }

@@ -106,7 +106,6 @@ let
     trace' "callCrane" {
       inherit
         buildArgs
-        checkArgs
         clippyArgs
         docArgs
         testArgs
