@@ -515,153 +515,36 @@ let
                   doCheck = warn "testing not currently supported when cross-compiling for `${target}` from non-Darwin platform" false;
                 }
             // optionalAttrs (doCheck && useEmu) (
-              if target == arm-unknown-linux-gnueabihf then
-                {
-                  CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_RUNNER = "qemu-arm";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == arm-unknown-linux-musleabihf then
-                {
-                  CARGO_TARGET_ARM_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == armv7-unknown-linux-gnueabihf then
-                {
-                  CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_RUNNER = "qemu-arm";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == armv7-unknown-linux-musleabihf then
-                {
-                  CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_RUNNER = "qemu-arm";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == aarch64-linux-android then
-                { doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false; }
-              else if target == aarch64-unknown-linux-gnu then
-                {
-                  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-aarch64";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == aarch64-unknown-linux-musl then
-                {
-                  CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-aarch64";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == mips-unknown-linux-gnu then
-                {
-                  CARGO_TARGET_MIPS_UNKNOWN_LINUX_GNU_RUNNER = "qemu-mips";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == mips64-unknown-linux-gnuabi64 then
-                {
-                  CARGO_TARGET_MIPS64_UNKNOWN_LINUX_GNUABI64_RUNNER = "qemu-mips64";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == mips64el-unknown-linux-gnuabi64 then
-                {
-                  CARGO_TARGET_MIPS64EL_UNKNOWN_LINUX_GNUABI64_RUNNER = "qemu-mips64el";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == mipsel-unknown-linux-gnu then
-                {
-                  CARGO_TARGET_MIPSEL_UNKNOWN_LINUX_GNU_RUNNER = "qemu-mipsel";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == powerpc64-unknown-linux-gnu then
-                {
-                  CARGO_TARGET_POWERPC64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-ppc64";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == powerpc64-unknown-linux-musl then
-                {
-                  CARGO_TARGET_POWERPC64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-ppc64";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == powerpc64le-unknown-linux-gnu then
-                {
-                  CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_GNU_RUNNER = "qemu-ppc64le";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == powerpc64le-unknown-linux-musl then
-                {
-                  CARGO_TARGET_POWERPC64LE_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-ppc64le";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == riscv64gc-unknown-linux-gnu then
-                {
-                  CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_RUNNER = "qemu-riscv64";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == s390x-unknown-linux-gnu then
-                {
-                  CARGO_TARGET_S390X_UNKNOWN_LINUX_GNU_RUNNER = "qemu-s390x";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == wasm32-unknown-unknown then
-                { doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false; }
-              else if target == wasm32-wasip1 then
-                { CARGO_TARGET_WASM32_WASIP1_RUNNER = "wasmtime run -C cache=n"; }
-              else if target == wasm32-wasip2 then
-                { CARGO_TARGET_WASM32_WASIP2_RUNNER = "wasmtime run -C cache=n"; }
-              else if target == x86_64-unknown-linux-gnu then
-                {
-                  CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-x86_64";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == x86_64-unknown-linux-musl then
-                {
-                  CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUNNER = "qemu-x86_64";
-                }
-                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
-                }
-              else if target == x86_64-pc-windows-gnu then
-                {
-                  # TODO: This works locally, but for some reason does not within the sanbox
-                  doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false;
+              let
+                runnerEnv = "CARGO_TARGET_${toUpper (kebab2snake target)}_RUNNER";
 
-                  CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER = final.writeScript "wine-wrapper" ''
-                    export WINEPREFIX="$(mktemp -d)"
-                    exec wine $@
-                  '';
+                # Targets that can be cross-built but not cross-tested here:
+                # there is no usable emulator (or a known-broken one).
+                noTestRunner = [
+                  aarch64-linux-android
+                  wasm32-unknown-unknown
+                  # TODO: wine works locally, but not within the sandbox
+                  x86_64-pc-windows-gnu
+                ];
+              in
+              if any (eq target) noTestRunner then
+                { doCheck = warn "testing not currently supported when cross-compiling for `${target}`" false; }
+              # `wasmtime` runs on every build host, including Darwin.
+              else if pkgsCross.stdenv.hostPlatform.isWasm then
+                { ${runnerEnv} = "wasmtime run -C cache=n"; }
+              # Everything else is emulated with `qemu`, keyed off the target's
+              # `qemuArch` (e.g. `qemu-aarch64`, `qemu-ppc64le`). `qemu` does not
+              # work under the Darwin build sandbox, so disable testing there.
+              else if pkgsCross.stdenv.hostPlatform.qemuArch != null then
+                {
+                  ${runnerEnv} = "qemu-${pkgsCross.stdenv.hostPlatform.qemuArch}";
+                }
+                // optionalAttrs final.stdenv.buildPlatform.isDarwin {
+                  doCheck = warn "testing not currently supported when cross-compiling for `${target}` on Darwin" false;
                 }
               else
                 warn
-                  "do not know which test runner to use for target `${target}`, set `CARGO_TARGET_${toUpper (kebab2snake target)}_RUNNER` to appropriate `qemu` binary name"
+                  "do not know which test runner to use for target `${target}`, set `${runnerEnv}` to appropriate `qemu` binary name"
                   { }
             )
           );
