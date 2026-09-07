@@ -11,7 +11,7 @@ permissions:
 runs:
   using: composite
   steps:
-  - uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3.21.9
+  - uses: DeterminateSystems/determinate-nix-action@021c8a1bd3570eb21f5c20a054812b0c4d9ca614 # v3.22.3
     with:
       extra-conf: |
         accept-flake-config = true
