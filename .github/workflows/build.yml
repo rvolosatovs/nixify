@@ -80,7 +80,7 @@ jobs:
           test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' ./result/bin/rust-hello.wasm
 
         - package: rust-hello-wasm32-wasip2
-          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' ./result/bin/rust-hello.wasm
+          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' -- -S cli-exit-with-code=y ./result/bin/rust-hello.wasm
           test-oci: docker load < ./result
 
         - package: rust-hello-x86_64-apple-darwin
@@ -161,7 +161,7 @@ jobs:
           test-oci: docker load < ./result
 
         - package: rust-hello-debug-wasm32-wasip2
-          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' ./result/bin/rust-hello.wasm
+          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' -- -S cli-exit-with-code=y ./result/bin/rust-hello.wasm
           test-oci: docker load < ./result
 
         - package: rust-hello-debug-x86_64-apple-darwin
@@ -269,7 +269,7 @@ jobs:
           suffix: .wasm
 
         - package: rust-complex-wasm32-wasip2
-          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' ./result/bin/complex-foo.wasm
+          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' -- -S cli-exit-with-code=y ./result/bin/complex-foo.wasm
           suffix: .wasm
 
         - package: rust-complex-debug
@@ -334,7 +334,7 @@ jobs:
           suffix: .wasm
 
         - package: rust-complex-debug-wasm32-wasip2
-          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' ./result/bin/complex-foo.wasm
+          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' -- -S cli-exit-with-code=y ./result/bin/complex-foo.wasm
           suffix: .wasm
 
     runs-on: ubuntu-24.04
@@ -414,7 +414,7 @@ jobs:
           suffix: .wasm
 
         - package: rust-complex-wasm32-wasip2
-          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' ./result/bin/complex-foo.wasm
+          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' -- -S cli-exit-with-code=y ./result/bin/complex-foo.wasm
           suffix: .wasm
 
         - package: rust-complex-debug
@@ -468,7 +468,7 @@ jobs:
           suffix: .wasm
 
         - package: rust-complex-debug-wasm32-wasip2
-          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' ./result/bin/complex-foo.wasm
+          test-bin: nix run --inputs-from . 'nixpkgs-nixos#wasmtime' -- -S cli-exit-with-code=y ./result/bin/complex-foo.wasm
           suffix: .wasm
 
     runs-on: macos-latest
