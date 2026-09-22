@@ -634,7 +634,7 @@ let
               else if target == wasm32-wasip1 then
                 { CARGO_TARGET_WASM32_WASIP1_RUNNER = "wasmtime run -C cache=n"; }
               else if target == wasm32-wasip2 then
-                { CARGO_TARGET_WASM32_WASIP2_RUNNER = "wasmtime run -C cache=n"; }
+                { CARGO_TARGET_WASM32_WASIP2_RUNNER = "wasmtime run -C cache=n -S cli-exit-with-code=y"; }
               else if target == x86_64-unknown-linux-gnu then
                 {
                   CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER = "qemu-x86_64";
