@@ -63,17 +63,10 @@ jobs:
         cachixAuthToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - run: nix build -L --show-trace --inputs-from . 'nixpkgs-darwin#pkgsCross.${{ matrix.pkgs }}.stdenv.cc'
 
-  check:
-    name: "nix flake check"
-    needs:
-    - toolchains-linux
-    - toolchains-macos
-    strategy:
-      matrix:
-        platform:
-        - host: macos-latest
-        - host: ubuntu-24.04
-    runs-on: ${{ matrix.platform.host }}
+  check-linux:
+    name: "nix flake check (ubuntu-24.04)"
+    needs: toolchains-linux
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       contents: read
@@ -83,17 +76,29 @@ jobs:
       with:
         cachixAuthToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - name: Set Swap Space
-      if: ${{ runner.os == 'Linux' }}
       uses: pierotofy/set-swap-space@49819abfb41bd9b44fb781159c033dba90353a7c # v1.0
       with:
         swap-size-gb: 10
     - name: Free Disk Space
-      if: ${{ runner.os == 'Linux' }}
       uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
       with:
         tool-cache: false
     - run: nix flake check -L --show-trace
-      continue-on-error: ${{ runner.os == 'macOS' }}
+
+  check-macos:
+    name: "nix flake check (macos-latest)"
+    needs: toolchains-macos
+    runs-on: macos-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/install-nix
+      with:
+        cachixAuthToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - run: nix flake check -L --show-trace
+      continue-on-error: true
 
   rust-hello-linux:
     needs: toolchains-linux
