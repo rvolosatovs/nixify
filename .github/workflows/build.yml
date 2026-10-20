@@ -14,6 +14,7 @@ concurrency:
 jobs:
   toolchains-linux:
     strategy:
+      fail-fast: false
       matrix:
         pkgs:
         - aarch64-multiplatform
@@ -40,6 +41,7 @@ jobs:
 
   toolchains-macos:
     strategy:
+      fail-fast: false
       matrix:
         pkgs:
         - aarch64-multiplatform-musl
@@ -66,6 +68,7 @@ jobs:
   check-linux:
     name: "nix flake check (ubuntu-24.04)"
     needs: toolchains-linux
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
@@ -88,6 +91,7 @@ jobs:
   check-macos:
     name: "nix flake check (macos-latest)"
     needs: toolchains-macos
+    if: ${{ !cancelled() }}
     runs-on: macos-latest
     permissions:
       id-token: write
