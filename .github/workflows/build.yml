@@ -12,7 +12,59 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  toolchains-linux:
+    strategy:
+      matrix:
+        pkgs:
+        - aarch64-multiplatform
+        - aarch64-multiplatform-musl
+        - armv7l-hf-multiplatform
+        - mingwW64
+        - musl64
+        - muslpi
+        - powernv
+        - raspberryPi
+        - riscv64
+        - s390x
+        - wasi32
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/install-nix
+      with:
+        cachixAuthToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - run: nix build -L --show-trace --inputs-from . 'nixpkgs-nixos#pkgsCross.${{ matrix.pkgs }}.stdenv.cc'
+
+  toolchains-macos:
+    strategy:
+      matrix:
+        pkgs:
+        - aarch64-multiplatform-musl
+        - armv7l-hf-multiplatform
+        - mingwW64
+        - musl64
+        - muslpi
+        - powernv
+        - raspberryPi
+        - riscv64
+        - s390x
+        - wasi32
+    runs-on: macos-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: ./.github/actions/install-nix
+      with:
+        cachixAuthToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - run: nix build -L --show-trace --inputs-from . 'nixpkgs-darwin#pkgsCross.${{ matrix.pkgs }}.stdenv.cc'
+
   rust-hello-linux:
+    needs: toolchains-linux
     strategy:
       matrix:
         config:
@@ -201,6 +253,7 @@ jobs:
 
 
   rust-complex-linux:
+    needs: toolchains-linux
     strategy:
       matrix:
         config:
@@ -355,6 +408,7 @@ jobs:
     - run: ${{ matrix.config.test-bin }}
 
   rust-complex-macos:
+    needs: toolchains-macos
     strategy:
       matrix:
         config:
