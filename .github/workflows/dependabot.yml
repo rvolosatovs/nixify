@@ -2,8 +2,8 @@ name: dependabot
 on: pull_request
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
 
 jobs:
   auto-merge:

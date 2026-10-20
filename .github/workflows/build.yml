@@ -44,8 +44,10 @@ jobs:
       fail-fast: false
       matrix:
         pkgs:
+        - aarch64-multiplatform
         - aarch64-multiplatform-musl
         - armv7l-hf-multiplatform
+        - gnu64
         - mingwW64
         - musl64
         - muslpi
@@ -84,8 +86,6 @@ jobs:
         swap-size-gb: 10
     - name: Free Disk Space
       uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
-      with:
-        tool-cache: false
     - run: nix flake check -L --show-trace
 
   check-macos:
@@ -106,6 +106,7 @@ jobs:
 
   rust-hello-linux:
     needs: toolchains-linux
+    if: ${{ !cancelled() }}
     strategy:
       matrix:
         config:
@@ -295,6 +296,7 @@ jobs:
 
   rust-complex-linux:
     needs: toolchains-linux
+    if: ${{ !cancelled() }}
     strategy:
       matrix:
         config:
@@ -450,6 +452,7 @@ jobs:
 
   rust-complex-macos:
     needs: toolchains-macos
+    if: ${{ !cancelled() }}
     strategy:
       matrix:
         config:
