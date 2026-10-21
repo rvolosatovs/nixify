@@ -42,7 +42,7 @@ let
     if version != null then
       version
     else if cargoToml.package.version.workspace or false then
-      cargoToml.package.workspace.version or defaultVersion
+      cargoToml.workspace.package.version or defaultVersion
     else
       cargoToml.package.version or defaultVersion;
 
@@ -132,16 +132,17 @@ let
     in
     trace "callCraneWithDeps" callCrane {
       inherit craneLib overrideArgs;
-      craneArgs = {
-        inherit cargoArtifacts;
-
-        passthru = {
+      craneArgs =
+        craneArgs
+        // {
           inherit cargoArtifacts;
+
+          passthru = {
+            inherit cargoArtifacts;
+          }
+          // (craneArgs.passthru or { });
         }
-        // (craneArgs.passthru or { });
-      }
-      // craneArgs
-      // packageArgs;
+        // packageArgs;
     };
 
   # buildPackage builds using `craneLib`.
@@ -250,7 +251,7 @@ let
               ''
               + optionalString final.stdenv.hostPlatform.isDarwin ''
                 _nixifyRustHostSign() {
-                    find "$out" -type f -exec sh -c "rcodesign sign '{}' || true" \;
+                    find "$out" -type f -exec sh -c 'rcodesign sign "$1" || true' _ '{}' \;
                 }
                 preFixupHooks+=(_nixifyRustHostSign)
               ''
@@ -337,7 +338,7 @@ let
             # https://actually.fyi/posts/zig-makes-rust-cross-compilation-just-work
             # https://github.com/rust-cross/cargo-zigbuild
             final.writeShellScriptBin "${target}-zigcc" ''
-              ${final.zig}/bin/zig cc ${optionalString pkgsCross.stdenv.buildPlatform.isDarwin ''--sysroot="$SDKROOT" -I"$SDKROOT/usr/include" -L"$SDKROOT/usr/lib" -F"$SDKROOT/System/Library/Frameworks"''} $@ -target ${target'}
+              ${final.zig}/bin/zig cc ${optionalString pkgsCross.stdenv.buildPlatform.isDarwin ''--sysroot="$SDKROOT" -I"$SDKROOT/usr/include" -L"$SDKROOT/usr/lib" -F"$SDKROOT/System/Library/Frameworks"''} "$@" -target ${target'}
             '';
 
           # On a Darwin build host the toolchain's LLD (`rust-lld`, and the
@@ -386,7 +387,7 @@ let
                             '{}' +
                         }
                         _nixifyRustDarwinSign() {
-                          find "$out" -type f -exec sh -c "rcodesign sign '{}' || true" \;
+                          find "$out" -type f -exec sh -c 'rcodesign sign "$1" || true' _ '{}' \;
                         }
                         postInstallHooks+=(_nixifyRustDarwinStrip)
                         preFixupHooks+=(_nixifyRustDarwinSign)
@@ -473,8 +474,8 @@ let
                 # `cc` via `-fuse-ld=mold`.
                 // optionalAttrs (pkgsCross.stdenv.hostPlatform.isLinux && !final.mold-unwrapped.meta.broken) {
                   nativeBuildInputs = [
+                    hook
                     final.mold-unwrapped
-                    final.removeReferencesTo
                   ];
 
                   "CARGO_TARGET_${toUpper (kebab2snake target)}_RUSTFLAGS" =
@@ -659,7 +660,7 @@ let
 
                   CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUNNER = final.writeScript "wine-wrapper" ''
                     export WINEPREFIX="$(mktemp -d)"
-                    exec wine $@
+                    exec wine "$@"
                   '';
                 }
               else
