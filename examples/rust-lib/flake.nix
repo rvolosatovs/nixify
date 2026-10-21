@@ -9,5 +9,7 @@
       nixpkgsConfig.allowUnfree = true;
 
       cargoLock = ./Cargo.test.lock;
+
+      test.miri = true;
     };
 }

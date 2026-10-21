@@ -112,7 +112,7 @@ A flake definition at `examples/rust-hello/flake.nix`:
 Produces the following outputs (per system):
 
 - `apps.<system>.{default,<pname>,<pname>-debug}` — `nix run` entry points wrapping the host-system binaries.
-- `checks.<system>.{audit,clippy,doc,fmt,nextest}` — what `nix flake check` runs (`doctest` is added when `test.allTargets` or `test.doc` is set).
+- `checks.<system>.{audit,clippy,doc,fmt,nextest}` — what `nix flake check` runs (`doctest` is added when `test.allTargets` or `test.doc` is set; `miri` is added when `test.miri` is set and runs `cargo miri test` with the `rust-toolchain.toml` channel if it is a nightly one, otherwise with `nightly`; an undated `nightly` resolves to the newest nightly with all components available, even if the host toolchain uses a newer one).
 - `devShells.<system>.default` — dev shell with the resolved Rust toolchain on `PATH`.
 - `formatter.<system>` — the Nix formatter (`nixfmt`).
 - `overlays.{default,<pname>,fenix,rust-overlay}` — re-exported toolchain overlays plus one that adds `<pname>` to nixpkgs.
