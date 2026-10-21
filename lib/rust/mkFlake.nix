@@ -47,7 +47,7 @@ let
   pname = if name != null then name else pnameFromCargoToml cargoToml;
   version =
     if cargoToml.package.version.workspace or false then
-      cargoToml.package.workspace.version or defaultVersion
+      cargoToml.workspace.package.version or defaultVersion
     else
       cargoToml.package.version or defaultVersion;
 
