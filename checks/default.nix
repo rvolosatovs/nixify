@@ -60,6 +60,7 @@ genAttrs [ aarch64-darwin aarch64-linux x86_64-darwin x86_64-linux ] (
   assert flakes.rust.complex.packages.${system} ? default;
   assert flakes.rust.hello-multibin.packages.${system} ? default;
   assert flakes.rust.hello.packages.${system} ? default;
+  assert flakes.rust.lib.checks.${system} ? miri;
   assert flakes.rust.workspace.packages.${system} ? default;
   foldl (
     checks: example: checks // (assertRustOutputs flakes.rust.${example} "rust-${example}" system)

@@ -50,6 +50,13 @@ let
 
   bins = crateBins { inherit build src; };
 
+  vendorArgs = {
+    src = if (dummySrc != null) then dummySrc else src;
+  }
+  // optionalAttrs (overrideVendorCargoPackage != null) { inherit overrideVendorCargoPackage; }
+  // optionalAttrs (overrideVendorGitCheckout != null) { inherit overrideVendorGitCheckout; }
+  // optionalAttrs (cargoLock != null) { inherit cargoLock; };
+
   callCrane =
     {
       craneArgs ? { },
@@ -72,13 +79,6 @@ let
           ++ optionals (clippy ? warn) (map (lint: "--warn ${lint} ") warn)
         )
       }";
-
-      vendorArgs = {
-        src = if (dummySrc != null) then dummySrc else src;
-      }
-      // optionalAttrs (overrideVendorCargoPackage != null) { inherit overrideVendorCargoPackage; }
-      // optionalAttrs (overrideVendorGitCheckout != null) { inherit overrideVendorGitCheckout; }
-      // optionalAttrs (cargoLock != null) { inherit cargoLock; };
 
       cargoVendorDir = craneLib.vendorCargoDeps vendorArgs;
 
@@ -176,17 +176,17 @@ let
     final.stdenv.hostPlatform.config = final.stdenv.hostPlatform.config;
   } mkCraneLib final hostRustToolchain;
 
-  mkHostArgs =
-    craneArgs:
-    trace' "mkHostArgs" { inherit craneArgs; } {
-      inherit craneArgs;
-
-      craneLib = hostCraneLib;
+  mkArgs =
+    craneLib: rustToolchain: craneArgs:
+    trace' "mkArgs" { inherit craneArgs; } {
+      inherit craneArgs craneLib;
 
       overrideArgs.pkgs = final;
-      overrideArgs.craneLib = hostCraneLib;
-      overrideArgs.rustToolchain = hostRustToolchain;
+      overrideArgs.craneLib = craneLib;
+      overrideArgs.rustToolchain = rustToolchain;
     };
+
+  mkHostArgs = mkArgs hostCraneLib hostRustToolchain;
 
   callHostCrane =
     craneArgs: trace' "callHostCrane" { inherit craneArgs; } callCrane (mkHostArgs craneArgs);
@@ -203,6 +203,21 @@ let
         doCheck = true; # without performing the actual testing, this check is useless
       }
     );
+
+  miriRustToolchain = withToolchain final {
+    channel =
+      if hasPrefix "nightly" (rustupToolchain'.channel or "") then
+        rustupToolchain'.channel
+      else
+        "nightly";
+    components = [
+      "miri"
+      "rust-src"
+      "rustc"
+    ];
+  };
+
+  miriCraneLib = mkCraneLib final miriRustToolchain;
 
   checks = {
     clippy = callHostCraneCheckWithDeps { } hostCraneLib.cargoClippy;
@@ -221,6 +236,52 @@ let
         )
       }";
     } hostCraneLib.cargoDocTest;
+  }
+  // (optionalAttrs (test ? miri && test.miri)) {
+    miri = callCraneWithDeps (
+      mkArgs miriCraneLib miriRustToolchain {
+        pname = "${pname'}-miri";
+        cargoVendorDir = final.runCommandLocal "vendor-cargo-deps-miri" { } ''
+          vendor=${miriCraneLib.vendorCargoDeps vendorArgs}
+          mkdir -p $out/crates-io
+          hash=$(sed -n '/^\[source\.crates-io\]$/,/^\[/s/^replace-with = "nix-sources-\(.*\)"$/\1/p' $vendor/config.toml)
+          if [ -n "$hash" ]; then
+            ln -s $vendor/$hash/* $out/crates-io/
+            sed "s|$vendor/$hash\"|$out/crates-io\"|" $vendor/config.toml > $out/config.toml
+          else
+            cat $vendor/config.toml > $out/config.toml
+            cat >> $out/config.toml <<EOF
+          [source.nix-sources-miri]
+          directory = "$out/crates-io"
+          [source.crates-io]
+          replace-with = "nix-sources-miri"
+          EOF
+          fi
+          for crate in ${miriRustToolchain}/lib/rustlib/src/rust/library/vendor/*; do
+            [ -e $out/crates-io/$(basename $crate) ] || ln -s $crate $out/crates-io/
+          done
+        '';
+        doCheck = false;
+        buildPhaseCargoCommand = ''
+          export HOME="$TMPDIR"
+          export MIRI_SYSROOT="$PWD/target/miri-sysroot"
+          cargo miri setup
+          cargo miri test --locked --no-run -j $NIX_BUILD_CORES ${mkCargoFlags test}
+        '';
+      }
+      // {
+        packageArgs = {
+          doCheck = true;
+          doInstallCargoArtifacts = false;
+          buildPhaseCargoCommand = "";
+          checkPhaseCargoCommand = ''
+            export HOME="$TMPDIR"
+            export MIRI_SYSROOT="$PWD/target/miri-sysroot"
+            cargo miri test --locked -j $NIX_BUILD_CORES ${mkCargoFlags test}
+          '';
+        };
+      }
+    ) miriCraneLib.mkCargoDerivation;
   }
   // (optionalAttrs (pathExists "${src}/Cargo.lock") {
     # TODO: Use `cargoLock` if `Cargo.lock` missing

@@ -64,7 +64,7 @@ let
     let
       channels.stable = "stable";
       channels.beta = "beta";
-      channels.nightly = "latest";
+      channels.nightly = if targets == [ ] then "complete" else "latest";
 
       channel' = channels.${channel};
       targets' = map (target: fenix.targets.${target}.${channel'}.rust-std) targets;
@@ -145,6 +145,7 @@ in
   defaultTestConfig.doc = false;
   defaultTestConfig.excludes = [ ];
   defaultTestConfig.features = [ ];
+  defaultTestConfig.miri = false;
   defaultTestConfig.noDefaultFeatures = false;
   defaultTestConfig.packages = [ ];
   defaultTestConfig.targets = [ ];
