@@ -18,6 +18,20 @@ let
   # crateBins returns a list of binaries that would be produced by cargo build
   crateBins = import ./crateBins.nix inputs;
 
+  # defaultCrateBin returns the binary in `bins` run by default, or `null` if there is none
+  defaultCrateBin =
+    cargoToml: pname: bins:
+    if elem (cargoToml.package.default-run or null) bins then
+      cargoToml.package.default-run
+    else if elem (cargoToml.package.name or null) bins then
+      cargoToml.package.name
+    else if elem pname bins then
+      pname
+    else if length bins == 1 then
+      head bins
+    else
+      null;
+
   # mkCargoFlags constructs a set of cargo flags from `config`
   mkCargoFlags =
     config:
@@ -84,6 +98,7 @@ in
 {
   inherit
     crateBins
+    defaultCrateBin
     defaultRustupToolchain
     mkAttrs
     mkCargoFlags

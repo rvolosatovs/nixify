@@ -58,10 +58,23 @@ genAttrs [ aarch64-darwin aarch64-linux x86_64-darwin x86_64-linux ] (
   system:
   assert flakes.rust.complex.checks.${system} ? doctest;
   assert flakes.rust.complex.packages.${system} ? default;
+  assert flakes.rust.complex.apps.${system} ? complex-foo;
+  assert flakes.rust.complex.apps.${system} ? default;
+  assert flakes.rust.complex.apps.${system} ? rust-complex;
+  assert flakes.rust.complex.apps.${system} ? rust-complex-debug;
+  assert flakes.rust.hello-multibin.apps.${system} ? bye;
+  assert flakes.rust.hello-multibin.apps.${system} ? bye-debug;
+  assert flakes.rust.hello-multibin.apps.${system} ? hello-other-path;
+  assert flakes.rust.hello-multibin.apps.${system} ? hello-other-path-debug;
+  assert flakes.rust.hello-multibin.apps.${system} ? rust-hello-multibin;
+  assert flakes.rust.hello-multibin.apps.${system} ? default;
   assert flakes.rust.hello-multibin.packages.${system} ? default;
   assert flakes.rust.hello.packages.${system} ? default;
+  assert flakes.rust.lib.apps.${system} == { };
   assert flakes.rust.lib.checks.${system} ? miri;
   assert flakes.rust.workspace.packages.${system} ? default;
+  assert flakes.rust.workspace.apps.${system} ? hello-workspace;
+  assert !(flakes.rust.workspace.apps.${system} ? default);
   foldl (
     checks: example: checks // (assertRustOutputs flakes.rust.${example} "rust-${example}" system)
   ) { } (attrNames flakes.rust)

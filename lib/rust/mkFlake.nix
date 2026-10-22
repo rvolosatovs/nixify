@@ -63,9 +63,15 @@ let
     include = includePaths;
   };
 
+  bins = crateBins {
+    inherit build;
+    src = src';
+  };
+
   # partially-applied `mkAttrs`
   mkAttrs' = mkAttrs {
     inherit
+      bins
       build
       buildOverrides
       cargoLock
@@ -109,18 +115,44 @@ self.lib.mkFlake {
       pkgs,
       ...
     }@cx:
+    let
+      mkBinApps =
+        suffix:
+        optionalAttrs (packages ? "${pname}${suffix}") (
+          listToAttrs (
+            map (
+              bin:
+              nameValuePair "${bin}${suffix}" (
+                flake-utils.lib.mkApp {
+                  drv = packages."${pname}${suffix}";
+                  exePath = "/bin/${bin}";
+                }
+              )
+            ) bins
+          )
+        );
+
+      mkDefaultBinApp =
+        suffix:
+        optionalAttrs (packages ? "${pname}${suffix}" && packages."${pname}${suffix}".passthru ? exePath) {
+          "${pname}${suffix}" = flake-utils.lib.mkApp { drv = packages."${pname}${suffix}"; };
+        };
+
+      binApps = mkBinApps "-debug" // mkBinApps "" // mkDefaultBinApp "-debug" // mkDefaultBinApp "";
+
+      apps' =
+        if (packages.default.pname or null) == pname && !(packages.default.passthru ? exePath) then
+          removeAttrs apps [ "default" ]
+        else
+          apps;
+    in
     withApps (
       cx
       // {
         apps =
-          apps
+          apps'
           # TODO: Add cross apps
-          // optionalAttrs (packages ? "${pname}") {
-            ${pname} = flake-utils.lib.mkApp { drv = packages."${pname}"; };
-          }
-          // optionalAttrs (packages ? "${pname}-debug") {
-            "${pname}-debug" = flake-utils.lib.mkApp { drv = packages."${pname}-debug"; };
-          };
+          // binApps;
       }
     );
 

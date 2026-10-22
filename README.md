@@ -111,7 +111,7 @@ A flake definition at `examples/rust-hello/flake.nix`:
 
 Produces the following outputs (per system):
 
-- `apps.<system>.{default,<pname>,<pname>-debug}` — `nix run` entry points wrapping the host-system binaries.
+- `apps.<system>.{default,<pname>,<pname>-debug,<bin>,<bin>-debug}` — `nix run` entry points, one per binary target cargo builds (release and debug host builds). `default` runs `packages.<system>.default`, and is omitted when that is the host package and it has no default binary. `<pname>` and `<pname>-debug` run the default binary when there is one, even if another binary is named `<pname>`. Binaries are discovered from `Cargo.toml` (autobins, `[[bin]]` targets whose `required-features` are enabled, directly or transitively, by `build.features` or the crate's `default` feature, and the workspace members cargo selects, honouring `build.workspace`, `build.packages`, `workspace.default-members` and `workspace.exclude`; path dependencies are members only inside a `[workspace]` root's directory); set `build.bins` to list them explicitly when discovery gets it wrong (this also passes `--bin` to cargo).
 - `checks.<system>.{audit,clippy,doc,fmt,nextest}` — what `nix flake check` runs (`doctest` is added when `test.allTargets` or `test.doc` is set; `miri` is added when `test.miri` is set and runs `cargo miri test` with the `rust-toolchain.toml` channel if it is a nightly one, otherwise with `nightly`; an undated `nightly` resolves to the newest nightly with all components available, even if the host toolchain uses a newer one).
 - `devShells.<system>.default` — dev shell with the resolved Rust toolchain on `PATH`.
 - `formatter.<system>` — the Nix formatter (`nixfmt`).
@@ -122,7 +122,7 @@ Produces the following outputs (per system):
   - `<pname>[-debug]-<target>-oci` — a `docker load`-able image tarball.
   - `<pname>[-debug]-<target>-oci-dir` — the same image as an OCI image directory.
   - `<pname>[-debug]-<target>-oci-manifest` — the OCI manifest JSON.
-  - Plus host-system aliases: `default`, `<pname>`, `<pname>-debug`, `<pname>-oci`, `<pname>-oci-dir` (target suffix dropped).
+  - Plus host-system aliases: `default`, `<pname>`, `<pname>-debug`, `<pname>-oci`, `<pname>-oci-dir` (target suffix dropped). The binary packages (`<pname>[-debug]-<target>`, `<pname>`, `<pname>-debug`) set `meta.mainProgram` to the default binary (the `default-run` one, else the one named after the Cargo package, else the one named `<pname>`, else the only one; with an `.exe` or `.wasm` suffix for Windows and WebAssembly targets), which is also the OCI image `Cmd`.
 
 <details>
 <summary><code>nix flake show --no-write-lock-file --all-systems 'github:rvolosatovs/nixify?dir=examples/rust-hello'</code></summary>
