@@ -17,6 +17,7 @@ with self.lib.rust.targets;
 {
   audit ? defaultAuditConfig,
   build ? defaultBuildConfig,
+  bins ? crateBins { inherit build src; },
   buildOverrides ? defaultBuildOverrides,
   cargoLock ? null,
   clippy ? defaultClippyConfig,
@@ -48,7 +49,7 @@ let
 
   rustupToolchain' = rustupToolchain.toolchain or { };
 
-  bins = crateBins { inherit build src; };
+  defaultBin = defaultCrateBin cargoToml pname' bins;
 
   vendorArgs = {
     src = if (dummySrc != null) then dummySrc else src;
@@ -319,9 +320,42 @@ let
             )
           );
     in
-    trace' "buildHostPackage" { inherit craneArgs; } callHostCraneWithDeps (
-      craneArgs // { nativeBuildInputs = [ hook ]; }
-    ) hostCraneLib.buildPackage;
+    withDefaultBin final.stdenv.hostPlatform (
+      trace' "buildHostPackage" { inherit craneArgs; } callHostCraneWithDeps (
+        craneArgs // { nativeBuildInputs = [ hook ]; }
+      ) hostCraneLib.buildPackage
+    );
+
+  withDefaultBin =
+    platform: pkg:
+    if defaultBin == null then
+      pkg
+    else
+      let
+        exe =
+          if platform.isWindows then
+            "${defaultBin}.exe"
+          else if platform.isWasm then
+            "${defaultBin}.wasm"
+          else
+            defaultBin;
+      in
+      pkg.overrideAttrs (
+        old:
+        let
+          meta = {
+            mainProgram = exe;
+          }
+          // old.meta or { };
+        in
+        {
+          inherit meta;
+          passthru = {
+            exePath = "/bin/${meta.mainProgram}";
+          }
+          // old.passthru or { };
+        }
+      );
 
   hostBin = buildHostPackage commonReleaseArgs;
   hostDebugBin = buildHostPackage commonDebugArgs;
@@ -801,7 +835,7 @@ let
                       ;
                   };
                 in
-                withPassthru craneArgs pkg;
+                withPassthru craneArgs (withDefaultBin pkgsCross.stdenv.hostPlatform pkg);
             in
             optionalAttrs (targets' != null && targets' ? ${target} && targets'.${target}) {
               "${pname'}-${target}" = buildPackageFor' commonReleaseArgs;
@@ -836,7 +870,6 @@ let
       ociArchitecture.${x86_64-unknown-linux-gnu} = "amd64";
       ociArchitecture.${x86_64-unknown-linux-musl} = "amd64";
 
-      bins' = genAttrs bins (_: { });
       targetImages = (
         mapAttrs' (
           target: pkg:
@@ -851,8 +884,7 @@ let
                 };
                 config.Env = [ "PATH=${pkg}/bin" ];
               }
-              // optionalAttrs (bins' ? ${pname'}) { config.Cmd = [ pname' ]; }
-              // optionalAttrs (length bins == 1) { config.Cmd = bins; }
+              // optionalAttrs (pkg.meta ? mainProgram) { config.Cmd = [ pkg.meta.mainProgram ]; }
               // optionalAttrs (ociArchitecture ? ${pkg.passthru.target}) {
                 architecture = ociArchitecture.${pkg.passthru.target};
               }
