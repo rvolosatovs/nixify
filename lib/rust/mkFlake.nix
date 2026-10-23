@@ -150,9 +150,9 @@ self.lib.mkFlake {
       cx
       // {
         apps =
-          apps'
+          binApps
           # TODO: Add cross apps
-          // binApps;
+          // apps';
       }
     );
 

@@ -320,45 +320,34 @@ let
             )
           );
     in
-    withDefaultBin final.stdenv.hostPlatform (
-      trace' "buildHostPackage" { inherit craneArgs; } callHostCraneWithDeps (
-        craneArgs // { nativeBuildInputs = [ hook ]; }
-      ) hostCraneLib.buildPackage
-    );
+    trace' "buildHostPackage" { inherit craneArgs; } callHostCraneWithDeps (
+      craneArgs // { nativeBuildInputs = [ hook ]; }
+    ) hostCraneLib.buildPackage;
 
   withDefaultBin =
     platform: pkg:
-    if defaultBin == null then
-      pkg
-    else
+    pkg.overrideAttrs (
+      old:
       let
-        exe =
-          if platform.isWindows then
-            "${defaultBin}.exe"
-          else if platform.isWasm then
-            "${defaultBin}.wasm"
-          else
-            defaultBin;
-      in
-      pkg.overrideAttrs (
-        old:
-        let
-          meta = {
-            mainProgram = exe;
+        meta =
+          optionalAttrs (defaultBin != null) {
+            mainProgram = defaultBin + (if platform.isWasm then ".wasm" else platform.extensions.executable);
           }
           // old.meta or { };
-        in
-        {
-          inherit meta;
-          passthru = {
-            exePath = "/bin/${meta.mainProgram}";
-          }
-          // old.passthru or { };
+      in
+      {
+        inherit meta;
+      }
+      // optionalAttrs (meta ? mainProgram) {
+        passthru = {
+          exePath = "/bin/${meta.mainProgram}";
         }
-      );
+        // old.passthru or { };
+      }
+    );
 
-  hostBin = buildHostPackage commonReleaseArgs;
-  hostDebugBin = buildHostPackage commonDebugArgs;
+  hostBin = withDefaultBin final.stdenv.hostPlatform (buildHostPackage commonReleaseArgs);
+  hostDebugBin = withDefaultBin final.stdenv.hostPlatform (buildHostPackage commonDebugArgs);
 
   mkPackages =
     prev:
@@ -882,9 +871,11 @@ let
                   name = pname';
                   paths = [ pkg ];
                 };
-                config.Env = [ "PATH=${pkg}/bin" ];
+                config = {
+                  Env = [ "PATH=${pkg}/bin" ];
+                }
+                // optionalAttrs (pkg.meta ? mainProgram) { Cmd = [ pkg.meta.mainProgram ]; };
               }
-              // optionalAttrs (pkg.meta ? mainProgram) { config.Cmd = [ pkg.meta.mainProgram ]; }
               // optionalAttrs (ociArchitecture ? ${pkg.passthru.target}) {
                 architecture = ociArchitecture.${pkg.passthru.target};
               }
