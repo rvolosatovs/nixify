@@ -134,14 +134,17 @@ self.lib.mkFlake {
 
       mkDefaultBinApp =
         suffix:
-        optionalAttrs (packages ? "${pname}${suffix}" && packages."${pname}${suffix}".passthru ? exePath) {
-          "${pname}${suffix}" = flake-utils.lib.mkApp { drv = packages."${pname}${suffix}"; };
+        optionalAttrs (packages ? "${pname}${suffix}" && packages."${pname}${suffix}".meta ? mainProgram) {
+          "${pname}${suffix}" = flake-utils.lib.mkApp {
+            drv = packages."${pname}${suffix}";
+            exePath = "/bin/${packages."${pname}${suffix}".meta.mainProgram}";
+          };
         };
 
       binApps = mkBinApps "-debug" // mkBinApps "" // mkDefaultBinApp "-debug" // mkDefaultBinApp "";
 
       apps' =
-        if (packages.default.pname or null) == pname && !(packages.default.passthru ? exePath) then
+        if (packages.default.pname or null) == pname && !(packages.default.meta ? mainProgram) then
           removeAttrs apps [ "default" ]
         else
           apps;
