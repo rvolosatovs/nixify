@@ -326,28 +326,15 @@ let
 
   withDefaultBin =
     platform: pkg:
-    if defaultBin == null && !(pkg.meta ? mainProgram) then
+    if defaultBin == null then
       pkg
     else
-      pkg.overrideAttrs (
-        old:
-        let
-          meta =
-            optionalAttrs (defaultBin != null) {
-              mainProgram = defaultBin + (if platform.isWasm then ".wasm" else platform.extensions.executable);
-            }
-            // old.meta or { };
-        in
-        {
-          inherit meta;
+      pkg.overrideAttrs (old: {
+        meta = {
+          mainProgram = defaultBin + (if platform.isWasm then ".wasm" else platform.extensions.executable);
         }
-        // optionalAttrs (meta ? mainProgram) {
-          passthru = {
-            exePath = "/bin/${meta.mainProgram}";
-          }
-          // old.passthru or { };
-        }
-      );
+        // old.meta or { };
+      });
 
   hostBin = withDefaultBin final.stdenv.hostPlatform (buildHostPackage commonReleaseArgs);
   hostDebugBin = withDefaultBin final.stdenv.hostPlatform (buildHostPackage commonDebugArgs);

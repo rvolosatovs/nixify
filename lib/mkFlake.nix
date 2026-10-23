@@ -82,7 +82,12 @@ in
         inherit packages;
 
         apps = optionalAttrs (packages ? default) {
-          default = flake-utils.lib.mkApp { drv = packages.default; };
+          default = flake-utils.lib.mkApp {
+            drv = packages.default;
+            exePath =
+              packages.default.passthru.exePath
+                or "/bin/${packages.default.meta.mainProgram or packages.default.pname or packages.default.name}";
+          };
         };
       }
     );
