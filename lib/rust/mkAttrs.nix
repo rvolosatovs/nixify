@@ -326,25 +326,28 @@ let
 
   withDefaultBin =
     platform: pkg:
-    pkg.overrideAttrs (
-      old:
-      let
-        meta =
-          optionalAttrs (defaultBin != null) {
-            mainProgram = defaultBin + (if platform.isWasm then ".wasm" else platform.extensions.executable);
-          }
-          // old.meta or { };
-      in
-      {
-        inherit meta;
-      }
-      // optionalAttrs (meta ? mainProgram) {
-        passthru = {
-          exePath = "/bin/${meta.mainProgram}";
+    if defaultBin == null && !(pkg.meta ? mainProgram) then
+      pkg
+    else
+      pkg.overrideAttrs (
+        old:
+        let
+          meta =
+            optionalAttrs (defaultBin != null) {
+              mainProgram = defaultBin + (if platform.isWasm then ".wasm" else platform.extensions.executable);
+            }
+            // old.meta or { };
+        in
+        {
+          inherit meta;
         }
-        // old.passthru or { };
-      }
-    );
+        // optionalAttrs (meta ? mainProgram) {
+          passthru = {
+            exePath = "/bin/${meta.mainProgram}";
+          }
+          // old.passthru or { };
+        }
+      );
 
   hostBin = withDefaultBin final.stdenv.hostPlatform (buildHostPackage commonReleaseArgs);
   hostDebugBin = withDefaultBin final.stdenv.hostPlatform (buildHostPackage commonDebugArgs);
@@ -874,7 +877,7 @@ let
                 config = {
                   Env = [ "PATH=${pkg}/bin" ];
                 }
-                // optionalAttrs (pkg.meta ? mainProgram) { Cmd = [ pkg.meta.mainProgram ]; };
+                // optionalAttrs (pkg.meta ? mainProgram) { Cmd = [ "/bin/${pkg.meta.mainProgram}" ]; };
               }
               // optionalAttrs (ociArchitecture ? ${pkg.passthru.target}) {
                 architecture = ociArchitecture.${pkg.passthru.target};
